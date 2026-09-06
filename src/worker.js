@@ -4,8 +4,9 @@
  * Serves the static client via Workers Assets, and — new — the accounts API
  * backed by D1. Sessions are opaque random tokens in a D1 table, delivered as
  * HttpOnly Secure cookies, so they are revocable server-side and never leak
- * into JS. Passwords are PBKDF2-SHA256 with 200k iterations (the strongest
- * KDF native to Workers; bcrypt/argon2 aren't available without WASM).
+ * into JS. Passwords are PBKDF2-SHA256 with 100k iterations (the strongest
+ * KDF native to Workers; bcrypt/argon2 aren't available without WASM — and
+ * 100k is the Workers runtime's hard ceiling for PBKDF2 iterations).
  *
  * The API is a plain fetch handler on the same origin as the client, so no
  * CORS setup, no separate deploy, no split secrets. When the match Durable
@@ -14,7 +15,7 @@
 
 const AUTH_COOKIE = 'sl_sess';
 const SESSION_DAYS = 30;
-const PBKDF2_ITERS = 200_000;
+const PBKDF2_ITERS = 100_000;
 
 // ── responses ────────────────────────────────────────────────────────────────
 const json = (body, init = {}) => new Response(JSON.stringify(body), {
