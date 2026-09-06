@@ -1,0 +1,25 @@
+{
+  "name": "supremacy-live",
+  "version": "1.0.0",
+  "description": "Supremacy Live — real-time territory-control game",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:migrations:local": "wrangler d1 migrations apply supremacy-live --local",
+    "db:migrations:remote": "wrangler d1 migrations apply supremacy-live --remote"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Synxpsis/supremacylive.git"
+  },
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/Synxpsis/supremacylive/issues"
+  },
+  "homepage": "https://github.com/Synxpsis/supremacylive#readme",
+  "devDependencies": {
+    "wrangler": "^4.129.0"
+  }
+}

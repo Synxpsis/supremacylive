@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700&family=Barlow+Semi+Condensed:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #0b1219; overflow: hidden; }
+  a { color: #d9a441; text-decoration: none; }
+  a:hover { color: #efe6d5; }
+  ::selection { background: rgba(217,164,65,0.28); }
+</style>
+</helmet>
+
+<div style="position: relative; height: 100vh; overflow: hidden; background: #0b1219; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-variant-numeric: tabular-nums;">
+
+  <sc-if value="{{ onLanding }}" hint-placeholder-val="{{ true }}">
+    <div style="position: absolute; inset: 0; display: grid; place-items: center; padding: 40px;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 30px; max-width: 620px; text-align: center;">
+        <span style="font-size: 12.5px; letter-spacing: 0.34em; text-transform: uppercase; color: #9aa1a8;">Supremacy</span>
+        <h1 style="margin: 0; font-family: Bitter, serif; font-weight: 600; font-size: 78px; line-height: 0.98; letter-spacing: -0.025em;">Take the centre,<br />take the map.</h1>
+        <p style="margin: 0; font-size: 19px; line-height: 1.55; color: #c8c2b4; max-width: 46ch; text-wrap: pretty;">Twenty-five territories, six hundred and twenty-five provinces, one road network. Real-time, no turns — every capital you hold pays for the army that takes the next.</p>
+        <button onClick="{{ toHub }}" style="margin-top: 6px; padding: 16px 46px; background: #d9a441; border: 1px solid #d9a441; border-radius: 3px; color: #121a22; font-family: Bitter, serif; font-weight: 600; font-size: 19px; letter-spacing: 0.02em; cursor: pointer;" style-hover="filter: brightness(1.1);">{{ playLabel }}</button>
+        <div style="display: flex; align-items: center; gap: 18px; font-size: 13.5px; color: #6f7883;">
+          <span>Free demo</span>
+          <span style="width: 1px; height: 12px; background: rgba(239,230,213,0.18);"></span>
+          <span>No account</span>
+          <span style="width: 1px; height: 12px; background: rgba(239,230,213,0.18);"></span>
+          <span>Runs in the browser</span>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ onAuth }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; display: grid; place-items: center; padding: 40px;">
+      <div style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 22px; padding: 30px 32px; background: #101a23; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px;">
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span style="font-size: 11.5px; letter-spacing: 0.2em; text-transform: uppercase; color: #9aa1a8;">Supremacy</span>
+          <span style="font-family: Bitter, serif; font-size: 26px; font-weight: 600;">{{ authTitle }}</span>
+        </div>
+
+        <div style="display: flex; gap: 4px; padding: 3px; background: rgba(11,18,25,0.6); border: 1px solid rgba(239,230,213,0.12); border-radius: 3px;">
+          <button onClick="{{ pickLogin }}" style="flex: 1; padding: 8px 12px; background: {{ loginTabBg }}; border: none; border-radius: 2px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14px; cursor: pointer;" style-hover="filter: brightness(1.2);">Sign in</button>
+          <button onClick="{{ pickSignup }}" style="flex: 1; padding: 8px 12px; background: {{ signupTabBg }}; border: none; border-radius: 2px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14px; cursor: pointer;" style-hover="filter: brightness(1.2);">Create account</button>
+        </div>
+
+        <form onSubmit="{{ submitAuth }}" style="display: flex; flex-direction: column; gap: 13px;">
+          <sc-if value="{{ isSignup }}" hint-placeholder-val="{{ false }}">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <label style="font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #9aa1a8;">Username</label>
+              <input value="{{ f_username }}" onInput="{{ onUsername }}" autoComplete="username" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: rgba(11,18,25,0.6); border: 1px solid {{ b_username }}; border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 15px;" />
+              <span style="font-size: 12px; color: #c0483c; min-height: 15px;">{{ e_username }}</span>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <label style="font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #9aa1a8;">Email</label>
+              <input type="email" value="{{ f_email }}" onInput="{{ onEmail }}" autoComplete="email" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: rgba(11,18,25,0.6); border: 1px solid {{ b_email }}; border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 15px;" />
+              <span style="font-size: 12px; color: #c0483c; min-height: 15px;">{{ e_email }}</span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+            <div style="display: flex; flex-direction: column; gap: 4px;">
+              <label style="font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #9aa1a8;">Username or email</label>
+              <input value="{{ f_identifier }}" onInput="{{ onIdentifier }}" autoComplete="username" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: rgba(11,18,25,0.6); border: 1px solid {{ b_identifier }}; border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 15px;" />
+              <span style="font-size: 12px; color: #c0483c; min-height: 15px;">{{ e_identifier }}</span>
+            </div>
+          </sc-if>
+
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #9aa1a8;">Password</label>
+            <input type="password" value="{{ f_password }}" onInput="{{ onPassword }}" autoComplete="{{ pwAutocomplete }}" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: rgba(11,18,25,0.6); border: 1px solid {{ b_password }}; border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 15px;" />
+            <span style="font-size: 12px; color: #c0483c; min-height: 15px;">{{ e_password }}</span>
+          </div>
+
+          <sc-if value="{{ hasFormError }}" hint-placeholder-val="{{ false }}">
+            <div style="padding: 9px 12px; background: rgba(192,72,60,0.12); border: 1px solid rgba(192,72,60,0.45); border-radius: 3px; font-size: 13.5px; color: #e7b3ac;">{{ formError }}</div>
+          </sc-if>
+
+          <button type="submit" disabled="{{ busy }}" style="margin-top: 4px; padding: 12px 20px; background: #d9a441; border: 1px solid #d9a441; border-radius: 3px; color: #121a22; font-family: Bitter, serif; font-weight: 600; font-size: 16px; cursor: pointer; opacity: {{ submitOpacity }};" style-hover="filter: brightness(1.1);">{{ submitLabel }}</button>
+        </form>
+
+        <button onClick="{{ toLanding }}" style="align-self: flex-start; padding: 4px 0; background: transparent; border: none; color: #9aa1a8; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13px; cursor: pointer;" style-hover="color: #efe6d5;">← Back</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ onHub }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; display: grid; grid-template-rows: auto 1fr; padding: 24px 30px 30px; gap: 22px; box-sizing: border-box;">
+
+      <header style="display: flex; align-items: center; justify-content: space-between; gap: 24px;">
+        <div style="display: flex; align-items: baseline; gap: 14px;">
+          <span style="font-family: Bitter, serif; font-size: 19px; font-weight: 600;">Supremacy</span>
+          <span style="font-size: 11.5px; letter-spacing: 0.2em; text-transform: uppercase; color: #9aa1a8;">Hub</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 9px; padding: 7px 14px; background: #131e28; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px;">
+            <span style="width: 9px; height: 9px; border-radius: 2px; background: #48a37c;"></span>
+            <span style="font-size: 14px; color: #c8c2b4;">{{ commander }}</span>
+          </div>
+          <button onClick="{{ logout }}" style="padding: 7px 13px; background: rgba(239,230,213,0.05); border: 1px solid rgba(239,230,213,0.16); border-radius: 3px; color: #9aa1a8; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="color: #efe6d5; border-color: rgba(239,230,213,0.3);">Sign out</button>
+        </div>
+      </header>
+
+      <div style="display: grid; grid-template-columns: 1fr 336px; gap: 22px; min-height: 0;">
+
+        <div style="display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow-y: auto;">
+          <span style="font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #9aa1a8;">Choose a match</span>
+
+          <sc-for list="{{ modes }}" as="mode" hint-placeholder-count="3">
+            <button onClick="{{ mode.pick }}" style="display: block; width: 100%; box-sizing: border-box; text-align: left; padding: 20px 22px; background: {{ mode.bg }}; border: 1px solid {{ mode.border }}; border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; cursor: {{ mode.cursor }};" style-hover="filter: brightness(1.14);">
+              <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px;">
+                <span style="font-family: Bitter, serif; font-size: 21px; font-weight: 600; color: {{ mode.titleColour }};">{{ mode.title }}</span>
+                <span style="flex: none; font-size: 11.5px; letter-spacing: 0.13em; text-transform: uppercase; color: {{ mode.tagColour }};">{{ mode.tag }}</span>
+              </div>
+              <p style="margin: 7px 0 0; font-size: 15px; line-height: 1.5; color: #9aa1a8; max-width: 58ch; text-wrap: pretty;">{{ mode.blurb }}</p>
+            </button>
+          </sc-for>
+        </div>
+
+        <aside style="display: flex; flex-direction: column; gap: 18px; padding: 20px; background: #101a23; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; overflow-y: auto;">
+          <div style="display: flex; flex-direction: column; gap: 5px;">
+            <span style="font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #9aa1a8;">Selected</span>
+            <span style="font-family: Bitter, serif; font-size: 22px; font-weight: 600;">{{ pickedTitle }}</span>
+            <span style="font-size: 14px; line-height: 1.45; color: #9aa1a8; text-wrap: pretty;">{{ pickedNote }}</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 9px;">
+            <span style="font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #9aa1a8;">Board</span>
+            <div style="display: flex; gap: 7px;">
+              <sc-for list="{{ boards }}" as="b" hint-placeholder-count="2">
+                <button onClick="{{ b.pick }}" style="flex: 1; padding: 10px 8px; background: {{ b.bg }}; border: 1px solid {{ b.border }}; border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14px; cursor: pointer;" style-hover="filter: brightness(1.18);">{{ b.label }}</button>
+              </sc-for>
+            </div>
+            <span style="font-size: 13px; line-height: 1.45; color: #6f7883;">{{ boardNote }}</span>
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 9px;">
+            <span style="font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #9aa1a8;">Opponent</span>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <sc-for list="{{ levels }}" as="l" hint-placeholder-count="3">
+                <button onClick="{{ l.pick }}" style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; width: 100%; box-sizing: border-box; text-align: left; padding: 10px 13px; background: {{ l.bg }}; border: 1px solid {{ l.border }}; border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14.5px; cursor: pointer;" style-hover="filter: brightness(1.18);">
+                  <span>{{ l.label }}</span>
+                  <span style="flex: none; font-size: 12.5px; color: #6f7883;">{{ l.note }}</span>
+                </button>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px;">
+            <a href="{{ launchHref }}" style="display: block; padding: 15px 20px; background: #d9a441; border: 1px solid #d9a441; border-radius: 3px; color: #121a22; font-family: Bitter, serif; font-weight: 600; font-size: 17px; text-align: center;" style-hover="filter: brightness(1.1);">{{ launchLabel }}</a>
+            <span style="font-size: 12.5px; line-height: 1.45; color: #6f7883; text-align: center; text-wrap: pretty;">{{ launchNote }}</span>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;$preview&quot;: { &quot;width&quot;: 1280, &quot;height&quot;: 800 }
+}">
+class Component extends DCLogic {
+  state = {
+    screen: 'landing', mode: 'ai', board: 'grand', level: 'Steady',
+    user: null, authChecked: false,
+    // Auth form
+    authMode: 'login',
+    f: { username: '', email: '', identifier: '', password: '' },
+    fieldErrors: {}, formError: '', busy: false,
+  };
+
+  componentDidMount() {
+    // Restore the session cookie on load so a returning player lands in the
+    // hub, not on the auth screen. `credentials: same-origin` is the default
+    // for same-origin fetches; being explicit here so nothing breaks if the
+    // API is ever proxied.
+    fetch('/api/auth/me', { credentials: 'same-origin' })
+      .then(r => r.ok ? r.json() : { user: null })
+      .then(j => this.setState({ user: j.user || null, authChecked: true }))
+      .catch(() => this.setState({ authChecked: true }));
+  }
+
+  goPlay() {
+    if (this.state.user) this.setState({ screen: 'hub' });
+    else this.setState({ screen: 'auth', authMode: 'login', fieldErrors: {}, formError: '' });
+  }
+
+  async submitAuth(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    if (this.state.busy) return;
+    const { f, authMode } = this.state;
+    this.setState({ busy: true, fieldErrors: {}, formError: '' });
+    try {
+      const body = authMode === 'signup'
+        ? { username: f.username.trim(), email: f.email.trim(), password: f.password }
+        : { identifier: f.identifier.trim(), password: f.password };
+      const r = await fetch(`/api/auth/${authMode}`, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        this.setState({
+          busy: false,
+          fieldErrors: j.fields || {},
+          formError: j.fields ? '' : (j.error || 'Sign in failed'),
+        });
+        return;
+      }
+      this.setState({
+        busy: false, user: j.user, screen: 'hub',
+        f: { username: '', email: '', identifier: '', password: '' },
+        fieldErrors: {}, formError: '',
+      });
+    } catch (err) {
+      this.setState({ busy: false, formError: 'Network error — try again.' });
+    }
+  }
+
+  async logout() {
+    try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); }
+    catch (_) {}
+    this.setState({ user: null, screen: 'landing' });
+  }
+
+  /** Where the match lives. `.dc.html` while authoring, `game.html` once
+   *  deployed, so one hub serves both without a build step. */
+  gameHref() {
+    const q = `?auto=1&board=${this.state.board}&ai=${encodeURIComponent(this.state.level)}`;
+    const here = (self.location && self.location.pathname) || '';
+    return (/\.dc\.html$/i.test(here) ? 'Game.dc.html' : 'game.html') + q;
+  }
+
+  renderVals() {
+    const st = this.state;
+    const chip = (active, colour) => ({
+      bg: active ? `${colour}26` : 'rgba(239,230,213,0.05)',
+      border: active ? colour : 'rgba(239,230,213,0.16)',
+    });
+
+    const modeDefs = [
+      {
+        id: 'ai', title: 'Test match', tag: 'Ready', tagColour: '#48a37c', live: true,
+        blurb: 'One seat against the AI on the full board. Everything the simulation does is already here — economy, roads, capitals, reinforcement.',
+      },
+      {
+        id: 'duel', title: '1v1 online', tag: 'Not yet wired', tagColour: '#6f7883', live: false,
+        blurb: 'Two players, one authoritative match. The simulation is deterministic and the protocol is designed; the server that runs it is the next build.',
+      },
+      {
+        id: 'lobby', title: 'Twelve-player lobby', tag: 'Later', tagColour: '#6f7883', live: false,
+        blurb: 'Same architecture, more seats — the cost of a match is the same whether two play it or twelve. The board is what needs rethinking, not the stack.',
+      },
+    ];
+
+    const modes = modeDefs.map(m => {
+      const on = st.mode === m.id;
+      const c = chip(on, m.live ? '#d9a441' : 'rgba(239,230,213,0.28)');
+      return {
+        key: m.id, title: m.title, tag: m.tag, tagColour: m.tagColour, blurb: m.blurb,
+        bg: m.live ? c.bg : '#131e28',
+        border: on ? (m.live ? '#d9a441' : 'rgba(239,230,213,0.3)') : 'rgba(239,230,213,0.13)',
+        titleColour: m.live ? '#efe6d5' : '#9aa1a8',
+        cursor: 'pointer',
+        pick: () => this.setState({ mode: m.id }),
+      };
+    });
+
+    const boardDefs = [
+      { id: 'grand', label: 'Grand', note: '25 territories, 625 provinces. Long game — hold 18 to win.' },
+      { id: 'duel', label: 'Small', note: 'Four territories. Quick, and the right board to learn the rules on.' },
+    ];
+    const boards = boardDefs.map(b => {
+      const c = chip(st.board === b.id, '#d9a441');
+      return { key: b.id, label: b.label, bg: c.bg, border: c.border, pick: () => this.setState({ board: b.id }) };
+    });
+
+    const levelDefs = [
+      { id: 'Passive', label: 'Passive', note: 'expands slowly' },
+      { id: 'Steady', label: 'Steady', note: 'plays properly' },
+      { id: 'Ruthless', label: 'Ruthless', note: 'presses hard' },
+    ];
+    const levels = levelDefs.map(l => {
+      const c = chip(st.level === l.id, '#c0483c');
+      return { key: l.id, label: l.label, note: l.note, bg: c.bg, border: c.border, pick: () => this.setState({ level: l.id }) };
+    });
+
+    const picked = modeDefs.find(m => m.id === st.mode) || modeDefs[0];
+    const live = picked.live;
+
+    const f = st.f, fe = st.fieldErrors;
+    const border = has => has ? '#c0483c' : 'rgba(239,230,213,0.18)';
+    const setField = k => e => this.setState({
+      f: { ...st.f, [k]: e.target.value },
+      fieldErrors: { ...fe, [k]: undefined },
+      formError: '',
+    });
+
+    return {
+      onLanding: st.screen === 'landing',
+      onAuth: st.screen === 'auth',
+      onHub: st.screen === 'hub',
+      toHub: () => this.goPlay(),
+      toLanding: () => this.setState({ screen: 'landing' }),
+      logout: () => this.logout(),
+      playLabel: st.user ? 'Enter hub' : 'Play',
+      commander: st.user ? st.user.username : 'Guest commander',
+
+      // Auth
+      authTitle: st.authMode === 'signup' ? 'Create your account' : 'Welcome back',
+      isSignup: st.authMode === 'signup',
+      isLogin: st.authMode === 'login',
+      loginTabBg: st.authMode === 'login' ? 'rgba(217,164,65,0.16)' : 'transparent',
+      signupTabBg: st.authMode === 'signup' ? 'rgba(217,164,65,0.16)' : 'transparent',
+      pickLogin: () => this.setState({ authMode: 'login', fieldErrors: {}, formError: '' }),
+      pickSignup: () => this.setState({ authMode: 'signup', fieldErrors: {}, formError: '' }),
+      submitAuth: e => this.submitAuth(e),
+      submitLabel: st.busy ? 'Please wait…' : (st.authMode === 'signup' ? 'Create account' : 'Sign in'),
+      submitOpacity: st.busy ? 0.7 : 1,
+      busy: st.busy,
+      pwAutocomplete: st.authMode === 'signup' ? 'new-password' : 'current-password',
+      hasFormError: !!st.formError,
+      formError: st.formError,
+      f_username: f.username, f_email: f.email, f_identifier: f.identifier, f_password: f.password,
+      onUsername: setField('username'),
+      onEmail: setField('email'),
+      onIdentifier: setField('identifier'),
+      onPassword: setField('password'),
+      e_username: fe.username || '', e_email: fe.email || '',
+      e_identifier: fe.identifier || '', e_password: fe.password || '',
+      b_username: border(fe.username), b_email: border(fe.email),
+      b_identifier: border(fe.identifier), b_password: border(fe.password),
+      modes, boards, levels,
+      pickedTitle: picked.title,
+      pickedNote: live
+        ? `${boardDefs.find(b => b.id === st.board).label} board · ${st.level} opponent`
+        : 'Pick Test match to launch — the other modes are not wired yet.',
+      boardNote: boardDefs.find(b => b.id === st.board).note,
+      launchHref: live ? this.gameHref() : '#',
+      launchLabel: live ? 'Launch match' : 'Unavailable',
+      launchNote: live
+        ? 'Drag from a city to send troops. Take a capital to take its territory.'
+        : 'Only the AI test match runs today.',
+    };
+  }
+}
+</script>
+</body>
+</html>
