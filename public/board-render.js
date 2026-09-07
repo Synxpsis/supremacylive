@@ -75,12 +75,18 @@
       ctx.closePath();
     };
     /* One extruded box. Heights are tile units scaled by BASE_SCALE, since
-     * cam.project takes height in world px. At yaw 45° the two viewer-facing
-     * walls are always the +c and +r edges, so which quads to draw is fixed. */
+     * cam.project takes height in world px. The board only ever sits at one
+     * of the four ISO_BEARINGS (45° normally, +180° for a seat-1 viewer — see
+     * game.html's viewYaw), and at any of those the two viewer-facing walls
+     * are the r-normal and c-normal edges, just possibly the -r/-c one
+     * instead of +r/+c — cam.faces() (already yaw-aware) picks the right one
+     * instead of assuming +r/+c the way a fixed-bearing board could. */
     const HU = F.BASE_SCALE;
+    const rNear = cam.faces(0, 1), cNear = cam.faces(1, 0);
     const prism = (c0, r0, w, d, hT, roof, near, side) => {
       const h = hT * HU;
       const c1 = c0 + w, r1 = r0 + d;
+      const rE = rNear ? r1 : r0, cE = cNear ? c1 : c0;
       const face = (pts, fill) => {
         ctx.beginPath();
         ctx.moveTo(pts[0][0], pts[0][1]);
@@ -88,8 +94,8 @@
         ctx.closePath();
         ctx.fillStyle = fill; ctx.fill();
       };
-      face([P(c0, r1, h), P(c1, r1, h), P(c1, r1, 0), P(c0, r1, 0)], near);
-      face([P(c1, r0, h), P(c1, r1, h), P(c1, r1, 0), P(c1, r0, 0)], side);
+      face([P(c0, rE, h), P(c1, rE, h), P(c1, rE, 0), P(c0, rE, 0)], near);
+      face([P(cE, r0, h), P(cE, r1, h), P(cE, r1, 0), P(cE, r0, 0)], side);
       face([P(c0, r0, h), P(c1, r0, h), P(c1, r1, h), P(c0, r1, h)], roof);
     };
 
@@ -110,10 +116,12 @@
 
     // The board as a physical slab: the two viewer-facing perimeter faces,
     // dropped below the tile plane. Gives the board thickness and presence
-    // instead of reading as a flat painted diamond.
+    // instead of reading as a flat painted diamond. Same near-edge-per-axis
+    // logic as prism() above, for the same reason.
     {
       const gw = M.gridW || 14, gh = M.gridH || 14;
       const t = -F.ISO.thick * 2.2;
+      const rEdge = rNear ? gh : 0, cEdge = cNear ? gw : 0;
       const face = (pts, fill) => {
         ctx.beginPath();
         ctx.moveTo(pts[0][0], pts[0][1]);
@@ -121,8 +129,8 @@
         ctx.closePath();
         ctx.fillStyle = fill; ctx.fill();
       };
-      face([P(0, gh, 0), P(gw, gh, 0), P(gw, gh, t), P(0, gh, t)], BOARD_EDGE);
-      face([P(gw, 0, 0), P(gw, gh, 0), P(gw, gh, t), P(gw, 0, t)], shade(BOARD_EDGE, 0.72));
+      face([P(0, rEdge, 0), P(gw, rEdge, 0), P(gw, rEdge, t), P(0, rEdge, t)], BOARD_EDGE);
+      face([P(cEdge, 0, 0), P(cEdge, gh, 0), P(cEdge, gh, t), P(cEdge, 0, t)], shade(BOARD_EDGE, 0.72));
     }
 
     // Provinces. Ownership carries the colour; the jitter is deterministic so
@@ -186,10 +194,12 @@
       }
     }
 
-    // Structures, as one depth-sorted pass. Farther tiles (smaller c+r) paint
-    // first so nearer volumes overlap them correctly — separate per-type loops
-    // would let a distant capital draw over a near barracks. One piece per
-    // tile, strongest claim winning, so volumes never intersect.
+    // Structures, as one depth-sorted pass. Farther tiles paint first so
+    // nearer volumes overlap them correctly — separate per-type loops would
+    // let a distant capital draw over a near barracks. One piece per tile,
+    // strongest claim winning, so volumes never intersect. cam.depth() rather
+    // than a raw c+r sum, so this stays correct at either viewer bearing —
+    // c+r only increases screenward at yaw 45°, and flips at yaw 225°.
     {
       const pieces = new Map();
       const put = (c, r, kind, own) => {
@@ -222,7 +232,7 @@
         put(c, r, 'industry', industry[k]);
       }
 
-      const order = [...pieces.values()].sort((a, b) => (a.c + a.r) - (b.c + b.r));
+      const order = [...pieces.values()].sort((a, b) => cam.depth(a.c, a.r) - cam.depth(b.c, b.r));
       for (const pc of order) piece(pc.c, pc.r, pc.kind, pc.own);
     }
 

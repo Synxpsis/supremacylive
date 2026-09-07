@@ -514,7 +514,7 @@ class Component extends DCLogic {
     this.setState({
       screen: 'match', def,
       sel: null, armed: null, notice: '',
-      cam: { yaw: Component.YAW, pitch: Component.PITCH, zoom: 1.0, panX: 0, panY: 0 },
+      cam: { yaw: this.viewYaw(M), pitch: Component.PITCH, zoom: 1.0, panX: 0, panY: 0 },
       mode: null,
     });
   }
@@ -606,6 +606,44 @@ class Component extends DCLogic {
    *  it is the local tweak so both openings can be checked against the AI. */
   viewSeat() { return this._netSeat != null ? this._netSeat : (this.props.viewAs === 'Seat 1' ? 1 : 0); }
 
+  /** The board's fixed 45° bearing, rotated a further 180° whenever the
+   *  viewer's own start isn't already the near corner at that bearing — so
+   *  the viewing player is always at the bottom of their own screen and the
+   *  opponent is always opposite them, never "whichever seat number I got".
+   *  Deliberately not "seat 1 gets rotated": the grand map's starts put seat
+   *  0 at the near corner already, but duel's put seat 0 at the FAR one (see
+   *  their `starts` arrays in map.js) — a seat-number rule would be right for
+   *  one board's convention and wrong for the other's. Reading which corner
+   *  is actually near from the built board's own province data is correct
+   *  for both, and for any board added later.
+   *
+   *  Rotating the camera instead of mirroring every coordinate keeps
+   *  hit-testing, ownership and sim state untouched — cam.unproject already
+   *  inverts whatever yaw is live, and board-render.js reads wall-facing and
+   *  paint order off this same camera (cam.faces() / cam.depth()) rather than
+   *  assuming yaw 45°, so it stays correct at either bearing too.
+   *
+   *  `M` is accepted explicitly for the two call sites (play(), the 'start'
+   *  handler) that compute this before `this.state.def` — and so `this.built()`
+   *  — reflects the match being entered; every other call site is fine
+   *  leaving it to fall back to `this.built()`. */
+  viewYaw(M) {
+    M = M || this.built();
+    const F = self.FPMap;
+    const seat = this.viewSeat();
+    const mine = M && M.starts && M.starts.find(s => s.seat === seat);
+    const theirs = M && M.starts && M.starts.find(s => s.seat !== seat);
+    if (!mine || !theirs) return Component.YAW;
+    const pMine = M.provinces.find(p => p.id === mine.territory);
+    const pTheirs = M.provinces.find(p => p.id === theirs.territory);
+    if (!pMine || !pTheirs) return Component.YAW;
+    const [cm, rm] = F.centreTile(M, pMine);
+    const [ct, rt] = F.centreTile(M, pTheirs);
+    // Depth at yaw 45° is proportional to c + r (see map.js's camera()) —
+    // the near corner (bottom of screen) is the higher of the two.
+    return (cm + rm) >= (ct + rt) ? Component.YAW : Component.YAW + Math.PI;
+  }
+
   built() {
     const d = this.state.def;
     if (!d || !self.FPMap) return null;
@@ -687,7 +725,7 @@ class Component extends DCLogic {
         this.startLoop();
         this.setState({
           screen: 'match', def, sel: null, armed: null, notice: '', mode: null,
-          cam: { yaw: Component.YAW, pitch: Component.PITCH, zoom: 1.0, panX: 0, panY: 0 },
+          cam: { yaw: this.viewYaw(M), pitch: Component.PITCH, zoom: 1.0, panX: 0, panY: 0 },
         });
         break;
       }
@@ -760,9 +798,10 @@ class Component extends DCLogic {
 
   // ── camera ───────────────────────────────────────────────────────────────
   buildCam(W, H, over) {
+    const yaw = this.viewYaw();
     return self.FPMap.orbitCamera(this.built(), W, H, {
-      ...this.state.cam, yaw: Component.YAW, pitch: Component.PITCH,
-      bearings: [Component.YAW],
+      ...this.state.cam, yaw, pitch: Component.PITCH,
+      bearings: [yaw],
       // Keeps a fitted board clear of the HUD instead of centring it in the raw
       // viewport and letting the bars cover the edges.
       insets: { top: 54, right: 22, bottom: 54, left: 22 },
@@ -773,7 +812,7 @@ class Component extends DCLogic {
   setCam(patch) { this.setState({ cam: { ...this.state.cam, ...patch } }); }
 
   fit() {
-    this.setCam({ yaw: Component.YAW, pitch: Component.PITCH, zoom: 1, panX: 0, panY: 0 });
+    this.setCam({ yaw: this.viewYaw(), pitch: Component.PITCH, zoom: 1, panX: 0, panY: 0 });
   }
 
   /** Centre one territory in the viewport — a player joins looking at the
@@ -1031,7 +1070,7 @@ class Component extends DCLogic {
     if (this._framedSeat !== seat) {
       this._framedSeat = seat;
       this._frame = setTimeout(() => this.setCam({
-        yaw: Component.YAW, pitch: Component.PITCH, zoom: 1, panX: 0, panY: 0
+        yaw: this.viewYaw(), pitch: Component.PITCH, zoom: 1, panX: 0, panY: 0
       }), 0);
     }
   }
