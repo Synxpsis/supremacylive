@@ -16,6 +16,8 @@
   a { color: #d9a441; text-decoration: none; }
   a:hover { color: #efe6d5; }
   ::selection { background: rgba(217,164,65,0.28); }
+  @keyframes bgPulse { 0%, 100% { opacity: 0.7; transform: scale(1); } 50% { opacity: 1; transform: scale(1.06); } }
+  @keyframes gridDrift { from { transform: translate3d(0,0,0); } to { transform: translate3d(-56px,-56px,0); } }
 </style>
 </helmet>
 
@@ -24,17 +26,9 @@
   <sc-if value="{{ onLanding }}" hint-placeholder-val="{{ true }}">
     <div style="position: absolute; inset: 0; display: grid; place-items: center; padding: 40px;">
       <div style="display: flex; flex-direction: column; align-items: center; gap: 30px; max-width: 620px; text-align: center;">
-        <span style="font-size: 12.5px; letter-spacing: 0.34em; text-transform: uppercase; color: #9aa1a8;">Supremacy</span>
-        <h1 style="margin: 0; font-family: Bitter, serif; font-weight: 600; font-size: 78px; line-height: 0.98; letter-spacing: -0.025em;">Take the centre,<br />take the map.</h1>
-        <p style="margin: 0; font-size: 19px; line-height: 1.55; color: #c8c2b4; max-width: 46ch; text-wrap: pretty;">Twenty-five territories, six hundred and twenty-five provinces, one road network. Real-time, no turns — every capital you hold pays for the army that takes the next.</p>
+        <h1 style="margin: 0; font-family: Bitter, serif; font-weight: 600; font-size: 78px; line-height: 0.98; letter-spacing: -0.025em;">Welcome to<br />Supremacy Live.<br /></h1>
+        <p style="margin: 0; font-size: 19px; line-height: 1.55; color: #c8c2b4; max-width: 46ch; text-wrap: pretty;">supremacy.live is a real-time "HQ" style PVP game designed to focus entirely on the community, and the content. Completely Free To Play, runs in the browser.</p>
         <button onClick="{{ toHub }}" style="margin-top: 6px; padding: 16px 46px; background: #d9a441; border: 1px solid #d9a441; border-radius: 3px; color: #121a22; font-family: Bitter, serif; font-weight: 600; font-size: 19px; letter-spacing: 0.02em; cursor: pointer;" style-hover="filter: brightness(1.1);">{{ playLabel }}</button>
-        <div style="display: flex; align-items: center; gap: 18px; font-size: 13.5px; color: #6f7883;">
-          <span>Free demo</span>
-          <span style="width: 1px; height: 12px; background: rgba(239,230,213,0.18);"></span>
-          <span>No account</span>
-          <span style="width: 1px; height: 12px; background: rgba(239,230,213,0.18);"></span>
-          <span>Runs in the browser</span>
-        </div>
       </div>
     </div>
   </sc-if>
@@ -43,7 +37,6 @@
     <div style="position: absolute; inset: 0; display: grid; place-items: center; padding: 40px;">
       <div style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 22px; padding: 30px 32px; background: #101a23; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px;">
         <div style="display: flex; flex-direction: column; gap: 5px;">
-          <span style="font-size: 11.5px; letter-spacing: 0.2em; text-transform: uppercase; color: #9aa1a8;">Supremacy</span>
           <span style="font-family: Bitter, serif; font-size: 26px; font-weight: 600;">{{ authTitle }}</span>
         </div>
 
@@ -93,73 +86,56 @@
   </sc-if>
 
   <sc-if value="{{ onHub }}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; inset: 0; background: radial-gradient(ellipse 900px 650px at 30% 26%, rgba(217,164,65,0.13), transparent 62%); animation: bgPulse 26s ease-in-out infinite; will-change: transform;"></div>
+    <div style="position: absolute; inset: 0; overflow: hidden;">
+      <!-- translate3d, not background-position: animating background-position repaints the full viewport every frame and hangs the page. -->
+      <div style="position: absolute; top: -56px; left: -56px; right: -56px; bottom: -56px; background-image: linear-gradient(rgba(239,230,213,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(239,230,213,0.03) 1px, transparent 1px); background-size: 56px 56px; animation: gridDrift 50s linear infinite; will-change: transform;"></div>
+    </div>
     <div style="position: absolute; inset: 0; display: grid; grid-template-rows: auto 1fr; padding: 24px 30px 30px; gap: 22px; box-sizing: border-box;">
 
       <header style="display: flex; align-items: center; justify-content: space-between; gap: 24px;">
-        <div style="display: flex; align-items: baseline; gap: 14px;">
-          <span style="font-family: Bitter, serif; font-size: 19px; font-weight: 600;">Supremacy</span>
-          <span style="font-size: 11.5px; letter-spacing: 0.2em; text-transform: uppercase; color: #9aa1a8;">Hub</span>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; background: #131e28; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px;">
+          <div style="width: 26px; height: 26px; flex: none; border-radius: 50%; background: rgba(239,230,213,0.1); display: flex; align-items: center; justify-content: center; color: #9aa1a8;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"></path></svg>
+          </div>
+          <span style="font-size: 14px; color: #c8c2b4;">{{ commander }}</span>
+          <span style="width: 1px; height: 14px; background: rgba(239,230,213,0.14);"></span>
+          <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: #6f7883;">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 4H7v5a5 5 0 0 0 10 0V4Z"></path><path d="M7 6H4a1 1 0 0 0-1 1 5 5 0 0 0 4 4.9M17 6h3a1 1 0 0 1 1 1 5 5 0 0 1-4 4.9"></path></svg>
+            {{ trophies }}
+          </span>
         </div>
         <div style="display: flex; align-items: center; gap: 16px;">
-          <div style="display: flex; align-items: center; gap: 9px; padding: 7px 14px; background: #131e28; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px;">
-            <span style="width: 9px; height: 9px; border-radius: 2px; background: #48a37c;"></span>
-            <span style="font-size: 14px; color: #c8c2b4;">{{ commander }}</span>
-          </div>
           <button onClick="{{ logout }}" style="padding: 7px 13px; background: rgba(239,230,213,0.05); border: 1px solid rgba(239,230,213,0.16); border-radius: 3px; color: #9aa1a8; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="color: #efe6d5; border-color: rgba(239,230,213,0.3);">Sign out</button>
         </div>
       </header>
 
-      <div style="display: grid; grid-template-columns: 1fr 336px; gap: 22px; min-height: 0;">
+      <div style="display: grid; grid-template-columns: 1fr 380px; gap: 22px; min-height: 0;">
 
-        <div style="display: flex; flex-direction: column; gap: 14px; min-height: 0; overflow-y: auto;">
-          <span style="font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #9aa1a8;">Choose a match</span>
+        <div style="position: relative; display: flex; flex-direction: column; justify-content: center; padding: 0 44px;">
+          <div style="position: relative; display: flex; flex-direction: column; gap: 16px; max-width: 460px;">
+            <div style="font-family: Bitter, serif; font-size: 46px; font-weight: 600; line-height: 1.06; letter-spacing: -0.02em;">Welcome back, {{ commander }}</div>
+            <p style="margin: 0; font-size: 15.5px; line-height: 1.55; color: #c8c2b4; text-wrap: pretty;">{{ heroSubtitle }}</p>
 
-          <sc-for list="{{ modes }}" as="mode" hint-placeholder-count="3">
-            <button onClick="{{ mode.pick }}" style="display: block; width: 100%; box-sizing: border-box; text-align: left; padding: 20px 22px; background: {{ mode.bg }}; border: 1px solid {{ mode.border }}; border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; cursor: {{ mode.cursor }};" style-hover="filter: brightness(1.14);">
-              <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px;">
-                <span style="font-family: Bitter, serif; font-size: 21px; font-weight: 600; color: {{ mode.titleColour }};">{{ mode.title }}</span>
-                <span style="flex: none; font-size: 11.5px; letter-spacing: 0.13em; text-transform: uppercase; color: {{ mode.tagColour }};">{{ mode.tag }}</span>
-              </div>
-              <p style="margin: 7px 0 0; font-size: 15px; line-height: 1.5; color: #9aa1a8; max-width: 58ch; text-wrap: pretty;">{{ mode.blurb }}</p>
-            </button>
-          </sc-for>
+            <div style="display: flex; gap: 8px; margin-top: 2px; flex-wrap: wrap;">
+              <sc-for list="{{ modePills }}" as="m" hint-placeholder-count="2">
+                <button onClick="{{ m.pick }}" style="display: flex; align-items: center; gap: 7px; padding: 8px 14px; background: {{ m.bg }}; border: 1px solid {{ m.border }}; border-radius: 3px; font-size: 13.5px; color: {{ m.colour }}; font-family: 'Barlow Semi Condensed', sans-serif; cursor: pointer;" style-hover="filter: brightness(1.15);"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{ m.dot }};"></span>{{ m.label }}</button>
+              </sc-for>
+            </div>
+
+            <div style="display: flex; gap: 6px; margin-top: 4px; padding: 3px; background: rgba(11,18,25,0.5); border: 1px solid rgba(239,230,213,0.1); border-radius: 3px; width: fit-content;">
+              <sc-for list="{{ levels }}" as="l" hint-placeholder-count="3">
+                <button onClick="{{ l.pick }}" style="padding: 6px 12px; background: {{ l.bg }}; border: none; border-radius: 2px; font-size: 13px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; cursor: pointer; white-space: nowrap;" style-hover="filter: brightness(1.2);">{{ l.label }}</button>
+              </sc-for>
+            </div>
+
+            <a href="{{ launchHref }}" onClick="{{ launchClick }}" style="margin-top: 10px; padding: 15px 30px; background: #d9a441; border-radius: 3px; color: #121a22; font-family: Bitter, serif; font-weight: 600; font-size: 16px; text-align: center; width: fit-content;" style-hover="filter: brightness(1.1);">{{ launchLabel }}</a>
+          </div>
         </div>
 
-        <aside style="display: flex; flex-direction: column; gap: 18px; padding: 20px; background: #101a23; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; overflow-y: auto;">
-          <div style="display: flex; flex-direction: column; gap: 5px;">
-            <span style="font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #9aa1a8;">Selected</span>
-            <span style="font-family: Bitter, serif; font-size: 22px; font-weight: 600;">{{ pickedTitle }}</span>
-            <span style="font-size: 14px; line-height: 1.45; color: #9aa1a8; text-wrap: pretty;">{{ pickedNote }}</span>
-          </div>
-
-          <sc-if value="{{ showBoardPicker }}" hint-placeholder-val="{{ true }}">
-            <div style="display: flex; flex-direction: column; gap: 9px;">
-              <span style="font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #9aa1a8;">Board</span>
-              <div style="display: flex; gap: 7px;">
-                <sc-for list="{{ boards }}" as="b" hint-placeholder-count="2">
-                  <button onClick="{{ b.pick }}" style="flex: 1; padding: 10px 8px; background: {{ b.bg }}; border: 1px solid {{ b.border }}; border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14px; cursor: pointer;" style-hover="filter: brightness(1.18);">{{ b.label }}</button>
-                </sc-for>
-              </div>
-              <span style="font-size: 13px; line-height: 1.45; color: #6f7883;">{{ boardNote }}</span>
-            </div>
-
-            <div style="display: flex; flex-direction: column; gap: 9px;">
-              <span style="font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #9aa1a8;">Opponent</span>
-              <div style="display: flex; flex-direction: column; gap: 6px;">
-                <sc-for list="{{ levels }}" as="l" hint-placeholder-count="3">
-                  <button onClick="{{ l.pick }}" style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; width: 100%; box-sizing: border-box; text-align: left; padding: 10px 13px; background: {{ l.bg }}; border: 1px solid {{ l.border }}; border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14.5px; cursor: pointer;" style-hover="filter: brightness(1.18);">
-                    <span>{{ l.label }}</span>
-                    <span style="flex: none; font-size: 12.5px; color: #6f7883;">{{ l.note }}</span>
-                  </button>
-                </sc-for>
-              </div>
-            </div>
-          </sc-if>
-
-          <div style="margin-top: auto; display: flex; flex-direction: column; gap: 10px;">
-            <a href="{{ launchHref }}" onClick="{{ launchClick }}" style="display: block; padding: 15px 20px; background: #d9a441; border: 1px solid #d9a441; border-radius: 3px; color: #121a22; font-family: Bitter, serif; font-weight: 600; font-size: 17px; text-align: center;" style-hover="filter: brightness(1.1);">{{ launchLabel }}</a>
-            <span style="font-size: 12.5px; line-height: 1.45; color: #6f7883; text-align: center; text-wrap: pretty;">{{ launchNote }}</span>
-          </div>
+        <aside style="display: flex; flex-direction: column; gap: 0; padding: 26px 24px; background: #101a23; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; overflow-y: auto;">
+          <span style="font-family: Bitter, serif; font-size: 15px; font-weight: 600; margin-bottom: 18px;">Patch notes</span>
+          <div style="padding: 16px 0; border-top: 1px solid rgba(239,230,213,0.08); font-size: 13.5px; color: #6f7883;">Nothing here yet.</div>
         </aside>
       </div>
     </div>
@@ -171,7 +147,7 @@
 }">
 class Component extends DCLogic {
   state = {
-    screen: 'landing', mode: 'ai', board: 'grand', level: 'Steady',
+    screen: 'landing', mode: 'ai', level: 'Steady',
     user: null, authChecked: false,
     // Auth form
     authMode: 'login',
@@ -184,12 +160,13 @@ class Component extends DCLogic {
 
   componentDidMount() {
     // Restore the session cookie on load so a returning player lands in the
-    // hub, not on the auth screen. `credentials: same-origin` is the default
-    // for same-origin fetches; being explicit here so nothing breaks if the
-    // API is ever proxied.
+    // hub, not on the marketing splash.
     fetch('/api/auth/me', { credentials: 'same-origin' })
       .then(r => r.ok ? r.json() : { user: null })
-      .then(j => this.setState({ user: j.user || null, authChecked: true }))
+      .then(j => this.setState(s => ({
+        user: j.user || null, authChecked: true,
+        screen: j.user && s.screen === 'landing' ? 'hub' : s.screen,
+      })))
       .catch(() => this.setState({ authChecked: true }));
   }
 
@@ -241,7 +218,7 @@ class Component extends DCLogic {
   /** Where the match lives. `.dc.html` while authoring, `game.html` once
    *  deployed, so one hub serves both without a build step. */
   gameHref() {
-    const q = `?auto=1&board=${this.state.board}&ai=${encodeURIComponent(this.state.level)}`;
+    const q = `?auto=1&board=grand&ai=${encodeURIComponent(this.state.level)}`;
     const here = (self.location && self.location.pathname) || '';
     return (/\.dc\.html$/i.test(here) ? 'Game.dc.html' : 'game.html') + q;
   }
@@ -271,8 +248,15 @@ class Component extends DCLogic {
     const ws = new WebSocket(`${proto}//${self.location.host}/queue`);
     this._queueSocket = ws;
     this.setState({ queueStatus: 'connecting', queueMessage: 'Connecting…' });
-    ws.addEventListener('open', () => this.setState({ queueStatus: 'searching', queueMessage: 'Searching for an opponent…' }));
+    // Cancel nulls `this._queueSocket` synchronously, but these handlers run
+    // later and still close over this exact `ws` — guarding against a stale
+    // socket stops a late 'open' from reviving a queue the user already
+    // cancelled (or a late 'close' from clobbering a newer socket).
+    ws.addEventListener('open', () => {
+      if (this._queueSocket === ws) this.setState({ queueStatus: 'searching', queueMessage: 'Searching for an opponent…' });
+    });
     ws.addEventListener('message', ev => {
+      if (this._queueSocket !== ws) return;
       let msg; try { msg = JSON.parse(ev.data); } catch (_) { return; }
       if (msg.type === 'matched') {
         self.location.href = this.gameUrl(msg.matchId);
@@ -281,13 +265,14 @@ class Component extends DCLogic {
       }
     });
     ws.addEventListener('close', () => {
+      if (this._queueSocket !== ws) return;
       this._queueSocket = null;
       if (this.state.queueStatus === 'connecting' || this.state.queueStatus === 'searching') {
         this.setState({ queueStatus: null, queueMessage: '' });
       }
     });
     ws.addEventListener('error', () => {
-      this.setState({ queueStatus: 'error', queueMessage: 'Could not reach the server.' });
+      if (this._queueSocket === ws) this.setState({ queueStatus: 'error', queueMessage: 'Could not reach the server.' });
     });
   }
 
@@ -302,61 +287,37 @@ class Component extends DCLogic {
 
   renderVals() {
     const st = this.state;
-    const chip = (active, colour) => ({
-      bg: active ? `${colour}26` : 'rgba(239,230,213,0.05)',
-      border: active ? colour : 'rgba(239,230,213,0.16)',
-    });
 
     const modeDefs = [
-      {
-        id: 'ai', title: 'Test match', tag: 'Ready', tagColour: '#48a37c', live: true,
-        blurb: 'One seat against the AI on the full board. Everything the simulation does is already here — economy, roads, capitals, reinforcement.',
-      },
-      {
-        id: 'duel', title: '1v1 online', tag: 'Live', tagColour: '#48a37c', live: true,
-        blurb: 'Two players, real time, lockstep-synced. Queue up and you’ll be matched with the next player who does the same.',
-      },
-      {
-        id: 'lobby', title: 'Twelve-player lobby', tag: 'Later', tagColour: '#6f7883', live: false,
-        blurb: 'Same architecture, more seats — the cost of a match is the same whether two play it or twelve. The board is what needs rethinking, not the stack.',
-      },
+      { id: 'ai', title: 'Test match' },
+      { id: 'duel', title: '1v1 online' },
     ];
-
-    const modes = modeDefs.map(m => {
+    const modePills = modeDefs.map(m => {
       const on = st.mode === m.id;
-      const c = chip(on, m.live ? '#d9a441' : 'rgba(239,230,213,0.28)');
       return {
-        key: m.id, title: m.title, tag: m.tag, tagColour: m.tagColour, blurb: m.blurb,
-        bg: m.live ? c.bg : '#131e28',
-        border: on ? (m.live ? '#d9a441' : 'rgba(239,230,213,0.3)') : 'rgba(239,230,213,0.13)',
-        titleColour: m.live ? '#efe6d5' : '#9aa1a8',
-        cursor: 'pointer',
-        pick: () => this.setState({ mode: m.id }),
+        key: m.id, label: m.title,
+        dot: '#48a37c',
+        bg: on ? 'rgba(217,164,65,0.14)' : 'rgba(239,230,213,0.04)',
+        border: on ? '#d9a441' : 'rgba(239,230,213,0.1)',
+        colour: on ? '#efe6d5' : '#6f7883',
+        pick: () => this.setState({ mode: m.id, queueStatus: null, queueMessage: '' }),
       };
     });
 
-    const boardDefs = [
-      { id: 'grand', label: 'Grand', note: '25 territories, 625 provinces. Long game — hold 18 to win.' },
-      { id: 'duel', label: 'Small', note: 'Four territories. Quick, and the right board to learn the rules on.' },
-    ];
-    const boards = boardDefs.map(b => {
-      const c = chip(st.board === b.id, '#d9a441');
-      return { key: b.id, label: b.label, bg: c.bg, border: c.border, pick: () => this.setState({ board: b.id }) };
+    const chip = (active, colour) => ({
+      bg: active ? `${colour}26` : 'rgba(239,230,213,0.05)',
     });
-
     const levelDefs = [
-      { id: 'Passive', label: 'Passive', note: 'expands slowly' },
-      { id: 'Steady', label: 'Steady', note: 'plays properly' },
-      { id: 'Ruthless', label: 'Ruthless', note: 'presses hard' },
+      { id: 'Passive', label: 'Passive' },
+      { id: 'Steady', label: 'Steady' },
+      { id: 'Ruthless', label: 'Ruthless' },
     ];
     const levels = levelDefs.map(l => {
       const c = chip(st.level === l.id, '#c0483c');
-      return { key: l.id, label: l.label, note: l.note, bg: c.bg, border: c.border, pick: () => this.setState({ level: l.id }) };
+      return { key: l.id, label: l.label, bg: c.bg, pick: () => this.setState({ level: l.id }) };
     });
 
-    const picked = modeDefs.find(m => m.id === st.mode) || modeDefs[0];
-    const live = picked.live;
-
+    const queueing = st.queueStatus === 'connecting' || st.queueStatus === 'searching';
     const f = st.f, fe = st.fieldErrors;
     const border = has => has ? '#c0483c' : 'rgba(239,230,213,0.18)';
     const setField = k => e => this.setState({
@@ -372,8 +333,9 @@ class Component extends DCLogic {
       toHub: () => this.goPlay(),
       toLanding: () => this.setState({ screen: 'landing' }),
       logout: () => this.logout(),
-      playLabel: st.user ? 'Enter hub' : 'Play',
+      playLabel: st.user ? 'Enter hub' : 'Play for free',
       commander: st.user ? st.user.username : 'Guest commander',
+      trophies: 0,
 
       // Auth
       authTitle: st.authMode === 'signup' ? 'Create your account' : 'Welcome back',
@@ -399,25 +361,15 @@ class Component extends DCLogic {
       e_identifier: fe.identifier || '', e_password: fe.password || '',
       b_username: border(fe.username), b_email: border(fe.email),
       b_identifier: border(fe.identifier), b_password: border(fe.password),
-      modes, boards, levels,
-      showBoardPicker: picked.id === 'ai',
-      pickedTitle: picked.title,
-      pickedNote: picked.id === 'duel'
-        ? (st.queueStatus ? st.queueMessage : 'Real-time 1v1 on the Small board — queue up to be matched.')
-        : live
-          ? `${boardDefs.find(b => b.id === st.board).label} board · ${st.level} opponent`
-          : 'Pick a live mode to launch.',
-      boardNote: boardDefs.find(b => b.id === st.board).note,
-      launchHref: picked.id === 'duel' ? '#' : (live ? this.gameHref() : '#'),
+
+      // Hub
+      modePills, levels,
+      heroSubtitle: st.mode === 'duel'
+        ? (st.queueStatus ? st.queueMessage : 'Real-time 1v1 on the Small board — queue up to be matched with the next player.')
+        : `Test match — Grand board, full simulation, ${st.level} AI opponent.`,
+      launchHref: st.mode === 'duel' ? '#' : this.gameHref(),
       launchClick: e => this.launchClick(e),
-      launchLabel: picked.id === 'duel'
-        ? ((st.queueStatus === 'connecting' || st.queueStatus === 'searching') ? 'Cancel' : 'Find match')
-        : (live ? 'Launch match' : 'Unavailable'),
-      launchNote: picked.id === 'duel'
-        ? 'You always play as green; your opponent is always red.'
-        : live
-        ? 'Drag from a city to send troops. Take a capital to take its territory.'
-        : 'This mode isn’t wired up yet.',
+      launchLabel: st.mode === 'duel' ? (queueing ? 'Cancel' : 'Find match') : 'Launch match',
     };
   }
 }

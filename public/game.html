@@ -27,86 +27,64 @@
 <div style="height: 100vh; overflow: hidden; background: #0b1219; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-variant-numeric: tabular-nums;">
 
   <sc-if value="{{ onMenu }}" hint-placeholder-val="{{ true }}">
-    <div style="height: 100vh; display: grid; place-items: center; background: radial-gradient(120% 90% at 50% 18%, #1e2b39, #0b1219 76%);">
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 34px; padding: 0 32px;">
-
-        <div style="display: flex; flex-direction: column; align-items: center; gap: 14px;">
-          <span style="font-size: 12px; letter-spacing: 0.34em; text-transform: uppercase; color: #9aa1a8;">REAL TIME PVP</span>
-          <h1 style="margin: 0; font-family: Bitter, serif; font-weight: 600; font-size: 68px; line-height: 1; letter-spacing: -0.02em; text-align: center;">Supremacy Live</h1>
-          <p style="margin: 0; max-width: 44ch; text-align: center; font-size: 18px; line-height: 1.55; color: #c8c2b4; text-wrap: pretty;">Twenty-five territories, twenty-five provinces each. Start in your corner, take ground province by province, hold eighteen territories to win.</p>
-        </div>
-
-        <button onClick="{{ play }}" style="padding: 16px 54px; background: #d9a441; border: 1px solid #d9a441; border-radius: 3px; color: #121a22; font-family: Bitter, serif; font-weight: 600; font-size: 21px; letter-spacing: 0.02em; cursor: pointer;" style-hover="filter: brightness(1.1);" style-active="filter: brightness(0.95);">Play</button>
-
-        <span style="font-size: 13px; color: #6f7883;">Local board. Nothing is networked yet.</span>
-      </div>
+    <div style="height: 100vh; display: grid; place-items: center; background: #0b1219;">
+      <span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: #6f7883;">Loading match…</span>
     </div>
   </sc-if>
 
   <sc-if value="{{ connecting }}" hint-placeholder-val="{{ false }}">
-    <div style="height: 100vh; display: grid; place-items: center; background: radial-gradient(120% 90% at 50% 18%, #1e2b39, #0b1219 76%);">
-      <div style="display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 0 32px; text-align: center;">
-        <span style="font-size: 12px; letter-spacing: 0.34em; text-transform: uppercase; color: #9aa1a8;">1v1 online</span>
-        <h1 style="margin: 0; font-family: Bitter, serif; font-weight: 600; font-size: 34px;">{{ connectMsg }}</h1>
-        <button onClick="{{ cancelConnect }}" style="padding: 12px 34px; background: transparent; border: 1px solid rgba(239,230,213,0.28); border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 15px; cursor: pointer;" style-hover="border-color: #efe6d5;">Cancel</button>
+    <div style="height: 100vh; display: grid; place-items: center; background: #0b1219;">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 18px;">
+        <span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: #6f7883;">{{ connectMsg }}</span>
+        <button onClick="{{ cancelConnect }}" style="padding: 10px 22px; background: rgba(239,230,213,0.06); border: 1px solid rgba(239,230,213,0.2); border-radius: 3px; color: #c8c2b4; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14px; cursor: pointer;" style-hover="color: #efe6d5; border-color: rgba(239,230,213,0.35);">Cancel</button>
       </div>
     </div>
   </sc-if>
 
   <sc-if value="{{ inMatch }}" hint-placeholder-val="{{ false }}">
-    <div ref="{{ rootRef }}" style="{{ rootStyle }} display: grid; grid-template-columns: 348px 1fr; grid-template-rows: auto 1fr; gap: 10px; padding: 10px; box-sizing: border-box; background: #080e14;">
+    <div style="height: 100vh; display: grid; grid-template-columns: 348px 1fr; grid-template-rows: auto 1fr; gap: 10px; padding: 10px; box-sizing: border-box; background: #080e14;">
 
       <header style="grid-column: 1 / -1; display: flex; align-items: stretch; background: #101a23; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; overflow: hidden;">
 
-        <div style="flex: 1 1 auto; min-width: 0; display: flex; align-items: stretch;">
-          <sc-for list="{{ overview }}" as="row" hint-placeholder-count="2">
-            <div style="flex: 1 1 0; min-width: 0; overflow: hidden; display: flex; flex-direction: column; gap: 6px; padding: 9px 14px; background: {{ row.bg }}; border-left: 3px solid {{ row.colour }};">
-              <div style="display: flex; align-items: baseline; gap: 14px; min-width: 0;">
-                <div style="flex: none; display: flex; align-items: baseline; gap: 7px;">
-                  <span style="flex: none; font-size: 13.5px; white-space: nowrap; color: {{ row.nameColour }};">{{ row.name }}</span>
-                  <span style="flex: none; font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; white-space: nowrap; color: #6f7883;">{{ row.role }}</span>
-                </div>
-                <span style="flex: 1 1 0; min-width: 0;"></span>
-                <div style="flex: none; display: flex; align-items: baseline; gap: 5px;">
-                  <span style="font-family: Bitter, serif; font-size: 18px; font-weight: 600; color: #d9a441;">{{ row.money }}</span>
-                  <span style="font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: #6f7883;">coin</span>
-                </div>
-                <div style="flex: none; display: flex; align-items: baseline; gap: 5px;">
-                  <span style="font-family: Bitter, serif; font-size: 18px; font-weight: 600; color: {{ row.terrColour }};">{{ row.terr }}</span>
-                  <span style="font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: #6f7883;">terr</span>
-                </div>
-                <div style="flex: none; display: flex; align-items: baseline; gap: 5px;">
-                  <span style="font-family: Bitter, serif; font-size: 18px; font-weight: 600; color: #c8c2b4;">{{ row.prov }}</span>
-                  <span style="font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: #6f7883;">prov</span>
-                </div>
-              </div>
-              <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-                <div style="flex: 1 1 auto; min-width: 24px; height: 5px; background: rgba(239,230,213,0.1); border-radius: 3px; overflow: hidden;">
-                  <div style="height: 100%; width: {{ row.pct }}; background: {{ row.colour }};"></div>
-                </div>
-                <span style="flex: none; white-space: nowrap; font-size: 11px; color: #6f7883;">{{ row.toWin }}</span>
-              </div>
+        <div style="flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 32px; padding: 0 20px;">
+
+          <div style="display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; background: #131e28; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px;">
+            <div style="width: 26px; height: 26px; flex: none; border-radius: 50%; background: rgba(239,230,213,0.1); display: flex; align-items: center; justify-content: center; color: {{ headerLeft.colour }};">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"></path></svg>
             </div>
-          </sc-for>
+            <span style="font-size: 14px; color: #c8c2b4;">{{ headerLeft.name }}</span>
+            <span style="width: 1px; height: 14px; background: rgba(239,230,213,0.14);"></span>
+            <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: #6f7883;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 4H7v5a5 5 0 0 0 10 0V4Z"></path><path d="M7 6H4a1 1 0 0 0-1 1 5 5 0 0 0 4 4.9M17 6h3a1 1 0 0 1 1 1 5 5 0 0 1-4 4.9"></path></svg>
+              {{ headerLeft.trophies }}
+            </span>
+          </div>
+
+          <div style="flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px;">
+            <span style="font-family: ui-monospace, Menlo, monospace; font-size: 19px; color: #efe6d5;">{{ clock }}</span>
+            <span style="font-family: Bitter, serif; font-size: 21px; font-weight: 600; color: #efe6d5;">{{ headerLeft.terr }} <span style="color: #6f7883; font-weight: 400;">·</span> {{ headerRight.terr }}</span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px; background: #131e28; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px;">
+            <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: #6f7883;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 4H7v5a5 5 0 0 0 10 0V4Z"></path><path d="M7 6H4a1 1 0 0 0-1 1 5 5 0 0 0 4 4.9M17 6h3a1 1 0 0 1 1 1 5 5 0 0 1-4 4.9"></path></svg>
+              {{ headerRight.trophies }}
+            </span>
+            <span style="width: 1px; height: 14px; background: rgba(239,230,213,0.14);"></span>
+            <span style="font-size: 14px; color: #c8c2b4;">{{ headerRight.name }}</span>
+            <div style="width: 26px; height: 26px; flex: none; border-radius: 50%; background: rgba(239,230,213,0.1); display: flex; align-items: center; justify-content: center; color: {{ headerRight.colour }};">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"></path></svg>
+            </div>
+          </div>
         </div>
 
         <div style="flex: none; display: flex; align-items: center; padding: 0 14px; border-left: 1px solid rgba(239,230,213,0.12);">
-          <button onClick="{{ exit }}" style="white-space: nowrap; padding: 8px 14px; background: rgba(192,72,60,0.14); border: 1px solid rgba(192,72,60,0.5); border-radius: 3px; color: #e7b3ac; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="filter: brightness(1.25);">Exit game</button>
+          <button onClick="{{ exit }}" style="white-space: nowrap; padding: 8px 14px; background: rgba(192,72,60,0.14); border: 1px solid rgba(192,72,60,0.5); border-radius: 3px; color: #e7b3ac; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="filter: brightness(1.25);">Forfeit</button>
         </div>
 
       </header>
 
-      <aside style="min-width: 0; display: grid; grid-template-rows: auto 1fr; background: #101a23; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; overflow: hidden;">
-
-        <div style="padding: 14px 16px; border-bottom: 1px solid rgba(239,230,213,0.12); background: #131e28; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-          <span style="font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #9aa1a8;">Dispatch</span>
-          <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-            <sc-if value="{{ showAiSaid }}" hint-placeholder-val="{{ false }}">
-              <span style="font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: {{ aiColour }};">{{ aiSaid }}</span>
-            </sc-if>
-            <span style="flex: none; font-family: ui-monospace, Menlo, monospace; font-size: 12.5px; color: #6f7883;">{{ clock }}</span>
-          </div>
-        </div>
+      <aside style="min-width: 0; display: grid; grid-template-rows: 1fr; background: #101a23; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; overflow: hidden;">
 
         <div style="min-height: 0; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px;">
 
@@ -214,20 +192,11 @@
         <sc-if value="{{ showOver }}" hint-placeholder-val="{{ false }}">
           <div style="position: absolute; inset: 0; display: grid; place-items: center; background: rgba(8,14,20,0.82); backdrop-filter: blur(3px);">
             <div style="display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 40px 52px; background: #101a23; border: 1px solid {{ overColour }}; border-radius: 3px;">
-              <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                <span style="font-size: 11.5px; letter-spacing: 0.2em; text-transform: uppercase; color: #9aa1a8;">Match over</span>
-                <span style="font-family: Bitter, serif; font-size: 40px; font-weight: 600; line-height: 1; color: {{ overColour }};">{{ overTitle }}</span>
-                <span style="font-size: 15px; color: #c8c2b4;">{{ overSub }}</span>
-              </div>
-              <div style="display: flex; gap: 10px;">
-                <button onClick="{{ rematch }}" style="padding: 12px 28px; background: #d9a441; border: 1px solid #d9a441; border-radius: 3px; color: #121a22; font-family: Bitter, serif; font-weight: 600; font-size: 16px; cursor: pointer;" style-hover="filter: brightness(1.1);">Rematch</button>
-                <button onClick="{{ exit }}" style="padding: 12px 22px; background: rgba(239,230,213,0.06); border: 1px solid rgba(239,230,213,0.2); border-radius: 3px; color: #c8c2b4; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 16px; cursor: pointer;" style-hover="color: #efe6d5; border-color: rgba(239,230,213,0.35);">Menu</button>
-              </div>
+              <span style="font-family: Bitter, serif; font-size: 40px; font-weight: 600; line-height: 1; color: {{ overColour }};">{{ overTitle }}</span>
+              <button onClick="{{ exit }}" style="padding: 12px 22px; background: rgba(239,230,213,0.06); border: 1px solid rgba(239,230,213,0.2); border-radius: 3px; color: #c8c2b4; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 16px; cursor: pointer;" style-hover="color: #efe6d5; border-color: rgba(239,230,213,0.35);">Menu</button>
             </div>
           </div>
         </sc-if>
-
-        <button onClick="{{ toggleFull }}" style="position: absolute; right: 14px; top: 12px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(11,18,25,0.82); border: 1px solid rgba(239,230,213,0.16); border-radius: 3px; color: #c8c2b4; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13px; cursor: pointer; backdrop-filter: blur(6px);" style-hover="color: #efe6d5; border-color: #d9a441;">{{ fullLabel }}</button>
 
         <div style="position: absolute; left: 14px; bottom: 12px; max-width: calc(100% - 28px); box-sizing: border-box; padding: 8px 12px; background: rgba(11,18,25,0.76); border: 1px solid rgba(239,230,213,0.12); border-radius: 3px; font-size: 12.5px; color: #6f7883; backdrop-filter: blur(6px);">
 Drag a garrison to march it · Shift to send all · roads are twice the pace · scroll to zoom · R to fit
@@ -252,8 +221,9 @@ class Component extends DCLogic {
 
   state = {
     screen: 'menu',
+    commander: null,
     def: null, sel: null, armed: null, notice: '',
-    dragFrom: null, dragTo: null, full: false,
+    dragFrom: null, dragTo: null,
     // Right-drag marquee: `marquee` is the live rectangle while dragging,
     // `multi` is the set of committed tile keys once released. A left-click on
     // the map after that dispatches from every eligible tile in `multi`.
@@ -262,14 +232,17 @@ class Component extends DCLogic {
     mode: null,   // null | 'maybePan' | 'pan' | 'maybeMarch' | 'march'
   };
 
-  rootRef = el => { this.root = el; };
-
   canvasRef = el => {
     this.cv = el;
     if (el) this.wire(); else this.unwire();
   };
 
   componentDidMount() {
+    fetch('/api/auth/me', { credentials: 'same-origin' })
+      .then(r => r.ok ? r.json() : { user: null })
+      .then(j => this.setState({ commander: (j.user && j.user.username) || null }))
+      .catch(() => {});
+
     this._onDown = e => {
       // Right-drag: rectangle-select multiple provinces. Middle-click also
       // starts one so trackpads with no right button can still use it.
@@ -404,10 +377,7 @@ class Component extends DCLogic {
     this._onKey = e => {
       const tag = e.target && e.target.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA') return;
-      if (this.state.screen !== 'match') {
-        if (e.key === 'Enter' || e.key === ' ') { this.play(); e.preventDefault(); }
-        return;
-      }
+      if (this.state.screen !== 'match') return;
       const c = this.state.cam, step = 60;
       switch (e.key) {
         case 'Escape': this.exit(); break;
@@ -439,13 +409,15 @@ class Component extends DCLogic {
       }
       if (!self.FPMap || !self.FPRender || !self.FPSim) return;
       clearInterval(this._boot);
-      // Arrived from the Hub with the match already chosen — skip the menu.
-      // Consume the flag so a reload doesn't repeat the auto-start; the board
-      // and opponent stay in the URL so refreshing keeps the same match config.
+      // There is no menu screen — the match starts as soon as the libs are
+      // ready, configured from the Hub's URL params (matchId, or board/ai).
+      // Consume the auto flag so a reload doesn't repeat the auto-start; the
+      // board and opponent stay in the URL so refreshing keeps the same
+      // match config.
       const matchId = this.param('matchId');
       if (matchId) {
         this._auto = setTimeout(() => this.playNetworked(matchId), 0);
-      } else if (this.param('auto') === '1') {
+      } else {
         try {
           const u = new URL(self.location.href);
           u.searchParams.delete('auto');
@@ -481,8 +453,6 @@ class Component extends DCLogic {
     this.cv.addEventListener('wheel', this._onWheel, { passive: false });
     this._onCtx = e => e.preventDefault();
     this.cv.addEventListener('contextmenu', this._onCtx);
-    this._onFull = () => { if (!document.fullscreenElement) this.setState({ full: false }); };
-    document.addEventListener('fullscreenchange', this._onFull);
     this._ro = new ResizeObserver(() => this.draw());
     this._ro.observe(this.cv);
     this.draw();
@@ -490,7 +460,6 @@ class Component extends DCLogic {
   }
 
   unwire() {
-    if (this._onFull) { document.removeEventListener('fullscreenchange', this._onFull); this._onFull = null; }
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
     if (this._wired && this.cv) {
       this.cv.removeEventListener('mousedown', this._onDown);
@@ -572,8 +541,7 @@ class Component extends DCLogic {
         // so the bot must not also run.
         const level = this.aiLevel();
         if (this._netSeat == null && self.FPAI && level !== 'None') {
-          const said = self.FPAI.think(this.sim, this.built(), 1 - this.viewSeat(), level);
-          if (said) this._said = { text: said, tick: this.sim.tick };
+          self.FPAI.think(this.sim, this.built(), 1 - this.viewSeat(), level);
         }
         // Keep a short back-catalogue of hashes so a slightly-delayed hashReq
         // from the match socket can still be answered for the exact tick the
@@ -710,12 +678,6 @@ class Component extends DCLogic {
         else this.setState({ notice: this._netMessage });
         break;
     }
-  }
-
-  /** Is the bot's last action still worth showing? */
-  _fresh() {
-    if (!this.sim || this.sim.over !== null || !this._said) return false;
-    return (this.sim.tick - this._said.tick) < self.FPSim.RULES.tickHz * 4;
   }
 
   /** Seats are named by their colour, so the label always matches the board.
@@ -1009,39 +971,20 @@ class Component extends DCLogic {
     const F = self.FPMap;
     const base = {
       canvasRef: this.canvasRef,
-      rootRef: this.rootRef,
       onMenu: this.state.screen === 'menu',
       connecting: this.state.screen === 'connecting',
       connectMsg: this._netMessage || 'Connecting…',
       cancelConnect: () => this.exit(),
       inMatch: this.state.screen === 'match',
-      fullLabel: this.state.full ? 'Exit fullscreen' : 'Fullscreen',
-      // The Fullscreen API is unavailable in some embeddings (a frame without
-      // allow="fullscreen"), where requestFullscreen rejects. Fall back to
-      // filling the viewport with CSS so the control is never dead.
-      toggleFull: () => {
-        const el = this.root;
-        if (!el) return;
-        if (document.fullscreenElement) { document.exitFullscreen().catch(() => {}); return; }
-        if (this.state.full) { this.setState({ full: false }); return; }
-        if (document.fullscreenEnabled && el.requestFullscreen) {
-          el.requestFullscreen().then(() => this.setState({ full: true }))
-            .catch(() => this.setState({ full: true }));
-        } else {
-          this.setState({ full: true });
-        }
-      },
-      rootStyle: this.state.full && !document.fullscreenElement
-        ? 'position: fixed; inset: 0; z-index: 9999; height: 100%;'
-        : 'height: 100vh;',
       cursor: this.state.mode === 'march' || this.state.mode === 'maybeMarch' ? 'grabbing'
         : this.state.mode === 'pan' ? 'grabbing' : 'default',
-      play: () => this.play(),
       exit: () => this.exit(),
       fit: () => this.fit(),
     };
+    const blankPill = { name: '—', colour: '#8b8272', terr: '0', trophies: 0 };
     const blank = {
-      overview: [], hasSel: false, hasMulti: false, noSel: true, selCoord: '—',
+      headerLeft: blankPill, headerRight: blankPill,
+      hasSel: false, hasMulti: false, noSel: true, selCoord: '—',
       multiCount: '', multiTroops: '', clearMulti: () => {},
       selHeading: '', selOwnerLine: '', selOwnerColour: '#8b8272', selRows: [],
       capNote: '', showCapNote: false, canBuild: false, canMarch: false,
@@ -1053,9 +996,8 @@ class Component extends DCLogic {
       canReinforce: false, reinforceCount: '',
       buildBarracks: () => {}, buildIndustry: () => {}, reinforceHere: () => {},
       arm50: () => {}, arm100: () => {}, cancelMarch: () => {},
-      notice: '', showNotice: false, clock: '', aiSaid: '', showAiSaid: false,
-      showOver: false, overColour: '#d9a441', overTitle: '', overSub: '',
-      rematch: () => {},
+      notice: '', showNotice: false, clock: '',
+      showOver: false, overColour: '#d9a441', overTitle: '',
     };
     if (!F) {
       return { ...base, ...blank, statTerritories: '—', statProvinces: '—', statWin: '—' };
@@ -1077,27 +1019,20 @@ class Component extends DCLogic {
     const F2 = self.FPSim;
     const owners = this.owners();
     const sc = F.score(M, owners);
-    const target = (M.win && M.win.territories) || M.provinces.length;
     const seat = this.viewSeat();
-    const money = this.sim.money.map(v => Math.floor(v / 1000));
-    const overview = [0, 1].map(s => {
-      const t = sc.territories[s] || 0;
-      const left = Math.max(0, target - t);
-      return {
-        key: 's' + s,
-        colour: this.seatColour(s),
-        bg: s === seat ? 'rgba(239,230,213,0.04)' : 'transparent',
-        name: s === seat ? 'You' : this.seatName(s),
-        role: s === seat ? this.seatName(s) : (this.aiLevel() === 'None' ? 'Idle' : this.aiLevel()),
-        nameColour: s === seat ? '#efe6d5' : '#9aa1a8',
-        money: String(money[s] ?? 0),
-        terr: `${t}/${target}`,
-        terrColour: t >= target ? '#48a37c' : '#efe6d5',
-        prov: String(sc.provinces[s] || 0),
-        pct: `${Math.round((t / target) * 100)}%`,
-        toWin: left === 0 ? 'Victory' : `${left} more to win`,
-      };
-    });
+    const opponentName = this._netOpponent ? this._netOpponent.username : `${this.aiLevel()} AI`;
+    const headerLeft = {
+      colour: this.seatColour(seat),
+      name: this.state.commander || 'Guest commander',
+      terr: String(sc.territories[seat] || 0),
+      trophies: 0,
+    };
+    const headerRight = {
+      colour: this.seatColour(1 - seat),
+      name: opponentName,
+      terr: String(sc.territories[1 - seat] || 0),
+      trophies: 0,
+    };
 
     const sel = this.state.sel;
     const armedAt = this.state.armed;
@@ -1207,22 +1142,13 @@ class Component extends DCLogic {
 
     const s = Math.floor(this.sim.tick / F2.RULES.tickHz);
     return {
-      ...base, ...menuStats, overview, ...detail,
+      ...base, ...menuStats, headerLeft, headerRight, ...detail,
       notice: this.state.notice,
       showNotice: !!this.state.notice,
       clock: `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`,
-      // The bot's last action, shown briefly so its behaviour is legible
-      // rather than mysterious.
-      // Stale once the match is decided — a frozen board still narrating an
-      // attack reads as a hang.
-      aiSaid: this._fresh() ? `${this.seatName(1 - seat)} is ${this._said.text}` : '',
-      showAiSaid: this._fresh(),
-      aiColour: this.seatColour(1 - seat),
       showOver: this.sim.over !== null,
       overColour: this.sim.over === seat ? '#48a37c' : this.seatColour(this.sim.over),
-      overTitle: this.sim.over === seat ? 'You hold the board' : `${this.seatName(this.sim.over)} takes the board`,
-      overSub: `${(sc.territories[this.sim.over] || 0)} of ${M.provinces.length} territories in ${Math.floor(s / 60)}m ${s % 60}s`,
-      rematch: () => this.play(),
+      overTitle: this.sim.over === seat ? 'You win' : 'You lose',
       buildBarracks: () => sel && this.order(() => this.issueCmd('build', [sel.c, sel.r])),
       buildIndustry: () => sel && this.order(() => this.issueCmd('industry', [sel.c, sel.r])),
       reinforceHere: () => sel && this.order(() => this.issueCmd('reinforce', [sel.c, sel.r])),
