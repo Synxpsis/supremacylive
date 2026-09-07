@@ -214,10 +214,12 @@ Drag a garrison to march it · Shift to send all · roads are twice the pace · 
   &quot;opponent&quot;: { &quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;Passive&quot;, &quot;Steady&quot;, &quot;Ruthless&quot;, &quot;None&quot;], &quot;default&quot;: &quot;Steady&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;Match&quot; }
 }">
 class Component extends DCLogic {
-  // The board is always presented as a diamond: top-down, fixed 45° bearing.
-  // Both are constants — there is no rotation, so the board never re-reads.
+  // The board is always presented as a diamond: tilted to the classic 2:1
+  // axonometric pitch, fixed 45° bearing. Both are constants — there is no
+  // rotation, so the board never re-reads. Math.asin(0.5) is FPMap.BASE_PITCH;
+  // the literal avoids depending on FPMap being loaded at class-definition time.
   static YAW = Math.PI / 4;
-  static PITCH = Math.PI / 2;
+  static PITCH = Math.asin(0.5);
 
   state = {
     screen: 'menu',
@@ -228,7 +230,7 @@ class Component extends DCLogic {
     // `multi` is the set of committed tile keys once released. A left-click on
     // the map after that dispatches from every eligible tile in `multi`.
     marquee: null, multi: null,
-    cam: { yaw: Math.PI / 4, pitch: Math.PI / 2, zoom: 2.6, panX: 0, panY: 0 },
+    cam: { yaw: Math.PI / 4, pitch: Math.asin(0.5), zoom: 1.0, panX: 0, panY: 0 },
     mode: null,   // null | 'maybePan' | 'pan' | 'maybeMarch' | 'march'
   };
 
@@ -503,7 +505,7 @@ class Component extends DCLogic {
     this.setState({
       screen: 'match', def,
       sel: null, armed: null, notice: '',
-      cam: { yaw: Component.YAW, pitch: Component.PITCH, zoom: 2.6, panX: 0, panY: 0 },
+      cam: { yaw: Component.YAW, pitch: Component.PITCH, zoom: 1.0, panX: 0, panY: 0 },
       mode: null,
     });
   }
@@ -638,7 +640,7 @@ class Component extends DCLogic {
         this.startLoop();
         this.setState({
           screen: 'match', def, sel: null, armed: null, notice: '', mode: null,
-          cam: { yaw: Component.YAW, pitch: Component.PITCH, zoom: 2.6, panX: 0, panY: 0 },
+          cam: { yaw: Component.YAW, pitch: Component.PITCH, zoom: 1.0, panX: 0, panY: 0 },
         });
         break;
       }
@@ -957,12 +959,16 @@ class Component extends DCLogic {
       ctx.setLineDash([]);
     }
 
-    // A player joins looking at the territory they start from.
+    // A player joins looking at the whole board. Focusing their starting
+    // territory instead pins the board's near corner to the viewport centre,
+    // which — now that the board is tilted — leaves the lower half of the
+    // canvas empty and clips the far edge off the top.
     const seat = this.viewSeat();
-    if (this._framedSeat !== seat && M.starts && M.starts.length) {
+    if (this._framedSeat !== seat) {
       this._framedSeat = seat;
-      const s = M.starts.find(x => x.seat === seat) || M.starts[0];
-      this._frame = setTimeout(() => this.focusTerritory(s.territory, 2.6), 0);
+      this._frame = setTimeout(() => this.setCam({
+        yaw: Component.YAW, pitch: Component.PITCH, zoom: 1, panX: 0, panY: 0
+      }), 0);
     }
   }
 

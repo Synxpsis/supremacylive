@@ -5,9 +5,10 @@
  * the game client and the creation table render from one code path and cannot
  * drift apart.
  *
- * Top-down (pitch 90°) has no elevation, so there are no plateau skirts, cast
- * shadows or extruded buildings here. Ownership, seams and structures carry the
- * whole read.
+ * Structures are real extruded volumes: a lit roof plus the two viewer-facing
+ * wall quads, projected through the camera's height axis. Roof colour carries
+ * ownership and walls stay neutral, so a dense board reads as a skyline rather
+ * than as colour soup. Footprint and height are the only two dials — see KIT.
  */
 (function (root, factory) {
   const api = factory();
@@ -17,6 +18,20 @@
 
   const LAND = '#6d675a';
   const NEUTRAL = '#8b8272';
+
+  /* The structure kit. `fp` is the share of the tile the footprint covers (the
+   * remainder is the margin that stops a built-up board looking welded
+   * together); `h` is height in tile units. Nothing else distinguishes the
+   * types, which is what lets new ones be added without new art. */
+  const KIT = {
+    barracks: { fp: 0.54, h: 0.40 },
+    industry: { fp: 0.74, h: 0.42 },
+    capital:  { fp: 0.66, h: 0.72 },
+    city:     { fp: 0.44, h: 0.26 }
+  };
+  const WALL_NEAR = '#8f887a';   // wall facing the viewer down-screen
+  const WALL_SIDE = '#68624f';   // the other visible wall, one step darker
+  const BOARD_EDGE = '#0c1620';
 
   function shade(hex, f) {
     const n = parseInt(hex.slice(1), 16);
@@ -51,7 +66,7 @@
     const seatColour = o.seatColour || defaultSeatColour;
     const labels = o.labels !== false;
     const S = cam.scale;
-    const P = (c, r) => cam.project(c, r);
+    const P = (c, r, h) => cam.project(c, r, h);
 
     const quad = (c, r) => {
       const a = P(c, r), b = P(c + 1, r), d = P(c + 1, r + 1), e = P(c, r + 1);
@@ -59,12 +74,56 @@
       ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(d[0], d[1]); ctx.lineTo(e[0], e[1]);
       ctx.closePath();
     };
+    /* One extruded box. Heights are tile units scaled by BASE_SCALE, since
+     * cam.project takes height in world px. At yaw 45° the two viewer-facing
+     * walls are always the +c and +r edges, so which quads to draw is fixed. */
+    const HU = F.BASE_SCALE;
+    const prism = (c0, r0, w, d, hT, roof, near, side) => {
+      const h = hT * HU;
+      const c1 = c0 + w, r1 = r0 + d;
+      const face = (pts, fill) => {
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+        ctx.closePath();
+        ctx.fillStyle = fill; ctx.fill();
+      };
+      face([P(c0, r1, h), P(c1, r1, h), P(c1, r1, 0), P(c0, r1, 0)], near);
+      face([P(c1, r0, h), P(c1, r1, h), P(c1, r1, 0), P(c1, r0, 0)], side);
+      face([P(c0, r0, h), P(c1, r0, h), P(c1, r1, h), P(c0, r1, h)], roof);
+    };
+
+    /* A structure centred on its tile, sized from the kit. */
+    const piece = (c, r, kind, own) => {
+      const k = KIT[kind] || KIT.city;
+      const m = (1 - k.fp) / 2;
+      const roof = own === null ? shade(NEUTRAL, 1.3) : shade(seatColour(own), 1.5);
+      prism(c + m, r + m, k.fp, k.fp, k.h, roof, WALL_NEAR, WALL_SIDE);
+    };
+
     const block = (c0, r0, w, h) => {
       const a = P(c0, r0), b = P(c0 + w, r0), d = P(c0 + w, r0 + h), e = P(c0, r0 + h);
       ctx.beginPath();
       ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(d[0], d[1]); ctx.lineTo(e[0], e[1]);
       ctx.closePath();
     };
+
+    // The board as a physical slab: the two viewer-facing perimeter faces,
+    // dropped below the tile plane. Gives the board thickness and presence
+    // instead of reading as a flat painted diamond.
+    {
+      const gw = M.gridW || 14, gh = M.gridH || 14;
+      const t = -F.ISO.thick * 2.2;
+      const face = (pts, fill) => {
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0], pts[0][1]);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+        ctx.closePath();
+        ctx.fillStyle = fill; ctx.fill();
+      };
+      face([P(0, gh, 0), P(gw, gh, 0), P(gw, gh, t), P(0, gh, t)], BOARD_EDGE);
+      face([P(gw, 0, 0), P(gw, gh, 0), P(gw, gh, t), P(gw, 0, t)], shade(BOARD_EDGE, 0.72));
+    }
 
     // Provinces. Ownership carries the colour; the jitter is deterministic so
     // the texture never shimmers between frames. A territory whose capital has
@@ -127,67 +186,53 @@
       }
     }
 
-    // Structures. A capital sits on its territory's centre province and is the
-    // object that decides the territory, so it reads heavier than a plain city.
-    for (const p of M.provinces) {
-      const cap = F.capitalOf(M, p);
-      for (const city of M.cities) {
-        if (city.prov !== p.id) continue;
-        const c = p.c0 + city.lc, r = p.r0 + city.lr;
-        const own = owners[F.tileKey(c, r)] ?? null;
-        const mid = P(c + 0.5, r + 0.5);
-        const isCap = cap && cap.id === city.id;
-        const rad = Math.max(3, (isCap ? 0.34 : 0.26) * S);
-        ctx.fillStyle = 'rgba(11,18,25,0.55)';
-        ctx.beginPath(); ctx.arc(mid[0], mid[1], rad * 1.2, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = shade(seatColour(own), 1.35);
-        ctx.beginPath(); ctx.arc(mid[0], mid[1], rad, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = 'rgba(11,18,25,0.8)'; ctx.lineWidth = 1.2; ctx.stroke();
-        if (isCap && rad > 5) {
-          ctx.strokeStyle = shade(seatColour(own), 1.7);
-          ctx.lineWidth = Math.max(1.2, rad * 0.22);
-          ctx.beginPath(); ctx.arc(mid[0], mid[1], rad * 1.75, 0, Math.PI * 2); ctx.stroke();
+    // Structures, as one depth-sorted pass. Farther tiles (smaller c+r) paint
+    // first so nearer volumes overlap them correctly — separate per-type loops
+    // would let a distant capital draw over a near barracks. One piece per
+    // tile, strongest claim winning, so volumes never intersect.
+    {
+      const pieces = new Map();
+      const put = (c, r, kind, own) => {
+        const rank = { capital: 3, industry: 2, barracks: 1, city: 0 };
+        const k = F.tileKey(c, r);
+        const cur = pieces.get(k);
+        if (cur && rank[cur.kind] >= rank[kind]) return;
+        pieces.set(k, { c, r, kind, own });
+      };
+
+      for (const p of M.provinces) {
+        const cap = F.capitalOf(M, p);
+        for (const city of M.cities) {
+          if (city.prov !== p.id) continue;
+          const c = p.c0 + city.lc, r = p.r0 + city.lr;
+          const own = owners[F.tileKey(c, r)] ?? null;
+          put(c, r, cap && cap.id === city.id ? 'capital' : 'city', own);
         }
       }
-    }
+      const barracks = o.barracks || {};
+      for (const k of Object.keys(barracks)) {
+        const [c, r] = k.split(',').map(Number);
+        if (!F.territoryAt(M, c, r)) continue;
+        put(c, r, 'barracks', barracks[k]);
+      }
+      const industry = o.industry || {};
+      for (const k of Object.keys(industry)) {
+        const [c, r] = k.split(',').map(Number);
+        if (!F.territoryAt(M, c, r)) continue;
+        put(c, r, 'industry', industry[k]);
+      }
 
-    // Barracks: a square plate, so it never reads as a capital's disc.
-    const barracks = o.barracks || {};
-    for (const k of Object.keys(barracks)) {
-      const [c, r] = k.split(',').map(Number);
-      if (!F.territoryAt(M, c, r)) continue;
-      const mid = P(c + 0.5, r + 0.5);
-      const s = Math.max(3, 0.2 * S);
-      ctx.fillStyle = 'rgba(11,18,25,0.6)';
-      ctx.fillRect(mid[0] - s - 1, mid[1] - s - 1, (s + 1) * 2, (s + 1) * 2);
-      ctx.fillStyle = shade(seatColour(barracks[k]), 1.2);
-      ctx.fillRect(mid[0] - s, mid[1] - s, s * 2, s * 2);
-    }
-
-    // Industry: a diamond plate, so barracks / industry / capital never read
-    // as the same object at a glance.
-    const industry = o.industry || {};
-    for (const k of Object.keys(industry)) {
-      const [c, r] = k.split(',').map(Number);
-      if (!F.territoryAt(M, c, r)) continue;
-      const mid = P(c + 0.5, r + 0.5);
-      const s = Math.max(4, 0.24 * S);
-      const dia = (rad, fill) => {
-        ctx.beginPath();
-        ctx.moveTo(mid[0], mid[1] - rad); ctx.lineTo(mid[0] + rad, mid[1]);
-        ctx.lineTo(mid[0], mid[1] + rad); ctx.lineTo(mid[0] - rad, mid[1]);
-        ctx.closePath(); ctx.fillStyle = fill; ctx.fill();
-      };
-      dia(s + 1.5, 'rgba(11,18,25,0.6)');
-      dia(s, shade(seatColour(industry[k]), 1.1));
-      ctx.strokeStyle = '#d9a441';
-      ctx.lineWidth = Math.max(1, s * 0.16);
-      ctx.stroke();
+      const order = [...pieces.values()].sort((a, b) => (a.c + a.r) - (b.c + b.r));
+      for (const pc of order) piece(pc.c, pc.r, pc.kind, pc.own);
     }
 
     // Garrison strength, where there is any and the board is close enough.
+    // The gate is tied to the fit scale: a 25×25 board fitted at zoom 1 gives
+    // S ≈ 19, so anything above that hides troop counts on join. The font is
+    // already pinned to its 9px floor at this scale, so drawing here costs no
+    // legibility — raise this only if the default zoom rises with it.
     const garrisons = o.garrisons || {};
-    if (S > 26) {
+    if (S > 18) {
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const fs = Math.max(9, Math.min(15, 0.2 * S));
       ctx.font = `600 ${fs}px 'Barlow Semi Condensed', sans-serif`;
@@ -219,7 +264,7 @@
       ctx.beginPath(); ctx.arc(mid[0], mid[1], rad * 1.3, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = shade(seatColour(st.seat), 1.55);
       ctx.beginPath(); ctx.arc(mid[0], mid[1], rad, 0, Math.PI * 2); ctx.fill();
-      if (S > 26) {
+      if (S > 18) {
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         const fs = Math.max(9, Math.min(14, 0.18 * S));
         ctx.font = `600 ${fs}px 'Barlow Semi Condensed', sans-serif`;
@@ -266,5 +311,5 @@
     }
   }
 
-  return { board, shade, defaultSeatColour, LAND, NEUTRAL };
+  return { board, shade, defaultSeatColour, KIT, LAND, NEUTRAL };
 });
