@@ -43,6 +43,16 @@
     </div>
   </sc-if>
 
+  <sc-if value="{{ connecting }}" hint-placeholder-val="{{ false }}">
+    <div style="height: 100vh; display: grid; place-items: center; background: radial-gradient(120% 90% at 50% 18%, #1e2b39, #0b1219 76%);">
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 0 32px; text-align: center;">
+        <span style="font-size: 12px; letter-spacing: 0.34em; text-transform: uppercase; color: #9aa1a8;">1v1 online</span>
+        <h1 style="margin: 0; font-family: Bitter, serif; font-weight: 600; font-size: 34px;">{{ connectMsg }}</h1>
+        <button onClick="{{ cancelConnect }}" style="padding: 12px 34px; background: transparent; border: 1px solid rgba(239,230,213,0.28); border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 15px; cursor: pointer;" style-hover="border-color: #efe6d5;">Cancel</button>
+      </div>
+    </div>
+  </sc-if>
+
   <sc-if value="{{ inMatch }}" hint-placeholder-val="{{ false }}">
     <div ref="{{ rootRef }}" style="{{ rootStyle }} display: grid; grid-template-columns: 348px 1fr; grid-template-rows: auto 1fr; gap: 10px; padding: 10px; box-sizing: border-box; background: #080e14;">
 
@@ -363,7 +373,7 @@ class Component extends DCLogic {
           // Shift sends the whole garrison; a plain drag sends half, so you can
           // press again without stranding a province empty.
           const pct = e.shiftKey ? 100 : 50;
-          const err = self.FPSim.march(this.sim, this.built(), this.viewSeat(), [from.c, from.r], [to.c, to.r], pct);
+          const err = this.issueCmd('march', [[from.c, from.r], [to.c, to.r], pct]);
           this.setState({ mode: null, dragFrom: null, dragTo: null, sel: to, notice: err || '' });
         } else {
           this.setState({ mode: null, dragFrom: null, dragTo: null });
@@ -432,7 +442,10 @@ class Component extends DCLogic {
       // Arrived from the Hub with the match already chosen — skip the menu.
       // Consume the flag so a reload doesn't repeat the auto-start; the board
       // and opponent stay in the URL so refreshing keeps the same match config.
-      if (this.param('auto') === '1') {
+      const matchId = this.param('matchId');
+      if (matchId) {
+        this._auto = setTimeout(() => this.playNetworked(matchId), 0);
+      } else if (this.param('auto') === '1') {
         try {
           const u = new URL(self.location.href);
           u.searchParams.delete('auto');
@@ -451,6 +464,7 @@ class Component extends DCLogic {
     clearTimeout(this._retry);
     clearTimeout(this._auto);
     clearTimeout(this._frame);
+    if (this._netSocket) { this._netSocket.close(); this._netSocket = null; }
     this.unwire();
     window.removeEventListener('mousemove', this._onMove);
     window.removeEventListener('mouseup', this._onUp);
@@ -528,6 +542,7 @@ class Component extends DCLogic {
   exit() {
     this.stopLoop();
     this.sim = null;
+    if (this._netSocket) { this._netSocket.close(); this._netSocket = null; }
     if (self.location) {
       const here = self.location.pathname || '';
       self.location.href = /\.dc\.html$/i.test(here) ? 'Home.dc.html' : '/';
@@ -552,11 +567,21 @@ class Component extends DCLogic {
         if (!this.sim || this.sim.over !== null) break;
         self.FPSim.step(this.sim, this.built());
         // The bot issues ordinary commands, so it runs between ticks exactly
-        // where a networked player's messages would arrive.
+        // where a networked player's messages arrive — in a real match the
+        // opponent's moves come from onNetMessage's 'applied' handler instead,
+        // so the bot must not also run.
         const level = this.aiLevel();
-        if (self.FPAI && level !== 'None') {
+        if (this._netSeat == null && self.FPAI && level !== 'None') {
           const said = self.FPAI.think(this.sim, this.built(), 1 - this.viewSeat(), level);
           if (said) this._said = { text: said, tick: this.sim.tick };
+        }
+        // Keep a short back-catalogue of hashes so a slightly-delayed hashReq
+        // from the match socket can still be answered for the exact tick the
+        // Durable Object asked about, not just "whatever tick we're at now".
+        if (this._netSocket) {
+          this._hashRing = this._hashRing || [];
+          this._hashRing.push({ tick: this.sim.tick, hash: self.FPSim.hash(this.sim) });
+          if (this._hashRing.length > self.FPSim.RULES.tickHz * 2) this._hashRing.shift();
         }
         acc -= dt; ran++;
       }
@@ -566,9 +591,10 @@ class Component extends DCLogic {
 
   stopLoop() { clearInterval(this._loop); this._loop = null; }
 
-  /** Which seat this client is playing. Networking will assign it; until then
-   *  it is a tweak so both openings can be checked. */
-  viewSeat() { return this.props.viewAs === 'Seat 1' ? 1 : 0; }
+  /** Which seat this client is playing. A networked match has the server
+   *  assign it (see playNetworked/onNetMessage's 'start' handler); otherwise
+   *  it is the local tweak so both openings can be checked against the AI. */
+  viewSeat() { return this._netSeat != null ? this._netSeat : (this.props.viewAs === 'Seat 1' ? 1 : 0); }
 
   built() {
     const d = this.state.def;
@@ -587,18 +613,120 @@ class Component extends DCLogic {
     if (!err) this.forceUpdate();
   }
 
+  /** The single choke point every build/industry/march/reinforce call goes
+   *  through. Locally, call straight into sim.js exactly as before. In a
+   *  networked match, send it to the Match Durable Object instead and return
+   *  no error yet — the real success/failure comes back later as 'applied',
+   *  same as a networked player's move would arrive. */
+  issueCmd(kind, args) {
+    if (this._netSocket && this._netSocket.readyState === WebSocket.OPEN) {
+      const seq = (this._cmdSeq = (this._cmdSeq || 0) + 1);
+      this._netSocket.send(JSON.stringify({ type: 'cmd', seq, kind, args }));
+      return null;
+    }
+    const F2 = self.FPSim;
+    const fn = { build: F2.build, industry: F2.industry, march: F2.march, reinforce: F2.reinforce }[kind];
+    return fn(this.sim, this.built(), this.viewSeat(), ...args);
+  }
+
+  /** Open the match socket and wait for the server to assign a seat and
+   *  board — mirrors play(), but the sim isn't created until 'start' arrives
+   *  so both clients build off the identical board the server chose. */
+  playNetworked(matchId) {
+    const proto = self.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${proto}//${self.location.host}/match/${encodeURIComponent(matchId)}`);
+    this._netSocket = ws;
+    this._netSeat = null;
+    this._netStatus = 'connecting';
+    this._netMessage = 'Connecting…';
+    this._hashRing = [];
+    this._framedSeat = null;
+    this.sim = null;
+    this.setState({ screen: 'connecting' });
+    ws.addEventListener('open', () => {
+      this._netMessage = 'Waiting for opponent…';
+      this.forceUpdate();
+    });
+    ws.addEventListener('message', ev => this.onNetMessage(ev));
+    ws.addEventListener('close', () => {
+      if (['over', 'forfeit', 'desync'].includes(this._netStatus)) return;
+      this._netStatus = 'disconnected';
+      this._netMessage = 'Connection lost.';
+      this.forceUpdate();
+    });
+  }
+
+  onNetMessage(ev) {
+    let msg; try { msg = JSON.parse(ev.data); } catch (_) { return; }
+    const F2 = self.FPSim;
+    switch (msg.type) {
+      case 'start': {
+        this._netSeat = msg.seat;
+        this._netOpponent = msg.opponent;
+        this._netStatus = 'playing';
+        const def = self.FPMap.MAPS[msg.board];
+        const M = self.FPMap.build(def);
+        this.sim = F2.create(M);
+        this.startLoop();
+        this.setState({
+          screen: 'match', def, sel: null, armed: null, notice: '', mode: null,
+          cam: { yaw: Component.YAW, pitch: Component.PITCH, zoom: 2.6, panX: 0, panY: 0 },
+        });
+        break;
+      }
+      case 'applied': {
+        if (!msg.ok) { this.setState({ notice: msg.error || '' }); break; }
+        const fn = { build: F2.build, industry: F2.industry, march: F2.march, reinforce: F2.reinforce }[msg.kind];
+        if (fn && this.sim) fn(this.sim, this.built(), msg.seat, ...msg.args);
+        this.forceUpdate();
+        break;
+      }
+      case 'hashReq': {
+        const hit = (this._hashRing || []).find(h => h.tick === msg.tick);
+        const hash = hit ? hit.hash : (this.sim ? F2.hash(this.sim) : '');
+        if (this._netSocket) this._netSocket.send(JSON.stringify({ type: 'hashResp', tick: msg.tick, hash }));
+        break;
+      }
+      case 'opponentGone':
+        this.setState({ notice: `Opponent disconnected — waiting ${msg.graceSeconds}s…` });
+        break;
+      case 'forfeit':
+        this._netStatus = 'forfeit';
+        if (this.sim) this.sim.over = msg.winnerSeat;
+        this.stopLoop();
+        this.forceUpdate();
+        break;
+      case 'desync':
+        this._netStatus = 'desync';
+        this.setState({ notice: 'Connection desynced — match voided.' });
+        this.stopLoop();
+        break;
+      case 'over':
+        this._netStatus = 'over';
+        break;
+      case 'error':
+        this._netMessage = msg.message === 'opponent-no-show' ? 'Opponent never showed up.' : (msg.message || 'Match error');
+        if (this.state.screen === 'connecting') this.forceUpdate();
+        else this.setState({ notice: this._netMessage });
+        break;
+    }
+  }
+
   /** Is the bot's last action still worth showing? */
   _fresh() {
     if (!this.sim || this.sim.over !== null || !this._said) return false;
     return (this.sim.tick - this._said.tick) < self.FPSim.RULES.tickHz * 4;
   }
 
-  /** Seats are named by their colour, so the label always matches the board. */
-  seatName(seat) { return seat === 0 ? 'Green' : 'Red'; }
+  /** Seats are named by their colour, so the label always matches the board.
+   *  Colour is relative to the viewer, not the raw seat number: you are
+   *  always green, the opponent is always red, regardless of which seat
+   *  either of you was actually assigned. */
+  seatName(seat) { return seat === this.viewSeat() ? 'Green' : 'Red'; }
 
   seatColour(seat) {
-    if (seat === 0) return this.props.seatOneColour ?? '#48a37c';
-    if (seat === 1) return this.props.seatTwoColour ?? '#c0483c';
+    if (seat === this.viewSeat()) return this.props.seatOneColour ?? '#48a37c';
+    if (seat === (1 - this.viewSeat())) return this.props.seatTwoColour ?? '#c0483c';
     return '#8b8272';
   }
 
@@ -689,7 +817,7 @@ class Component extends DCLogic {
       const [c, r] = k.split(',').map(Number);
       if ((this.sim.garrisons[k] || 0) <= 0) continue;
       if (c === target.c && r === target.r) continue;
-      const err = F2.march(this.sim, M, seat, [c, r], [target.c, target.r], pct);
+      const err = this.issueCmd('march', [[c, r], [target.c, target.r], pct]);
       if (err) lastErr = err; else sent++;
     }
     this.setState({
@@ -711,7 +839,7 @@ class Component extends DCLogic {
     // Armed for a march: this click is the destination, not a selection.
     const armed = this.state.armed;
     if (armed && !(armed.c === c && armed.r === r)) {
-      const err = self.FPSim.march(this.sim, M, this.viewSeat(), [armed.c, armed.r], [c, r], armed.pct);
+      const err = this.issueCmd('march', [[armed.c, armed.r], [c, r], armed.pct]);
       this.setState({ armed: null, sel: { c, r }, notice: err || '' });
       return;
     }
@@ -883,6 +1011,9 @@ class Component extends DCLogic {
       canvasRef: this.canvasRef,
       rootRef: this.rootRef,
       onMenu: this.state.screen === 'menu',
+      connecting: this.state.screen === 'connecting',
+      connectMsg: this._netMessage || 'Connecting…',
+      cancelConnect: () => this.exit(),
       inMatch: this.state.screen === 'match',
       fullLabel: this.state.full ? 'Exit fullscreen' : 'Fullscreen',
       // The Fullscreen API is unavailable in some embeddings (a frame without
@@ -1092,9 +1223,9 @@ class Component extends DCLogic {
       overTitle: this.sim.over === seat ? 'You hold the board' : `${this.seatName(this.sim.over)} takes the board`,
       overSub: `${(sc.territories[this.sim.over] || 0)} of ${M.provinces.length} territories in ${Math.floor(s / 60)}m ${s % 60}s`,
       rematch: () => this.play(),
-      buildBarracks: () => sel && this.order(() => F2.build(this.sim, M, seat, sel.c, sel.r)),
-      buildIndustry: () => sel && this.order(() => F2.industry(this.sim, M, seat, sel.c, sel.r)),
-      reinforceHere: () => sel && this.order(() => F2.reinforce(this.sim, M, seat, sel.c, sel.r)),
+      buildBarracks: () => sel && this.order(() => this.issueCmd('build', [sel.c, sel.r])),
+      buildIndustry: () => sel && this.order(() => this.issueCmd('industry', [sel.c, sel.r])),
+      reinforceHere: () => sel && this.order(() => this.issueCmd('reinforce', [sel.c, sel.r])),
       arm50: () => sel && this.setState({ armed: { c: sel.c, r: sel.r, pct: 50 }, notice: '' }),
       arm100: () => sel && this.setState({ armed: { c: sel.c, r: sel.r, pct: 100 }, notice: '' }),
       cancelMarch: () => this.setState({ armed: null, notice: '' }),

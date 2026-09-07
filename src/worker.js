@@ -9,9 +9,14 @@
  * 100k is the Workers runtime's hard ceiling for PBKDF2 iterations).
  *
  * The API is a plain fetch handler on the same origin as the client, so no
- * CORS setup, no separate deploy, no split secrets. When the match Durable
- * Object lands it will slot in at /match/:id alongside these routes.
+ * CORS setup, no separate deploy, no split secrets. Matchmaking (/queue) and
+ * live matches (/match/:id) are WebSocket upgrades routed to the Matchmaker
+ * and Match Durable Objects — see src/matchmaker.js and src/match.js.
  */
+import { Match } from './match.js';
+import { Matchmaker } from './matchmaker.js';
+
+export { Match, Matchmaker };
 
 const AUTH_COOKIE = 'sl_sess';
 const SESSION_DAYS = 30;
@@ -231,12 +236,22 @@ export default {
       return problem(404, 'not found');
     }
 
-    // ── The match seam ──────────────────────────────────────────────────────
-    // if (path.startsWith('/match/')) {
-    //   const id = path.split('/')[2];
-    //   const stub = env.MATCH.idFromName(id);
-    //   return env.MATCH.get(stub).fetch(request);
-    // }
+    // ── Matchmaking + live matches ──────────────────────────────────────────
+    // Both are WebSocket upgrades; the cookie that authenticates any other
+    // same-origin request is present on the upgrade handshake too, so the
+    // Durable Object trusts the user id/username the Worker resolved and
+    // forwarded — it is never reachable except through this fetch handler.
+    if (path === '/queue' || path.startsWith('/match/')) {
+      const user = await userFromRequest(env, request);
+      if (!user) return problem(401, 'login required');
+      const stub = path === '/queue'
+        ? env.MATCHMAKER.get(env.MATCHMAKER.idFromName('global'))
+        : env.MATCH.get(env.MATCH.idFromName(path.split('/')[2]));
+      const fwd = new Request(request, { headers: new Headers(request.headers) });
+      fwd.headers.set('x-sl-user-id', String(user.id));
+      fwd.headers.set('x-sl-username', user.username);
+      return stub.fetch(fwd);
+    }
 
     return env.ASSETS.fetch(request);
   },

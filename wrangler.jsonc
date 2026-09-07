@@ -15,6 +15,15 @@
       "database_id": "556ba857-3eb5-4caa-91bc-b8b2efac7d91"
     }
   ],
+  "durable_objects": {
+    "bindings": [
+      { "name": "MATCH", "class_name": "Match" },
+      { "name": "MATCHMAKER", "class_name": "Matchmaker" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["Match", "Matchmaker"] }
+  ],
   "routes": [
     { "pattern": "supremacy.live", "zone_name": "supremacy.live", "custom_domain": true },
     { "pattern": "www.supremacy.live", "zone_name": "supremacy.live", "custom_domain": true }
