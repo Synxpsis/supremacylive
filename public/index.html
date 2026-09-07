@@ -94,16 +94,21 @@
     <div style="position: absolute; inset: 0; display: grid; grid-template-rows: auto 1fr; padding: 24px 30px 30px; gap: 22px; box-sizing: border-box;">
 
       <header style="display: flex; align-items: center; justify-content: space-between; gap: 24px;">
-        <div style="display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; background: #131e28; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px;">
-          <div style="width: 26px; height: 26px; flex: none; border-radius: 50%; background: rgba(239,230,213,0.1); display: flex; align-items: center; justify-content: center; color: #9aa1a8;">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"></path></svg>
+        <div style="display: flex; align-items: center; gap: 18px;">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; background: #131e28; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px;">
+            <div style="width: 26px; height: 26px; flex: none; border-radius: 50%; background: rgba(239,230,213,0.1); display: flex; align-items: center; justify-content: center; color: #9aa1a8;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"></path></svg>
+            </div>
+            <span style="font-size: 14px; color: #c8c2b4;">{{ commander }}</span>
+            <span style="width: 1px; height: 14px; background: rgba(239,230,213,0.14);"></span>
+            <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: #6f7883;">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 4H7v5a5 5 0 0 0 10 0V4Z"></path><path d="M7 6H4a1 1 0 0 0-1 1 5 5 0 0 0 4 4.9M17 6h3a1 1 0 0 1 1 1 5 5 0 0 1-4 4.9"></path></svg>
+              {{ trophies }}
+            </span>
           </div>
-          <span style="font-size: 14px; color: #c8c2b4;">{{ commander }}</span>
-          <span style="width: 1px; height: 14px; background: rgba(239,230,213,0.14);"></span>
-          <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: #6f7883;">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 4H7v5a5 5 0 0 0 10 0V4Z"></path><path d="M7 6H4a1 1 0 0 0-1 1 5 5 0 0 0 4 4.9M17 6h3a1 1 0 0 1 1 1 5 5 0 0 1-4 4.9"></path></svg>
-            {{ trophies }}
-          </span>
+          <nav style="display: flex; align-items: center; gap: 6px;">
+            <span style="padding: 7px 14px; background: rgba(217,164,65,0.14); border: 1px solid #d9a441; border-radius: 3px; color: #efe6d5; font-size: 13.5px;">Home</span>
+          </nav>
         </div>
         <div style="display: flex; align-items: center; gap: 16px;">
           <button onClick="{{ logout }}" style="padding: 7px 13px; background: rgba(239,230,213,0.05); border: 1px solid rgba(239,230,213,0.16); border-radius: 3px; color: #9aa1a8; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="color: #efe6d5; border-color: rgba(239,230,213,0.3);">Sign out</button>
@@ -113,7 +118,7 @@
       <div style="display: grid; grid-template-columns: 1fr 380px; gap: 22px; min-height: 0;">
 
         <div style="position: relative; display: flex; flex-direction: column; justify-content: center; padding: 0 44px;">
-          <div style="position: relative; display: flex; flex-direction: column; gap: 16px; max-width: 460px;">
+          <div style="position: relative; display: flex; flex-direction: column; gap: 16px; max-width: 460px; margin-top: -56px;">
             <div style="font-family: Bitter, serif; font-size: 46px; font-weight: 600; line-height: 1.06; letter-spacing: -0.02em;">Welcome back, {{ commander }}</div>
             <p style="margin: 0; font-size: 15.5px; line-height: 1.55; color: #c8c2b4; text-wrap: pretty;">{{ heroSubtitle }}</p>
 
@@ -123,23 +128,27 @@
               </sc-for>
             </div>
 
-            <div style="display: flex; gap: 6px; margin-top: 4px; padding: 3px; background: rgba(11,18,25,0.5); border: 1px solid rgba(239,230,213,0.1); border-radius: 3px; width: fit-content;">
-              <sc-for list="{{ levels }}" as="l" hint-placeholder-count="3">
-                <button onClick="{{ l.pick }}" style="padding: 6px 12px; background: {{ l.bg }}; border: none; border-radius: 2px; font-size: 13px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; cursor: pointer; white-space: nowrap;" style-hover="filter: brightness(1.2);">{{ l.label }}</button>
-              </sc-for>
-            </div>
-
-            <a href="{{ launchHref }}" onClick="{{ launchClick }}" style="margin-top: 10px; padding: 15px 30px; background: #d9a441; border-radius: 3px; color: #121a22; font-family: Bitter, serif; font-weight: 600; font-size: 16px; text-align: center; width: fit-content;" style-hover="filter: brightness(1.1);">{{ launchLabel }}</a>
+            <sc-if value="{{ showLevels }}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; gap: 6px; margin-top: 4px; padding: 3px; background: rgba(11,18,25,0.5); border: 1px solid rgba(239,230,213,0.1); border-radius: 3px; width: fit-content;">
+                <sc-for list="{{ levels }}" as="l" hint-placeholder-count="3">
+                  <button onClick="{{ l.pick }}" style="padding: 6px 12px; background: {{ l.bg }}; border: none; border-radius: 2px; font-size: 13px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; cursor: pointer; white-space: nowrap;" style-hover="filter: brightness(1.2);">{{ l.label }}</button>
+                </sc-for>
+              </div>
+            </sc-if>
           </div>
         </div>
 
-        <aside style="display: flex; flex-direction: column; gap: 0; padding: 26px 24px; background: #101a23; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; overflow-y: auto;">
-          <span style="font-family: Bitter, serif; font-size: 15px; font-weight: 600; margin-bottom: 18px;">Patch notes</span>
-          <div style="padding: 16px 0; border-top: 1px solid rgba(239,230,213,0.08); font-size: 13.5px; color: #6f7883;">Nothing here yet.</div>
-        </aside>
+        <div style="display: flex; flex-direction: column; justify-content: flex-end; gap: 14px; min-height: 0; margin-bottom: 50px;">
+          <aside style="display: flex; flex-direction: column; gap: 0; padding: 26px 24px; background: #101a23; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; overflow-y: auto; height: 50%; box-sizing: border-box;">
+            <span style="font-family: Bitter, serif; font-size: 15px; font-weight: 600; margin-bottom: 18px;">Patch notes</span>
+            <div style="padding: 16px 0; border-top: 1px solid rgba(239,230,213,0.08); font-size: 13.5px; color: #6f7883;">Nothing here yet.</div>
+          </aside>
+          <a href="{{ launchHref }}" onClick="{{ launchClick }}" style="padding: 15px 30px; background: #d9a441; border-radius: 3px; color: #121a22; font-family: Bitter, serif; font-weight: 600; font-size: 16px; text-align: center;" style-hover="filter: brightness(1.1);">{{ launchLabel }}</a>
+        </div>
       </div>
     </div>
   </sc-if>
+  <footer style="position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 30px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #4a5158;">© 2026 Supremacy Live</footer>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{
@@ -364,6 +373,7 @@ class Component extends DCLogic {
 
       // Hub
       modePills, levels,
+      showLevels: st.mode === 'ai',
       heroSubtitle: st.mode === 'duel'
         ? (st.queueStatus ? st.queueMessage : 'Real-time 1v1 on the Small board — queue up to be matched with the next player.')
         : `Test match — Grand board, full simulation, ${st.level} AI opponent.`,

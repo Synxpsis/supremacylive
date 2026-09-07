@@ -42,9 +42,16 @@
   </sc-if>
 
   <sc-if value="{{ inMatch }}" hint-placeholder-val="{{ false }}">
-    <div style="height: 100vh; display: grid; grid-template-columns: 348px 1fr; grid-template-rows: auto 1fr; gap: 10px; padding: 10px; box-sizing: border-box; background: #080e14;">
+    <div style="height: 100vh; display: grid; grid-template-columns: {{ gridCols }}; grid-template-rows: auto 1fr; gap: 10px; padding: 10px; box-sizing: border-box; background: #080e14;">
 
       <header style="grid-column: 1 / -1; display: flex; align-items: stretch; background: #101a23; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; overflow: hidden;">
+
+        <div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-right: 1px solid rgba(239,230,213,0.12);">
+          <div style="width: 22px; height: 22px; flex: none; border-radius: 50%; background: rgba(217,164,65,0.16); display: flex; align-items: center; justify-content: center; color: #d9a441;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4.5"></circle></svg>
+          </div>
+          <span style="font-family: Bitter, serif; font-size: 16px; font-weight: 600; color: #d9a441;">{{ myCoin }}</span>
+        </div>
 
         <div style="flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 32px; padding: 0 20px;">
 
@@ -52,7 +59,7 @@
             <div style="width: 26px; height: 26px; flex: none; border-radius: 50%; background: rgba(239,230,213,0.1); display: flex; align-items: center; justify-content: center; color: {{ headerLeft.colour }};">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"></path></svg>
             </div>
-            <span style="font-size: 14px; color: #c8c2b4;">{{ headerLeft.name }}</span>
+            <span style="font-size: 14px; color: {{ headerLeft.nameColour }};">{{ headerLeft.name }}</span>
             <span style="width: 1px; height: 14px; background: rgba(239,230,213,0.14);"></span>
             <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: #6f7883;">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 4H7v5a5 5 0 0 0 10 0V4Z"></path><path d="M7 6H4a1 1 0 0 0-1 1 5 5 0 0 0 4 4.9M17 6h3a1 1 0 0 1 1 1 5 5 0 0 1-4 4.9"></path></svg>
@@ -71,7 +78,7 @@
               {{ headerRight.trophies }}
             </span>
             <span style="width: 1px; height: 14px; background: rgba(239,230,213,0.14);"></span>
-            <span style="font-size: 14px; color: #c8c2b4;">{{ headerRight.name }}</span>
+            <span style="font-size: 14px; color: {{ headerRight.nameColour }};">{{ headerRight.name }}</span>
             <div style="width: 26px; height: 26px; flex: none; border-radius: 50%; background: rgba(239,230,213,0.1); display: flex; align-items: center; justify-content: center; color: {{ headerRight.colour }};">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"></path></svg>
             </div>
@@ -84,7 +91,7 @@
 
       </header>
 
-      <aside style="min-width: 0; display: grid; grid-template-rows: 1fr; background: #101a23; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; overflow: hidden;">
+      <aside style="min-width: 0; display: grid; grid-template-rows: 1fr; background: #101a23; border: {{ asideBorder }}; border-radius: 3px; overflow: hidden;">
 
         <div style="min-height: 0; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px;">
 
@@ -1036,9 +1043,10 @@ class Component extends DCLogic {
       exit: () => this.exit(),
       fit: () => this.fit(),
     };
-    const blankPill = { name: '—', colour: '#8b8272', terr: '0', trophies: 0 };
+    const blankPill = { name: '—', colour: '#8b8272', nameColour: '#9aa1a8', terr: '0', trophies: 0 };
     const blank = {
       headerLeft: blankPill, headerRight: blankPill,
+      myCoin: 0, gridCols: '0px 1fr', asideBorder: 'none',
       hasSel: false, hasMulti: false, noSel: true, selCoord: '—',
       multiCount: '', multiTroops: '', clearMulti: () => {},
       selHeading: '', selOwnerLine: '', selOwnerColour: '#8b8272', selRows: [],
@@ -1076,15 +1084,18 @@ class Component extends DCLogic {
     const sc = F.score(M, owners);
     const seat = this.viewSeat();
     const opponentName = this._netOpponent ? this._netOpponent.username : `${this.aiLevel()} AI`;
+    const money = this.sim.money.map(v => Math.floor(v / 1000));
     const headerLeft = {
       colour: this.seatColour(seat),
       name: this.state.commander || 'Guest commander',
+      nameColour: '#efe6d5',
       terr: String(sc.territories[seat] || 0),
       trophies: 0,
     };
     const headerRight = {
       colour: this.seatColour(1 - seat),
       name: opponentName,
+      nameColour: '#9aa1a8',
       terr: String(sc.territories[1 - seat] || 0),
       trophies: 0,
     };
@@ -1198,6 +1209,9 @@ class Component extends DCLogic {
     const s = Math.floor(this.sim.tick / F2.RULES.tickHz);
     return {
       ...base, ...menuStats, headerLeft, headerRight, ...detail,
+      myCoin: money[seat] ?? 0,
+      gridCols: detail.noSel ? '0px 1fr' : '348px 1fr',
+      asideBorder: detail.noSel ? 'none' : '1px solid rgba(239,230,213,0.14)',
       notice: this.state.notice,
       showNotice: !!this.state.notice,
       clock: `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`,
