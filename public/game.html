@@ -691,6 +691,14 @@ class Component extends DCLogic {
         });
         break;
       }
+      case 'ping': {
+        // Answered immediately, no scheduling — the round trip on this is
+        // exactly what the Match Durable Object uses to size how far ahead
+        // of "now" it schedules commands (see match.js), so any added delay
+        // here would make the server think the link is worse than it is.
+        if (this._netSocket) this._netSocket.send(JSON.stringify({ type: 'pong', seq: msg.seq }));
+        break;
+      }
       case 'applied': {
         if (!msg.ok) { this.setState({ notice: msg.error || '' }); break; }
         // Scheduled onto the tick the server named, not applied now — see

@@ -33,10 +33,24 @@ const FORFEIT_GRACE_MS = 15_000;
 // client's WebSocket message arrives — network latency to the two clients
 // differs, so "apply on receipt" lands the same command on a different tick
 // on each side, which is a permanent divergence once anything tick-driven
-// (income, barracks growth) has run in between. 10 ticks (500ms @ 20Hz) is
-// generous headroom over normal one-way latency + processing jitter. See
-// game.html's matching scheduler in its 'applied' handler and startLoop.
-const APPLY_DELAY_TICKS = 10;
+// (income, barracks growth) has run in between. See game.html's matching
+// scheduler in its 'applied' handler and startLoop.
+//
+// The delay itself is measured, not guessed: a flat constant has to assume
+// the worst connection anyone might ever have, which taxes every player with
+// the latency of the least fortunate one. Instead each seat is pinged every
+// PING_INTERVAL_MS and the delay is sized off the *measured* round trip to
+// whichever seat is currently slower — good connections feel it less, and a
+// connection that degrades mid-match gets more headroom automatically. Until
+// both seats have answered at least one ping, DEFAULT_APPLY_DELAY_TICKS (the
+// old flat constant) is used, since a guess before measuring is exactly the
+// unsafe case this replaces.
+const PING_INTERVAL_MS = 2_000;
+const RTT_SAMPLES = 6;                  // ~12s of history at PING_INTERVAL_MS — long enough to catch a bad streak, short enough to recover from one
+const JITTER_MARGIN_MS = 100;           // flat pad over the worst recent round trip, for the jitter that one sample won't have shown yet
+const DEFAULT_APPLY_DELAY_TICKS = 10;   // 500ms @ 20Hz — used until both seats have an RTT sample
+const MIN_APPLY_DELAY_TICKS = 4;        // 200ms floor — tick-loop jitter needs some headroom even on a LAN
+const MAX_APPLY_DELAY_TICKS = 30;       // 1.5s ceiling — beyond this the hash-check safety net is the answer, not more lag
 
 const commands = () => ({
   build: self.FPSim.build,
@@ -59,6 +73,11 @@ export class Match {
     this.alarmKind = null;           // 'connect-timeout' | 'forfeit'
     this.forfeitSeat = null;
     this.matchStartMs = null;
+    this.rtt = new Map();            // seat -> array of the last RTT_SAMPLES round trips, in ms
+    this.pendingPing = new Map();    // seat -> { seq, sentAt } — only the latest, a stale pong is just ignored
+    this.pingSeq = new Map();        // seat -> last seq sent
+    this.pingTimer = null;
+    this.applyDelayTicks = DEFAULT_APPLY_DELAY_TICKS;
   }
 
   async fetch(request) {
@@ -114,6 +133,46 @@ export class Match {
         matchStartMs: this.matchStartMs,
       });
     }
+    this.sendPings();
+    this.pingTimer = setInterval(() => this.sendPings(), PING_INTERVAL_MS);
+  }
+
+  sendPings() {
+    for (const seat of this.seats.keys()) {
+      const seq = (this.pingSeq.get(seat) || 0) + 1;
+      this.pingSeq.set(seat, seq);
+      this.pendingPing.set(seat, { seq, sentAt: Date.now() });
+      this.send(seat, { type: 'ping', seq });
+    }
+  }
+
+  handlePong(seat, msg) {
+    const pending = this.pendingPing.get(seat);
+    if (!pending || pending.seq !== msg.seq) return;   // stale reply to an old ping
+    this.pendingPing.delete(seat);
+    const sample = Math.max(0, Date.now() - pending.sentAt);
+    const samples = this.rtt.get(seat) || [];
+    samples.push(sample);
+    if (samples.length > RTT_SAMPLES) samples.shift();
+    this.rtt.set(seat, samples);
+    this.recomputeApplyDelay();
+  }
+
+  /** Sized off the *worst* round trip either seat has seen recently, not an
+   *  average — an average shrugs off a bad spike as "noise", but a spike we
+   *  miss is a voided match, not a stutter, so the whole point is to not miss
+   *  it. Recent (last RTT_SAMPLES pings) rather than all-time so a connection
+   *  that was bad early in the match and recovers isn't stuck paying for it. */
+  recomputeApplyDelay() {
+    if (this.rtt.size < this.seats.size) return;   // not every seat has a sample yet — keep the safe default
+    const dt = 1000 / self.FPSim.RULES.tickHz;
+    let neededMs = 0;
+    for (const samples of this.rtt.values()) {
+      const worst = Math.max(...samples);
+      neededMs = Math.max(neededMs, worst / 2 + JITTER_MARGIN_MS);
+    }
+    const ticks = Math.ceil(neededMs / dt);
+    this.applyDelayTicks = Math.min(MAX_APPLY_DELAY_TICKS, Math.max(MIN_APPLY_DELAY_TICKS, ticks));
   }
 
   /** The shadow sim has no timer of its own — it only advances when a command
@@ -142,6 +201,7 @@ export class Match {
     try { msg = JSON.parse(raw); } catch (_) { return; }
     if (msg.type === 'cmd') this.handleCmd(seat, msg);
     else if (msg.type === 'hashResp') this.handleHashResp(seat, msg);
+    else if (msg.type === 'pong') this.handlePong(seat, msg);
   }
 
   /** Validate against the shadow sim; only a legal command is broadcast, and
@@ -165,7 +225,7 @@ export class Match {
     // only job is gatekeeping legality and it is never hash-compared to the
     // clients, but the two real clients need a shared future tick to apply on
     // or their independent local clocks land the mutation at different points.
-    this.broadcast({ type: 'applied', seq, seat, kind, args, ok: true, tick: this.sim.tick + APPLY_DELAY_TICKS });
+    this.broadcast({ type: 'applied', seq, seat, kind, args, ok: true, tick: this.sim.tick + this.applyDelayTicks });
     this.maybeCheckHash();
     this.maybeEnd();
   }
@@ -201,6 +261,7 @@ export class Match {
   endMatch() {
     if (this.ended) return;
     this.ended = true;
+    if (this.pingTimer) { clearInterval(this.pingTimer); this.pingTimer = null; }
     this.state.storage.deleteAlarm().catch(() => {});
     for (const s of this.seats.values()) { try { s.ws.close(1000, 'match-ended'); } catch (_) {} }
   }
