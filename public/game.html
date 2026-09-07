@@ -501,6 +501,8 @@ class Component extends DCLogic {
     const M = self.FPMap.build(def);
     this._framedSeat = null;
     this.sim = self.FPSim.create(M);
+    this._matchStartMs = Date.now();
+    this._scheduled = [];
     this.startLoop();
     this.setState({
       screen: 'match', def,
@@ -520,23 +522,45 @@ class Component extends DCLogic {
     }
   }
 
-  /* Fixed 20 Hz accumulator, wall clock read only to decide how many whole
-   * ticks are owed — the sim itself never sees a timestamp. setInterval rather
-   * than rAF, because a hidden document never fires rAF and the match would
-   * silently stop. */
+  /** Apply one build/industry/march/reinforce mutation straight to the sim —
+   *  the same dispatch table onNetMessage's 'applied' handler schedules from,
+   *  factored out so startLoop can run it at the right tick. */
+  applyCmd(kind, seat, args) {
+    const fn = { build: self.FPSim.build, industry: self.FPSim.industry, march: self.FPSim.march, reinforce: self.FPSim.reinforce }[kind];
+    if (fn && this.sim) fn(this.sim, this.built(), seat, ...args);
+  }
+
+  sendHashResp(tick, hash) {
+    if (this._netSocket) this._netSocket.send(JSON.stringify({ type: 'hashResp', tick, hash }));
+  }
+
+  /* Ticks are counted from `_matchStartMs`, not from an in-loop accumulator —
+   * "how many ticks are owed" is recomputed each fire from absolute elapsed
+   * time, never carried forward as a running total. An accumulator anchored to
+   * "whenever this client's loop last fired" bakes in this client's own
+   * start-message latency as a permanent offset from a networked opponent's
+   * clock, which is what let the two sims apply the same relayed command at
+   * different tick numbers and diverge (see onNetMessage's 'applied' handler
+   * and the server's APPLY_DELAY_TICKS). setInterval rather than rAF, because
+   * a hidden document never fires rAF and the match would silently stop. */
   startLoop() {
     this.stopLoop();
     const dt = 1000 / self.FPSim.RULES.tickHz;
-    let last = Date.now(), acc = 0;
     this._loop = setInterval(() => {
-      const now = Date.now();
-      acc += now - last;
-      last = now;
-      if (acc > 1000) acc = dt;          // came back from a long pause: skip ahead
+      if (!this.sim || this.sim.over !== null || this._matchStartMs == null) return;
+      const owed = Math.floor((Date.now() - this._matchStartMs) / dt) - this.sim.tick;
       let ran = 0;
-      while (acc >= dt && ran < 40) {
-        if (!this.sim || this.sim.over !== null) break;
+      while (ran < owed && ran < 40) {
+        if (this.sim.over !== null) break;
         self.FPSim.step(this.sim, this.built());
+        // A networked opponent's (and this client's own, once round-tripped)
+        // moves are scheduled here rather than applied on message receipt, so
+        // both sides mutate their sim at the identical tick regardless of when
+        // each of them actually received the broadcast.
+        while (this._scheduled && this._scheduled.length && this._scheduled[0].tick <= this.sim.tick) {
+          const c = this._scheduled.shift();
+          this.applyCmd(c.kind, c.seat, c.args);
+        }
         // The bot issues ordinary commands, so it runs between ticks exactly
         // where a networked player's messages arrive — in a real match the
         // opponent's moves come from onNetMessage's 'applied' handler instead,
@@ -545,15 +569,24 @@ class Component extends DCLogic {
         if (this._netSeat == null && self.FPAI && level !== 'None') {
           self.FPAI.think(this.sim, this.built(), 1 - this.viewSeat(), level);
         }
-        // Keep a short back-catalogue of hashes so a slightly-delayed hashReq
-        // from the match socket can still be answered for the exact tick the
-        // Durable Object asked about, not just "whatever tick we're at now".
+        // Keep a back-catalogue of hashes so a delayed hashReq from the match
+        // socket can still be answered for the exact tick the Durable Object
+        // asked about, not just "whatever tick we're at now" — a minute at
+        // 20Hz is a few thousand 8-char strings, cheap enough to just not
+        // worry about a real player ever stalling that long.
         if (this._netSocket) {
           this._hashRing = this._hashRing || [];
           this._hashRing.push({ tick: this.sim.tick, hash: self.FPSim.hash(this.sim) });
-          if (this._hashRing.length > self.FPSim.RULES.tickHz * 2) this._hashRing.shift();
+          if (this._hashRing.length > self.FPSim.RULES.tickHz * 60) this._hashRing.shift();
+          if (this._pendingHash && this._pendingHash.length) {
+            this._pendingHash = this._pendingHash.filter(tick => {
+              const h = this._hashRing.find(r => r.tick === tick);
+              if (h) this.sendHashResp(tick, h.hash);
+              return !h;
+            });
+          }
         }
-        acc -= dt; ran++;
+        ran++;
       }
       if (ran) this.forceUpdate();
     }, dt);
@@ -610,8 +643,11 @@ class Component extends DCLogic {
     this._netStatus = 'connecting';
     this._netMessage = 'Connecting…';
     this._hashRing = [];
+    this._pendingHash = [];
+    this._scheduled = [];
     this._framedSeat = null;
     this.sim = null;
+    this._matchStartMs = null;
     this.setState({ screen: 'connecting' });
     ws.addEventListener('open', () => {
       this._netMessage = 'Waiting for opponent…';
@@ -637,6 +673,10 @@ class Component extends DCLogic {
         const def = self.FPMap.MAPS[msg.board];
         const M = self.FPMap.build(def);
         this.sim = F2.create(M);
+        // Anchored to the server's clock, not to whenever this message
+        // happened to arrive — see startLoop's header comment.
+        this._matchStartMs = msg.matchStartMs;
+        this._scheduled = [];
         this.startLoop();
         this.setState({
           screen: 'match', def, sel: null, armed: null, notice: '', mode: null,
@@ -646,15 +686,24 @@ class Component extends DCLogic {
       }
       case 'applied': {
         if (!msg.ok) { this.setState({ notice: msg.error || '' }); break; }
-        const fn = { build: F2.build, industry: F2.industry, march: F2.march, reinforce: F2.reinforce }[msg.kind];
-        if (fn && this.sim) fn(this.sim, this.built(), msg.seat, ...msg.args);
-        this.forceUpdate();
+        // Scheduled onto the tick the server named, not applied now — see
+        // startLoop, which mutates the sim once it reaches that tick. Both
+        // clients receive the same tick number, so both apply it at the same
+        // simulated point regardless of when each of them got this message.
+        (this._scheduled || (this._scheduled = [])).push({ tick: msg.tick, kind: msg.kind, seat: msg.seat, args: msg.args });
         break;
       }
       case 'hashReq': {
         const hit = (this._hashRing || []).find(h => h.tick === msg.tick);
-        const hash = hit ? hit.hash : (this.sim ? F2.hash(this.sim) : '');
-        if (this._netSocket) this._netSocket.send(JSON.stringify({ type: 'hashResp', tick: msg.tick, hash }));
+        if (hit) { this.sendHashResp(msg.tick, hit.hash); break; }
+        // Not there yet — either this client is momentarily behind wall clock
+        // (a GC pause, a backgrounded-tab throttle) or, before this session's
+        // desync fix, the ring's window was too tight under real latency.
+        // Guessing with today's hash for a past tick is *always* wrong, and a
+        // wrong guess is indistinguishable from a genuine divergence — so wait
+        // for startLoop to actually reach this tick and answer for real,
+        // rather than trip a false "match desynced" on a healthy match.
+        (this._pendingHash || (this._pendingHash = [])).push(msg.tick);
         break;
       }
       case 'opponentGone':

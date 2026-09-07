@@ -29,6 +29,14 @@ import '../public/sim.js';
 const HASH_EVERY_TICKS = 100;
 const CONNECT_TIMEOUT_MS = 20_000;
 const FORFEIT_GRACE_MS = 15_000;
+// Commands are scheduled onto a future tick rather than applied the instant a
+// client's WebSocket message arrives — network latency to the two clients
+// differs, so "apply on receipt" lands the same command on a different tick
+// on each side, which is a permanent divergence once anything tick-driven
+// (income, barracks growth) has run in between. 10 ticks (500ms @ 20Hz) is
+// generous headroom over normal one-way latency + processing jitter. See
+// game.html's matching scheduler in its 'applied' handler and startLoop.
+const APPLY_DELAY_TICKS = 10;
 
 const commands = () => ({
   build: self.FPSim.build,
@@ -96,7 +104,15 @@ export class Match {
     this.matchStartMs = Date.now();
     for (const [seat] of this.seats) {
       const opp = this.seats.get(1 - seat);
-      this.send(seat, { type: 'start', seat, board: 'duel', opponent: { username: opp.username } });
+      // Both clients anchor their local tick clock to this timestamp (see
+      // game.html's startLoop) instead of to whenever each of them happens to
+      // receive this message — otherwise the two clients' tick counters start
+      // offset by the difference in one-way latency to each of them, and every
+      // command applied afterward lands on a different tick on each side.
+      this.send(seat, {
+        type: 'start', seat, board: 'duel', opponent: { username: opp.username },
+        matchStartMs: this.matchStartMs,
+      });
     }
   }
 
@@ -144,7 +160,12 @@ export class Match {
       this.send(seat, { type: 'applied', seq, ok: false, error: err });
       return;
     }
-    this.broadcast({ type: 'applied', seq, seat, kind, args, ok: true, tick: this.sim.tick });
+    // `tick` here is when both clients must apply this command, not when the
+    // shadow validated it — the shadow itself applies immediately, since its
+    // only job is gatekeeping legality and it is never hash-compared to the
+    // clients, but the two real clients need a shared future tick to apply on
+    // or their independent local clocks land the mutation at different points.
+    this.broadcast({ type: 'applied', seq, seat, kind, args, ok: true, tick: this.sim.tick + APPLY_DELAY_TICKS });
     this.maybeCheckHash();
     this.maybeEnd();
   }
