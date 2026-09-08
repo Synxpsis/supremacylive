@@ -510,6 +510,7 @@ class Component extends DCLogic {
     this.sim = self.FPSim.create(M);
     this._matchStartMs = Date.now();
     this._scheduled = [];
+    this._predicted = [];
     this.startLoop();
     this.setState({
       screen: 'match', def,
@@ -529,12 +530,37 @@ class Component extends DCLogic {
     }
   }
 
-  /** Apply one build/industry/march/reinforce mutation straight to the sim —
-   *  the same dispatch table onNetMessage's 'applied' handler schedules from,
-   *  factored out so startLoop can run it at the right tick. */
-  applyCmd(kind, seat, args) {
+  /** Apply one build/industry/march/reinforce mutation to a sim — the same
+   *  dispatch table onNetMessage's 'applied' handler schedules from, factored
+   *  out so startLoop can run it at the right tick. `target` defaults to the
+   *  real sim; buildPredictedSim() passes a scratch clone instead. */
+  applyCmd(kind, seat, args, target) {
     const fn = { build: self.FPSim.build, industry: self.FPSim.industry, march: self.FPSim.march, reinforce: self.FPSim.reinforce }[kind];
-    if (fn && this.sim) fn(this.sim, this.built(), seat, ...args);
+    const S = target || this.sim;
+    if (fn && S) fn(S, this.built(), seat, ...args);
+  }
+
+  /** A scratch sim for rendering only: the real sim plus every one of this
+   *  client's own commands that the server hasn't scheduled yet, so a build
+   *  or march shows up the instant you click it instead of after a network
+   *  round trip. The real sim (`this.sim`) is never touched by this — it
+   *  stays the exact lockstep replica the opponent's client and the hash
+   *  check expect, and `this._predicted` is what tracks which commands are
+   *  still owed a real, scheduled application (see startLoop and 'applied').
+   *  Shallow copies are enough: build/march/industry/reinforce only ever
+   *  write dictionary entries, push new stacks, or replace a money total —
+   *  none of them mutate an existing stack object in place (only step()
+   *  does, and step() never runs against this clone). */
+  buildPredictedSim() {
+    const s = this.sim;
+    const clone = {
+      tick: s.tick, over: s.over, nextId: s.nextId,
+      owners: { ...s.owners }, garrisons: { ...s.garrisons },
+      barracks: { ...s.barracks }, industry: { ...s.industry },
+      stacks: s.stacks.slice(), money: s.money.slice(),
+    };
+    for (const p of this._predicted) this.applyCmd(p.kind, p.seat, p.args, clone);
+    return clone;
   }
 
   sendHashResp(tick, hash) {
@@ -567,6 +593,13 @@ class Component extends DCLogic {
         while (this._scheduled && this._scheduled.length && this._scheduled[0].tick <= this.sim.tick) {
           const c = this._scheduled.shift();
           this.applyCmd(c.kind, c.seat, c.args);
+          // This exact command just became real, so the prediction that was
+          // standing in for it is no longer needed — dropped here, at the
+          // same instant, rather than when 'applied' arrived, so the board
+          // never has a gap where it isn't predicted yet isn't real yet either.
+          if (c.seq != null && this._predicted && this._predicted.length) {
+            this._predicted = this._predicted.filter(p => !(p.seq === c.seq && p.seat === c.seat));
+          }
         }
         // The bot issues ordinary commands, so it runs between ticks exactly
         // where a networked player's messages arrive — in a real match the
@@ -670,6 +703,10 @@ class Component extends DCLogic {
     if (this._netSocket && this._netSocket.readyState === WebSocket.OPEN) {
       const seq = (this._cmdSeq = (this._cmdSeq || 0) + 1);
       this._netSocket.send(JSON.stringify({ type: 'cmd', seq, kind, args }));
+      // Rendered immediately from buildPredictedSim() rather than waiting for
+      // the round trip — see its comment, and 'applied'/startLoop for how
+      // this gets cleared once the command has a real, scheduled tick.
+      (this._predicted || (this._predicted = [])).push({ seq, kind, seat: this.viewSeat(), args });
       return null;
     }
     const F2 = self.FPSim;
@@ -690,6 +727,7 @@ class Component extends DCLogic {
     this._hashRing = [];
     this._pendingHash = [];
     this._scheduled = [];
+    this._predicted = [];
     this._framedSeat = null;
     this.sim = null;
     this._matchStartMs = null;
@@ -722,6 +760,7 @@ class Component extends DCLogic {
         // happened to arrive — see startLoop's header comment.
         this._matchStartMs = msg.matchStartMs;
         this._scheduled = [];
+        this._predicted = [];
         this.startLoop();
         this.setState({
           screen: 'match', def, sel: null, armed: null, notice: '', mode: null,
@@ -738,12 +777,23 @@ class Component extends DCLogic {
         break;
       }
       case 'applied': {
-        if (!msg.ok) { this.setState({ notice: msg.error || '' }); break; }
+        if (!msg.ok) {
+          // Never going to be scheduled for real — drop the optimistic
+          // prediction (rejections are unicast back to the sender only, so
+          // this is always one of our own).
+          if (this._predicted) this._predicted = this._predicted.filter(p => p.seq !== msg.seq);
+          this.setState({ notice: msg.error || '' });
+          break;
+        }
         // Scheduled onto the tick the server named, not applied now — see
         // startLoop, which mutates the sim once it reaches that tick. Both
         // clients receive the same tick number, so both apply it at the same
         // simulated point regardless of when each of them got this message.
-        (this._scheduled || (this._scheduled = [])).push({ tick: msg.tick, kind: msg.kind, seat: msg.seat, args: msg.args });
+        // `seq` rides along so startLoop can drop the matching prediction at
+        // the exact moment this stops being predicted and becomes real —
+        // dropping it any earlier would flash the board back to "not done
+        // yet" for the gap between this message and that tick.
+        (this._scheduled || (this._scheduled = [])).push({ tick: msg.tick, seq: msg.seq, kind: msg.kind, seat: msg.seat, args: msg.args });
         break;
       }
       case 'hashReq': {
@@ -916,8 +966,19 @@ class Component extends DCLogic {
   }
 
   // ── draw ─────────────────────────────────────────────────────────────────
+  /** Swaps in buildPredictedSim() for the duration of one call, so paint()
+   *  and renderVals() (see its wrapper below) draw/read the optimistic view
+   *  without either of them needing to know it exists. this.sim itself is
+   *  never touched by this outside of the swap's own try/finally. */
+  withPredictedSim(fn) {
+    if (!this.sim || !this._predicted || !this._predicted.length) return fn();
+    const real = this.sim;
+    this.sim = this.buildPredictedSim();
+    try { return fn(); } finally { this.sim = real; }
+  }
+
   draw() {
-    try { this.paint(); }
+    try { this.withPredictedSim(() => this.paint()); }
     catch (e) { console.error('Game: draw failed', e); }
   }
 
@@ -1076,7 +1137,12 @@ class Component extends DCLogic {
   }
 
   // ── view values ──────────────────────────────────────────────────────────
-  renderVals() {
+  /** Wrapped the same way draw() is — see withPredictedSim() — so the sidebar
+   *  (afford checks, garrison counts, "Territory held by") reads the
+   *  optimistic view too, not just the canvas. */
+  renderVals() { return this.withPredictedSim(() => this._renderVals()); }
+
+  _renderVals() {
     const F = self.FPMap;
     const base = {
       canvasRef: this.canvasRef,
