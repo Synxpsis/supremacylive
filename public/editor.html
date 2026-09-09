@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Supremacy Live — Map Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700&amp;family=Barlow+Semi+Condensed:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<script src="./map.js"></script>
+<script src="./board-render.js"></script>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; height: 100vh; overflow: hidden;
+    background: #0b1219; color: #efe6d5;
+    font-family: 'Barlow Semi Condensed', sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+  h1, h2, h3 { font-family: 'Bitter', serif; margin: 0; }
+  input, select, button { font-family: inherit; }
+  a { color: #d9a441; }
+  ::selection { background: rgba(217,164,65,0.28); }
+
+  #app { display: none; height: 100vh; flex-direction: column; }
+  #app.ready { display: flex; }
+
+  #topbar {
+    display: flex; align-items: center; gap: 16px;
+    padding: 10px 18px; border-bottom: 1px solid rgba(239,230,213,0.12);
+    background: #0d151d;
+  }
+  #topbar h1 { font-size: 16px; font-weight: 700; color: #efe6d5; }
+  #topbar .sub { font-size: 12px; color: #6f7883; }
+  #topbar .spacer { flex: 1; }
+  #saveStatus { font-size: 12px; color: #9aa1a8; min-width: 160px; text-align: right; }
+  #saveStatus.err { color: #c0483c; }
+  #saveStatus.ok { color: #48a37c; }
+
+  button.btn {
+    padding: 8px 16px; border-radius: 3px; cursor: pointer;
+    background: rgba(239,230,213,0.06); border: 1px solid rgba(239,230,213,0.2);
+    color: #c8c2b4; font-size: 13.5px;
+  }
+  button.btn:hover { color: #efe6d5; border-color: rgba(239,230,213,0.35); }
+  button.btn:disabled { opacity: 0.4; cursor: default; }
+  button.btn.primary { background: #d9a441; border-color: #d9a441; color: #0b1219; font-weight: 600; }
+  button.btn.primary:hover { background: #e8b658; }
+  button.btn.on { background: rgba(217,164,65,0.24); border-color: #d9a441; color: #efe6d5; }
+  button.btn.danger { border-color: rgba(192,72,60,0.5); color: #c0483c; }
+  button.btn.danger:hover { color: #e0685a; border-color: #e0685a; }
+
+  #main { flex: 1; display: flex; min-height: 0; }
+  #canvasWrap { flex: 1; position: relative; background: #0b1219; }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+  #hint {
+    position: absolute; left: 14px; bottom: 12px; padding: 7px 12px;
+    background: rgba(11,18,25,0.76); border: 1px solid rgba(239,230,213,0.12);
+    border-radius: 3px; font-size: 12px; color: #6f7883;
+  }
+
+  #panel {
+    width: 320px; flex: none; overflow-y: auto; overflow-x: hidden;
+    border-left: 1px solid rgba(239,230,213,0.12); background: #0d151d;
+    padding: 16px; display: flex; flex-direction: column; gap: 18px;
+  }
+  .section-title {
+    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    color: #9aa1a8; margin-bottom: 8px;
+  }
+  .field { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
+  .field label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #7a828b; }
+  .field input, .field select {
+    width: 100%; min-width: 0;
+    padding: 7px 9px; background: rgba(11,18,25,0.6);
+    border: 1px solid rgba(239,230,213,0.18); border-radius: 3px;
+    color: #efe6d5; font-size: 14px;
+  }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; min-width: 0; }
+  .row2 .field { min-width: 0; }
+  .prov-row {
+    display: flex; align-items: center; gap: 8px; padding: 6px 0;
+    border-bottom: 1px solid rgba(239,230,213,0.06);
+  }
+  .prov-row .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+  .prov-row input {
+    flex: 1; background: transparent; border: none; border-bottom: 1px solid transparent;
+    color: #efe6d5; font-size: 13.5px; padding: 3px 2px;
+  }
+  .prov-row input:focus { outline: none; border-bottom-color: #d9a441; }
+
+  #symList { display: flex; flex-direction: column; gap: 6px; }
+  .sym-ok { color: #48a37c; font-size: 13px; }
+  .sym-issue {
+    font-size: 12.5px; color: #d9a441; background: rgba(217,164,65,0.08);
+    border: 1px solid rgba(217,164,65,0.2); border-radius: 3px; padding: 6px 8px;
+  }
+
+  #emptyPanel { font-size: 13px; color: #6f7883; line-height: 1.5; }
+
+  #login {
+    height: 100vh; display: grid; place-items: center;
+  }
+  #login form {
+    width: 300px; display: flex; flex-direction: column; gap: 12px;
+    padding: 24px; border: 1px solid rgba(239,230,213,0.14); border-radius: 6px;
+    background: #0d151d;
+  }
+  #login .err { font-size: 12.5px; color: #c0483c; min-height: 16px; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <form id="loginForm">
+    <h2 style="font-size: 18px; color: #efe6d5;">Map Editor</h2>
+    <div class="field"><label>Username or email</label><input id="loginId" autocomplete="username"></div>
+    <div class="field"><label>Password</label><input id="loginPw" type="password" autocomplete="current-password"></div>
+    <div class="err" id="loginErr"></div>
+    <button class="btn primary" type="submit">Log in</button>
+  </form>
+</div>
+
+<div id="app">
+  <div id="topbar">
+    <h1>Map Editor</h1>
+    <span class="sub" id="whoami"></span>
+    <span class="sub">·</span>
+    <span class="sub">duel</span>
+    <div class="spacer"></div>
+    <span id="saveStatus"></span>
+    <button class="btn" id="reloadBtn">Reload</button>
+    <button class="btn primary" id="saveBtn">Save</button>
+  </div>
+  <div id="main">
+    <div id="canvasWrap">
+      <canvas id="cv"></canvas>
+      <div id="hint">Click a city to edit it · Add City, then click open ground · scroll to zoom · drag to pan</div>
+    </div>
+    <div id="panel"></div>
+  </div>
+</div>
+
+<script>
+(function () {
+  const F = () => self.FPMap;
+  const R = () => self.FPRender;
+
+  const S = {
+    user: null,
+    key: 'duel',
+    def: null,        // raw definition, mutated in place then rebuilt
+    built: null,
+    symmetry: null,
+    sel: null,         // { kind: 'city', id } | { kind: 'province', id }
+    addMode: false,
+    cam: { zoom: 1, panX: 0, panY: 0 },
+    saving: false,
+    dirty: false,
+  };
+
+  const cv = document.getElementById('cv');
+  const panel = document.getElementById('panel');
+  const saveStatus = document.getElementById('saveStatus');
+
+  // ── auth ───────────────────────────────────────────────────────────────
+  async function me() {
+    const r = await fetch('/api/auth/me', { credentials: 'same-origin' });
+    const j = await r.json().catch(() => ({ user: null }));
+    return j.user || null;
+  }
+
+  document.getElementById('loginForm').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const identifier = document.getElementById('loginId').value.trim();
+    const password = document.getElementById('loginPw').value;
+    const errEl = document.getElementById('loginErr');
+    errEl.textContent = '';
+    try {
+      const r = await fetch('/api/auth/login', {
+        method: 'POST', credentials: 'same-origin',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ identifier, password }),
+      });
+      const j = await r.json();
+      if (!r.ok || !j.ok) { errEl.textContent = (j && j.error) || 'login failed'; return; }
+      boot(j.user);
+    } catch (_) { errEl.textContent = 'network error'; }
+  });
+
+  // ── load ───────────────────────────────────────────────────────────────
+  async function loadMap() {
+    const r = await fetch('/api/maps/' + S.key, { credentials: 'same-origin' });
+    const j = await r.json().catch(() => null);
+    if (!r.ok || !j || !j.ok) throw new Error((j && j.error) || 'failed to load map');
+    S.def = j.map.definition;
+    S.dirty = false;
+    rebuild();
+  }
+
+  function rebuild() {
+    S.built = F().build(S.def);
+    S.symmetry = S.key === 'duel' ? F().symmetry(S.built) : { ok: true, issues: [] };
+    renderPanel();
+    paint();
+  }
+
+  async function boot(user) {
+    S.user = user;
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('app').classList.add('ready');
+    document.getElementById('whoami').textContent = user.username;
+    try {
+      await loadMap();
+    } catch (err) {
+      saveStatus.textContent = String(err.message || err);
+      saveStatus.className = 'err';
+    }
+  }
+
+  me().then(user => {
+    if (user) boot(user);
+    else document.getElementById('login').style.display = 'grid';
+  });
+
+  // ── camera / render ───────────────────────────────────────────────────
+  function buildCam(W, H) {
+    return F().orbitCamera(S.built, W, H, {
+      yaw: F().BASE_YAW, pitch: F().BASE_PITCH,
+      zoom: S.cam.zoom, panX: S.cam.panX, panY: S.cam.panY,
+      bearings: [F().BASE_YAW],
+      insets: { top: 24, right: 24, bottom: 24, left: 24 },
+    });
+  }
+
+  /** Sparse owners/garrisons overlay built straight from the definition's own
+   *  cities — there is no sim here, this is the content being edited, not a
+   *  game in progress. */
+  function overlay() {
+    const owners = {}, garrisons = {};
+    for (const c of S.built.cities) {
+      const tc = Math.floor(c.tc), tr = Math.floor(c.tr);
+      const k = F().tileKey(tc, tr);
+      if (c.seat !== null) owners[k] = c.seat;
+      if (c.garrison) garrisons[k] = c.garrison;
+    }
+    let sel = null;
+    if (S.sel && S.sel.kind === 'city') {
+      const c = S.built.city(S.sel.id);
+      if (c) sel = { c: Math.floor(c.tc), r: Math.floor(c.tr) };
+    }
+    return { owners, garrisons, sel, labels: true, slots: true };
+  }
+
+  let cam = null;
+  function paint() {
+    if (!S.built) return;
+    const ctx = cv.getContext('2d');
+    const dpr = self.devicePixelRatio || 1;
+    const W = cv.clientWidth, H = cv.clientHeight;
+    if (!W || !H) return;
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    cam = buildCam(W, H);
+    R().board(ctx, cam, S.built, overlay());
+  }
+
+  window.addEventListener('resize', paint);
+
+  // ── hit testing ────────────────────────────────────────────────────────
+  function tileAt(mx, my) {
+    if (!cam || !S.built) return null;
+    const u = cam.unproject(mx, my);
+    const c = Math.floor(u.c), r = Math.floor(u.r);
+    if (c < 0 || r < 0 || c >= S.built.gridW || r >= S.built.gridH) return null;
+    if (!F().territoryAt(S.built, c, r)) return null;
+    return { c, r };
+  }
+
+  function cityAtTile(c, r) {
+    return S.built.cities.find(city => Math.floor(city.tc) === c && Math.floor(city.tr) === r) || null;
+  }
+
+  // ── pointer: click-select vs drag-pan ────────────────────────────────────
+  let downAt = null, panning = false, startPan = null;
+  cv.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    downAt = { x: e.clientX, y: e.clientY };
+    startPan = { x: S.cam.panX, y: S.cam.panY };
+    panning = false;
+  });
+  window.addEventListener('mousemove', e => {
+    if (!downAt) return;
+    const dx = e.clientX - downAt.x, dy = e.clientY - downAt.y;
+    if (!panning && Math.hypot(dx, dy) > 4) panning = true;
+    if (panning) { S.cam.panX = startPan.x + dx; S.cam.panY = startPan.y + dy; paint(); }
+  });
+  window.addEventListener('mouseup', e => {
+    if (!downAt) return;
+    if (!panning) {
+      const b = cv.getBoundingClientRect();
+      onClick(e.clientX - b.left, e.clientY - b.top);
+    }
+    downAt = null; panning = false;
+  });
+  cv.addEventListener('wheel', e => {
+    e.preventDefault();
+    const f = Math.exp(-e.deltaY * 0.001);
+    S.cam.zoom = Math.max(0.4, Math.min(3, S.cam.zoom * f));
+    paint();
+  }, { passive: false });
+
+  function onClick(mx, my) {
+    const t = tileAt(mx, my);
+    if (!t) return;
+    const city = cityAtTile(t.c, t.r);
+    if (city) { select({ kind: 'city', id: city.id }); return; }
+    const prov = F().territoryAt(S.built, t.c, t.r);
+    if (S.addMode && prov) { addCity(prov, t.c - prov.c0, t.r - prov.r0); return; }
+    if (prov) { select({ kind: 'province', id: prov.id }); return; }
+    select(null);
+  }
+
+  function select(sel) { S.sel = sel; renderPanel(); paint(); }
+
+  // ── edits ──────────────────────────────────────────────────────────────
+  function markDirty() { S.dirty = true; saveStatus.textContent = 'Unsaved changes'; saveStatus.className = ''; }
+
+  function findCityDef(id) { return S.def.cities.find(c => c.id === id); }
+  function findProvDef(id) { return S.def.provinces.find(p => p.id === id); }
+
+  function addCity(prov, lc, lr) {
+    const existingNames = S.def.cities.map(c => c.name);
+    const existingIds = S.def.cities.map(c => c.id);
+    const name = F().pickName(F().CITY_NAMES, existingNames, 'City');
+    const id = F().pickId(name, existingIds);
+    S.def.cities.push({
+      id, name, prov: prov.id,
+      lc: Math.max(0, Math.min(prov.w - 1, Math.round(lc))),
+      lr: Math.max(0, Math.min(prov.h - 1, Math.round(lr))),
+      wealth: 2.4, garrison: 34,
+    });
+    S.addMode = false;
+    markDirty();
+    rebuild();
+    select({ kind: 'city', id });
+  }
+
+  function deleteCity(id) {
+    S.def.cities = S.def.cities.filter(c => c.id !== id);
+    markDirty();
+    select(null);
+    rebuild();
+  }
+
+  function mirrorCity(id) {
+    const built = S.built.city(id);
+    if (!built || !built.twin) return;
+    const src = findCityDef(id), dst = findCityDef(built.twin);
+    if (!src || !dst) return;
+    dst.wealth = src.wealth;
+    if (src.seat === undefined || src.seat === null) {
+      delete dst.seat;
+      dst.garrison = src.garrison;
+    } else {
+      dst.seat = 1 - src.seat;
+      delete dst.garrison;
+    }
+    markDirty();
+    rebuild();
+  }
+
+  // ── panel rendering ───────────────────────────────────────────────────
+  function renderPanel() {
+    const parts = [];
+
+    parts.push('<div class="section-title">Provinces</div>');
+    for (const p of S.def.provinces) {
+      parts.push(
+        '<div class="prov-row">' +
+        '<span class="dot" style="background:#8b8272"></span>' +
+        '<input data-prov-name="' + p.id + '" value="' + escapeAttr(p.name) + '">' +
+        '</div>'
+      );
+    }
+
+    if (S.sel && S.sel.kind === 'city') {
+      const c = findCityDef(S.sel.id);
+      const built = S.built.city(S.sel.id);
+      if (c && built) {
+        const isNeutral = c.seat === undefined || c.seat === null;
+        parts.push('<div><div class="section-title">City — ' + escapeHtml(c.name) + '</div>');
+        parts.push(field('Name', 'text', 'name', c.name));
+        parts.push('<div class="row2">' + field('Col (lc)', 'number', 'lc', c.lc) + field('Row (lr)', 'number', 'lr', c.lr) + '</div>');
+        parts.push(fieldSelect('seat', isNeutral ? 'neutral' : String(c.seat), [
+          ['neutral', 'Neutral'], ['0', 'Seat 0'], ['1', 'Seat 1'],
+        ]));
+        parts.push(field('Wealth', 'number', 'wealth', c.wealth, '0.1'));
+        if (isNeutral) parts.push(field('Garrison', 'number', 'garrison', c.garrison || 0));
+        parts.push(
+          '<div style="display:flex; gap:8px; margin-top:6px;">' +
+          '<button class="btn" id="mirrorBtn"' + (built.twin ? '' : ' disabled') + '>Mirror to twin</button>' +
+          '<button class="btn danger" id="deleteBtn">Delete</button>' +
+          '</div></div>'
+        );
+      }
+    } else if (S.sel && S.sel.kind === 'province') {
+      const p = findProvDef(S.sel.id);
+      if (p) parts.push('<div><div class="section-title">Province — ' + escapeHtml(p.name) + '</div>' +
+        '<div style="font-size:12.5px;color:#7a828b;">Rename it above. Add cities with "Add City", then click open ground inside it.</div></div>');
+    } else {
+      parts.push('<div id="emptyPanel">Click a city to edit it, or a province to rename it.</div>');
+    }
+
+    parts.push('<div>' +
+      '<button class="btn' + (S.addMode ? ' on' : '') + '" id="addModeBtn" style="width:100%;">' +
+      (S.addMode ? 'Click open ground to place…' : 'Add City') + '</button></div>');
+
+    parts.push('<div><div class="section-title">Symmetry</div><div id="symList">' +
+      (S.symmetry.ok
+        ? '<div class="sym-ok">✓ Balanced</div>'
+        : S.symmetry.issues.map(i => '<div class="sym-issue">' + escapeHtml(i) + '</div>').join('')) +
+      '</div></div>');
+
+    panel.innerHTML = parts.join('');
+    wirePanel();
+  }
+
+  function field(label, type, key, value, step) {
+    return '<div class="field"><label>' + label + '</label>' +
+      '<input data-city-field="' + key + '" type="' + type + '" value="' + escapeAttr(value) + '"' +
+      (step ? ' step="' + step + '"' : '') + '></div>';
+  }
+  function fieldSelect(key, value, options) {
+    return '<div class="field"><label>Seat</label><select data-city-field="' + key + '">' +
+      options.map(([v, l]) => '<option value="' + v + '"' + (v === value ? ' selected' : '') + '>' + l + '</option>').join('') +
+      '</select></div>';
+  }
+  function escapeHtml(s) { return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+  function escapeAttr(s) { return escapeHtml(s).replace(/"/g, '&quot;'); }
+
+  function wirePanel() {
+    panel.querySelectorAll('[data-prov-name]').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const p = findProvDef(inp.getAttribute('data-prov-name'));
+        if (p) { p.name = inp.value; markDirty(); rebuild(); }
+      });
+    });
+
+    const addModeBtn = document.getElementById('addModeBtn');
+    if (addModeBtn) addModeBtn.addEventListener('click', () => { S.addMode = !S.addMode; renderPanel(); });
+
+    const mirrorBtn = document.getElementById('mirrorBtn');
+    if (mirrorBtn) mirrorBtn.addEventListener('click', () => S.sel && mirrorCity(S.sel.id));
+
+    const deleteBtn = document.getElementById('deleteBtn');
+    if (deleteBtn) deleteBtn.addEventListener('click', () => S.sel && deleteCity(S.sel.id));
+
+    if (S.sel && S.sel.kind === 'city') {
+      panel.querySelectorAll('[data-city-field]').forEach(inp => {
+        inp.addEventListener('change', () => {
+          const c = findCityDef(S.sel.id);
+          if (!c) return;
+          const key = inp.getAttribute('data-city-field');
+          if (key === 'seat') {
+            if (inp.value === 'neutral') { delete c.seat; if (c.garrison == null) c.garrison = 30; }
+            else { c.seat = Number(inp.value); delete c.garrison; }
+          } else if (key === 'name') {
+            c.name = inp.value;
+          } else if (key === 'lc' || key === 'lr') {
+            c[key] = Math.max(0, Math.round(Number(inp.value) || 0));
+          } else if (key === 'wealth') {
+            c.wealth = Math.max(0, Number(inp.value) || 0);
+          } else if (key === 'garrison') {
+            c.garrison = Math.max(0, Math.round(Number(inp.value) || 0));
+          }
+          markDirty();
+          rebuild();
+        });
+      });
+    }
+  }
+
+  // ── save / reload ─────────────────────────────────────────────────────
+  document.getElementById('saveBtn').addEventListener('click', async () => {
+    if (S.saving) return;
+    S.saving = true;
+    saveStatus.textContent = 'Saving…'; saveStatus.className = '';
+    try {
+      const r = await fetch('/api/maps/' + S.key, {
+        method: 'PUT', credentials: 'same-origin',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(S.def),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.ok) {
+        const issues = j.issues ? ' — ' + j.issues.join('; ') : '';
+        saveStatus.textContent = (j.error || 'save failed') + issues;
+        saveStatus.className = 'err';
+      } else {
+        S.dirty = false;
+        saveStatus.textContent = 'Saved ' + new Date(j.map.updatedAt).toLocaleTimeString();
+        saveStatus.className = 'ok';
+      }
+    } catch (_) {
+      saveStatus.textContent = 'network error'; saveStatus.className = 'err';
+    } finally {
+      S.saving = false;
+    }
+  });
+
+  document.getElementById('reloadBtn').addEventListener('click', async () => {
+    if (S.dirty && !confirm('Discard unsaved changes?')) return;
+    select(null);
+    try { await loadMap(); } catch (err) { saveStatus.textContent = String(err.message || err); saveStatus.className = 'err'; }
+  });
+})();
+</script>
+</body>
+</html>

@@ -15,12 +15,17 @@
  */
 import { Match } from './match.js';
 import { Matchmaker } from './matchmaker.js';
+import '../public/map.js';
 
 export { Match, Matchmaker };
 
 const AUTH_COOKIE = 'sl_sess';
 const SESSION_DAYS = 30;
 const PBKDF2_ITERS = 100_000;
+
+// Only this account can write live map content — the editor at
+// editor.supremacy.live is otherwise read-only for any signed-in user.
+const EDITOR_USERS = new Set(['Developer']);
 
 // ── responses ────────────────────────────────────────────────────────────────
 const json = (body, init = {}) => new Response(JSON.stringify(body), {
@@ -111,7 +116,27 @@ async function ensureSchema(db) {
       expires_at INTEGER NOT NULL
     )`),
     db.prepare(`CREATE INDEX IF NOT EXISTS sessions_expires ON sessions(expires_at)`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS maps (
+      key TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      definition TEXT NOT NULL,
+      updated_at INTEGER NOT NULL,
+      updated_by TEXT
+    )`),
   ]);
+}
+
+/** Seed a board's live row from the static map.js definition the first time
+ *  it's asked for, so the editor starts from real production content instead
+ *  of empty. A no-op once the row exists — D1 is the source of truth after that. */
+async function ensureMapSeeded(db, key) {
+  const row = await db.prepare(`SELECT key FROM maps WHERE key = ?1`).bind(key).first();
+  if (row) return;
+  const def = self.FPMap.MAPS[key];
+  if (!def) return;
+  await db.prepare(
+    `INSERT OR IGNORE INTO maps (key, name, definition, updated_at, updated_by) VALUES (?1, ?2, ?3, ?4, ?5)`
+  ).bind(key, def.name || key, JSON.stringify(def), Date.now(), null).run();
 }
 
 async function userFromRequest(env, request) {
@@ -212,6 +237,49 @@ async function handleMe(env, request) {
   return json({ ok: true, user: { id: user.id, username: user.username, email: user.email } });
 }
 
+// ── map content (editor.supremacy.live) ─────────────────────────────────────
+const MAP_KEY = /^[a-z0-9_-]{1,40}$/i;
+
+async function handleGetMap(env, request, key) {
+  if (!MAP_KEY.test(key)) return problem(400, 'invalid map key');
+  const user = await userFromRequest(env, request);
+  if (!user) return problem(401, 'login required');
+
+  await ensureSchema(env.DB);
+  await ensureMapSeeded(env.DB, key);
+  const row = await env.DB.prepare(`SELECT key, name, definition, updated_at, updated_by FROM maps WHERE key = ?1`).bind(key).first();
+  if (!row) return problem(404, 'no such map');
+  return json({ ok: true, map: { key: row.key, name: row.name, definition: JSON.parse(row.definition), updatedAt: row.updated_at, updatedBy: row.updated_by } });
+}
+
+async function handlePutMap(env, request, key) {
+  if (!MAP_KEY.test(key)) return problem(400, 'invalid map key');
+  const user = await userFromRequest(env, request);
+  if (!user) return problem(401, 'login required');
+  if (!EDITOR_USERS.has(user.username)) return problem(403, 'not authorized to edit maps');
+
+  const def = await request.json().catch(() => null);
+  if (!def || typeof def !== 'object') return problem(400, 'invalid body');
+
+  let built;
+  try { built = self.FPMap.build({ ...def, id: key }); }
+  catch (err) { return problem(400, 'invalid map definition', { detail: String(err && err.message || err) }); }
+
+  if (key === 'duel') {
+    const sym = self.FPMap.symmetry(built);
+    if (!sym.ok) return problem(400, 'map is not symmetric', { issues: sym.issues });
+  }
+
+  await ensureSchema(env.DB);
+  const now = Date.now();
+  await env.DB.prepare(
+    `INSERT INTO maps (key, name, definition, updated_at, updated_by) VALUES (?1, ?2, ?3, ?4, ?5)
+     ON CONFLICT(key) DO UPDATE SET name = excluded.name, definition = excluded.definition, updated_at = excluded.updated_at, updated_by = excluded.updated_by`
+  ).bind(key, def.name || key, JSON.stringify(def), now, user.username).run();
+
+  return json({ ok: true, map: { key, name: def.name || key, updatedAt: now, updatedBy: user.username } });
+}
+
 // ── entry ────────────────────────────────────────────────────────────────────
 export default {
   async fetch(request, env) {
@@ -229,6 +297,9 @@ export default {
         if (path === '/api/auth/login'  && request.method === 'POST') return await handleLogin(env, request);
         if (path === '/api/auth/logout' && request.method === 'POST') return await handleLogout(env, request);
         if (path === '/api/auth/me'     && request.method === 'GET')  return await handleMe(env, request);
+        const mapMatch = path.match(/^\/api\/maps\/([^/]+)$/);
+        if (mapMatch && request.method === 'GET') return await handleGetMap(env, request, mapMatch[1]);
+        if (mapMatch && request.method === 'PUT') return await handlePutMap(env, request, mapMatch[1]);
       } catch (err) {
         console.error('api error', path, err && err.stack || err);
         return problem(500, 'server error');
@@ -251,6 +322,32 @@ export default {
       fwd.headers.set('x-sl-user-id', String(user.id));
       fwd.headers.set('x-sl-username', user.username);
       return stub.fetch(fwd);
+    }
+
+    // editor.supremacy.live serves the map editor instead of the game client,
+    // off the same Worker/assets bundle — no separate deploy, no split DB.
+    // Only the root path is rewritten; editor.html's own script/font requests
+    // (./map.js, ./board-render.js, ./support.js, …) must still resolve to
+    // their real files under public/.
+    //
+    // This only runs at all because assets.run_worker_first: ["/"] in
+    // wrangler.jsonc forces it to — Workers Assets' default is to serve a
+    // path that matches a static file (which "/" always does, as index.html)
+    // directly, without invoking the Worker script, for every hostname alike.
+    // Target "/editor" (no extension): requesting "/editor.html" directly
+    // hits Workers Assets' own redirect-to-canonical-URL behavior (307 to
+    // "/editor") instead of the file, since html_handling normalizes the
+    // extensioned path away — asking for the canonical form up front avoids
+    // that hop. no-store keeps this one host-dependent response (unlike every
+    // other shared static asset, which is identical across hosts) uncached.
+    if (path === '/') {
+      const target = url.hostname === 'editor.supremacy.live' ? '/editor' : path;
+      const rewritten = new URL(request.url);
+      rewritten.pathname = target;
+      const res = await env.ASSETS.fetch(new Request(rewritten, request));
+      const out = new Response(res.body, res);
+      out.headers.set('Cache-Control', 'no-store');
+      return out;
     }
 
     return env.ASSETS.fetch(request);

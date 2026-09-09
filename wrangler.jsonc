@@ -6,7 +6,16 @@
   "assets": {
     "directory": "./public",
     "binding": "ASSETS",
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
+    // "/" resolves to different content depending on hostname (editor.html on
+    // editor.supremacy.live, index.html elsewhere) — that decision has to run
+    // in worker.js. Without this, Workers Assets serves "/" -> index.html
+    // directly for every hostname without ever invoking the Worker, since a
+    // static file matching the request path is served ahead of the Worker
+    // script by default. Scoped to "/" only so every other static asset
+    // (map.js, board-render.js, editor.html itself, ...) still serves
+    // directly with no Worker invocation.
+    "run_worker_first": ["/"]
   },
   "d1_databases": [
     {
@@ -26,7 +35,8 @@
   ],
   "routes": [
     { "pattern": "supremacy.live", "zone_name": "supremacy.live", "custom_domain": true },
-    { "pattern": "www.supremacy.live", "zone_name": "supremacy.live", "custom_domain": true }
+    { "pattern": "www.supremacy.live", "zone_name": "supremacy.live", "custom_domain": true },
+    { "pattern": "editor.supremacy.live", "zone_name": "supremacy.live", "custom_domain": true }
   ],
   "observability": {
     "enabled": true

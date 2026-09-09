@@ -753,7 +753,12 @@ class Component extends DCLogic {
         this._netSeat = msg.seat;
         this._netOpponent = msg.opponent;
         this._netStatus = 'playing';
-        const def = self.FPMap.MAPS[msg.board];
+        // The server resolves `duel` against its live D1 content and sends the
+        // resolved definition down as boardDef — using that (not the local
+        // static MAPS[msg.board]) means an editor.supremacy.live save takes
+        // effect immediately, with no client redeploy. boardDef is absent only
+        // from an older server build; MAPS[msg.board] is the fallback for that.
+        const def = msg.boardDef || self.FPMap.MAPS[msg.board];
         const M = self.FPMap.build(def);
         this.sim = F2.create(M);
         // Anchored to the server's clock, not to whenever this message

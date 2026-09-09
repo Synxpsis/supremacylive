@@ -114,11 +114,27 @@ export class Match {
     return new Response(null, { status: 101, webSocket: client });
   }
 
+  /** The `duel` board is live content, editable at editor.supremacy.live and
+   *  stored in D1 — not the static MAPS.duel baked into whatever public/map.js
+   *  happened to ship with the last deploy. Reading it here (rather than
+   *  trusting the client's bundle) is what makes an editor save take effect
+   *  without a redeploy; sending the resolved definition back down in `start`
+   *  (not just the key) is what keeps the client from rendering its own,
+   *  possibly stale, static copy instead. */
+  async loadBoardDef() {
+    const row = this.env.DB && await this.env.DB.prepare(
+      `SELECT definition FROM maps WHERE key = ?1`
+    ).bind('duel').first().catch(() => null);
+    if (row) { try { return JSON.parse(row.definition); } catch (_) { /* fall through */ } }
+    return self.FPMap.MAPS.duel;
+  }
+
   async beginMatch() {
     this.started = true;
     this.alarmKind = null;
     await this.state.storage.deleteAlarm();
-    this.M = self.FPMap.build('duel');
+    const boardDef = await this.loadBoardDef();
+    this.M = self.FPMap.build(boardDef);
     this.sim = self.FPSim.create(this.M);
     this.matchStartMs = Date.now();
     for (const [seat] of this.seats) {
@@ -129,7 +145,7 @@ export class Match {
       // offset by the difference in one-way latency to each of them, and every
       // command applied afterward lands on a different tick on each side.
       this.send(seat, {
-        type: 'start', seat, board: 'duel', opponent: { username: opp.username },
+        type: 'start', seat, board: 'duel', boardDef, opponent: { username: opp.username },
         matchStartMs: this.matchStartMs,
       });
     }

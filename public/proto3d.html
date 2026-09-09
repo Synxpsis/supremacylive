@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3D camera spike — duel board</title>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0b1219; }
+  canvas { display: block; }
+  #hud {
+    position: fixed; left: 14px; top: 14px; z-index: 10;
+    font: 13px/1.5 'Barlow Semi Condensed', system-ui, sans-serif;
+    color: #efe6d5; background: rgba(11,18,25,0.76);
+    border: 1px solid rgba(239,230,213,0.14); border-radius: 4px;
+    padding: 10px 14px; max-width: 320px;
+  }
+  #hud b { color: #d9a441; }
+  #fps {
+    position: fixed; right: 14px; top: 14px; z-index: 10;
+    font: 12px/1 monospace; color: #6f7883;
+    background: rgba(11,18,25,0.76); padding: 6px 9px; border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+<div id="hud">
+  <b>Camera-projection spike</b> — real <code>duel</code> board data, free WebGL camera.<br>
+  Drag to orbit · right-drag / two-finger to pan · scroll to zoom.<br>
+  Not wired to the game or editor — throwaway prototype for Phase 2.
+</div>
+<div id="fps">-- fps</div>
+
+<script src="./map.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+
+/* ── real board data, straight from the production map system ──────────────
+ * Deliberately reusing FPMap.build() rather than hand-authoring geometry —
+ * the whole point of the spike is proving the new camera against the actual
+ * data model (tile-space provinces/cities), not a stand-in. */
+const M = self.FPMap.build('duel');
+
+const SEAT_COLOR = { 0: 0x48a37c, 1: 0xc0483c, null: 0x8b8272 };
+const LAND = 0x6d675a;
+
+// ── scene ───────────────────────────────────────────────────────────────
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b1219);
+scene.fog = new THREE.Fog(0x0b1219, 40, 90);
+
+const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 500);
+// Start near the classic isometric feel (45deg-ish look-down) so the jump
+// from the old renderer isn't jarring — MapControls takes it free from here.
+camera.position.set(M.gridW * 0.9, M.gridW * 0.85, M.gridH * 0.9);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.shadowMap.enabled = true;
+document.body.appendChild(renderer.domElement);
+
+const boardCenter = new THREE.Vector3(M.gridW / 2, 0, M.gridH / 2);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.copy(boardCenter);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.maxPolarAngle = Math.PI / 2 - 0.03; // stop just short of edge-on/underneath
+controls.minDistance = 4;
+controls.maxDistance = 60;
+controls.update();
+
+// ── lighting — the thing flat 2D iso could never give us for free ─────────
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const sun = new THREE.DirectionalLight(0xfff3d9, 1.05);
+sun.position.set(M.gridW * 0.4, 22, -M.gridH * 0.3);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -M.gridW; sun.shadow.camera.right = M.gridW;
+sun.shadow.camera.top = M.gridH; sun.shadow.camera.bottom = -M.gridH;
+scene.add(sun);
+
+// ── ground: one tinted plane per province, tile coords -> world x/z ───────
+// World axes: x = tile column, z = tile row, y = up. This is the actual
+// change from the old renderer: tile space maps straight into real 3D
+// coordinates instead of being pre-flattened into an isometric pixel offset.
+const groundMat = new THREE.MeshStandardMaterial({ color: LAND, roughness: 0.95 });
+for (const p of M.provinces) {
+  const geo = new THREE.PlaneGeometry(p.w, p.h);
+  const mesh = new THREE.Mesh(geo, groundMat.clone());
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.set(p.c0 + p.w / 2, 0, p.r0 + p.h / 2);
+  mesh.receiveShadow = true;
+  scene.add(mesh);
+
+  const edges = new THREE.LineSegments(
+    new THREE.EdgesGeometry(geo),
+    new THREE.LineBasicMaterial({ color: 0x0c1620 })
+  );
+  edges.rotation.x = -Math.PI / 2;
+  edges.position.copy(mesh.position);
+  edges.position.y += 0.01;
+  scene.add(edges);
+}
+
+// Faint per-tile grid, just for scale/orientation while orbiting.
+scene.add(new THREE.GridHelper(M.gridW, M.gridW, 0x0c1620, 0x0c1620));
+
+// ── cities: extruded boxes, sized/coloured like the old KIT concept ───────
+for (const c of M.cities) {
+  const seatColor = SEAT_COLOR[c.seat] ?? SEAT_COLOR[null];
+  const isHome = c.seat !== null;
+  const footprint = isHome ? 0.66 : 0.44 + Math.min(0.2, (c.garrison || 0) / 300);
+  const height = isHome ? 1.4 : 0.6 + Math.min(0.6, (c.garrison || 0) / 100);
+
+  const geo = new THREE.BoxGeometry(footprint, height, footprint);
+  const mat = new THREE.MeshStandardMaterial({ color: seatColor, roughness: 0.6, metalness: 0.05 });
+  const box = new THREE.Mesh(geo, mat);
+  box.position.set(c.tc, height / 2, c.tr);
+  box.castShadow = true;
+  box.receiveShadow = true;
+  scene.add(box);
+}
+
+// ── resize + render loop ───────────────────────────────────────────────
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+const fpsEl = document.getElementById('fps');
+let frames = 0, fpsAt = performance.now();
+function loop() {
+  requestAnimationFrame(loop);
+  controls.update();
+  renderer.render(scene, camera);
+  frames++;
+  const now = performance.now();
+  if (now - fpsAt > 500) {
+    fpsEl.textContent = Math.round((frames * 1000) / (now - fpsAt)) + ' fps';
+    frames = 0; fpsAt = now;
+  }
+}
+loop();
+</script>
+</body>
+</html>
