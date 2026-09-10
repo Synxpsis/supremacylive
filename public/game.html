@@ -347,6 +347,15 @@ class Component extends DCLogic {
     };
 
     this._onUp = e => {
+      // Unlike _onDown/_onMove/_onWheel, this one never gated on `this.cam`
+      // (only some of its branches touch `this.cv`), so without this it
+      // fires on every mouseup regardless of render mode — including the
+      // ones _onDown3D/_onMove3D just drove — and, since it runs first
+      // (attached before the 3D handlers), resets this.state.mode to null
+      // before _onUp3D ever sees it, so _onUp3D's `controls.enabled = true`
+      // never runs. Camera controls disabled at drag-start then never came
+      // back — this guard is the fix.
+      if (this.is3D()) return;
       const dm = this.state.mode;
       if (dm === 'marquee') {
         const M = this.built();
