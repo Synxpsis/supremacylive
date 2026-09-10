@@ -123,6 +123,21 @@
           </nav>
         </div>
         <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="position: relative;">
+            <button onClick="{{ toggleSettings }}" title="Settings" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: {{ settingsBg }}; border: 1px solid {{ settingsBorder }}; border-radius: 3px; color: #9aa1a8; cursor: pointer;" style-hover="border-color: #d9a441; color: #efe6d5;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>
+            </button>
+            <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="position: absolute; right: 0; top: calc(100% + 8px); width: 190px; padding: 12px; background: #101a23; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 20;">
+                <div style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #6f7883; margin-bottom: 8px;">Board renderer</div>
+                <div style="display: flex; gap: 6px; padding: 3px; background: rgba(11,18,25,0.5); border: 1px solid rgba(239,230,213,0.1); border-radius: 3px;">
+                  <sc-for list="{{ renderOptions }}" as="r" hint-placeholder-count="2">
+                    <button onClick="{{ r.pick }}" style="flex: 1; padding: 6px 0; background: {{ r.bg }}; border: none; border-radius: 2px; font-size: 13px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; cursor: pointer;" style-hover="filter: brightness(1.2);">{{ r.label }}</button>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+          </div>
           <button onClick="{{ logout }}" style="padding: 7px 13px; background: rgba(239,230,213,0.05); border: 1px solid rgba(239,230,213,0.16); border-radius: 3px; color: #9aa1a8; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="color: #efe6d5; border-color: rgba(239,230,213,0.3);">Sign out</button>
         </div>
       </header>
@@ -226,6 +241,15 @@ class Component extends DCLogic {
     newsIndex: 0,
     modePickerOpen: false,
     challengeTab: 'daily',
+    settingsOpen: false,
+    // The 3D renderer (board-render-3d.js) is opt-in — this is the one place
+    // that choice lives, read once at load and carried into every match link
+    // this page builds. localStorage rather than a server field: it's a
+    // purely client-side rendering preference, not account data.
+    renderMode: (() => {
+      try { return self.localStorage.getItem('sl_render_mode') === '3d' ? '3d' : '2d'; }
+      catch (_) { return '2d'; }
+    })(),
   };
 
   componentDidMount() {
@@ -293,10 +317,16 @@ class Component extends DCLogic {
     this.setState({ user: null, screen: 'landing' });
   }
 
+  setRenderMode(mode) {
+    try { self.localStorage.setItem('sl_render_mode', mode); } catch (_) {}
+    this.setState({ renderMode: mode, settingsOpen: false });
+  }
+
   /** Where the match lives. `.dc.html` while authoring, `game.html` once
    *  deployed, so one hub serves both without a build step. */
   gameHref() {
-    const q = `?auto=1&board=grand&ai=${encodeURIComponent(this.state.level)}`;
+    const render = this.state.renderMode === '3d' ? '&render=3d' : '';
+    const q = `?auto=1&board=grand&ai=${encodeURIComponent(this.state.level)}${render}`;
     const here = (self.location && self.location.pathname) || '';
     return (/\.dc\.html$/i.test(here) ? 'Game.dc.html' : 'game.html') + q;
   }
@@ -304,7 +334,8 @@ class Component extends DCLogic {
   gameUrl(matchId) {
     const here = (self.location && self.location.pathname) || '';
     const base = /\.dc\.html$/i.test(here) ? 'Game.dc.html' : 'game.html';
-    return `${base}?matchId=${encodeURIComponent(matchId)}`;
+    const render = this.state.renderMode === '3d' ? '&render=3d' : '';
+    return `${base}?matchId=${encodeURIComponent(matchId)}${render}`;
   }
 
   /** The 1v1 online launch button is async (queue, then wait to be paired),
@@ -467,6 +498,15 @@ class Component extends DCLogic {
       return { key: l.id, label: l.label, bg: c.bg, pick: () => this.setState({ level: l.id }) };
     });
 
+    const renderDefs = [
+      { id: '2d', label: '2D' },
+      { id: '3d', label: '3D' },
+    ];
+    const renderOptions = renderDefs.map(r => {
+      const c = chip(st.renderMode === r.id, '#d9a441');
+      return { key: r.id, label: r.label, bg: c.bg, pick: () => this.setRenderMode(r.id) };
+    });
+
     const queueing = st.queueStatus === 'connecting' || st.queueStatus === 'searching';
     const f = st.f, fe = st.fieldErrors;
     const border = has => has ? '#c0483c' : 'rgba(239,230,213,0.18)';
@@ -520,6 +560,11 @@ class Component extends DCLogic {
       launchLabel: st.mode === 'duel' ? (queueing ? 'Cancel' : 'Find match') : 'Launch match',
 
       slides, dots,
+      renderOptions,
+      settingsOpen: st.settingsOpen,
+      toggleSettings: () => this.setState(s => ({ settingsOpen: !s.settingsOpen })),
+      settingsBg: st.settingsOpen ? 'rgba(217,164,65,0.14)' : 'rgba(239,230,213,0.05)',
+      settingsBorder: st.settingsOpen ? '#d9a441' : 'rgba(239,230,213,0.16)',
       modeOptions,
       modePickerOpen: st.modePickerOpen,
       toggleModePicker: () => this.setState(s => ({ modePickerOpen: !s.modePickerOpen })),
