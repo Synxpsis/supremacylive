@@ -3,154 +3,209 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>3D camera spike — duel board</title>
+<title>3D engine demo — duel board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Bitter:wght@600;700&amp;family=Barlow+Semi+Condensed:wght@400;500;600&amp;display=swap" rel="stylesheet">
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #0b1219; }
-  canvas { display: block; }
+  body { font-family: 'Barlow Semi Condensed', sans-serif; color: #efe6d5; }
+  #canvasWrap { position: absolute; inset: 0; }
+  canvas { display: block; width: 100%; height: 100%; }
+
   #hud {
-    position: fixed; left: 14px; top: 14px; z-index: 10;
-    font: 13px/1.5 'Barlow Semi Condensed', system-ui, sans-serif;
-    color: #efe6d5; background: rgba(11,18,25,0.76);
-    border: 1px solid rgba(239,230,213,0.14); border-radius: 4px;
-    padding: 10px 14px; max-width: 320px;
+    position: fixed; left: 14px; top: 14px; z-index: 10; max-width: 320px;
+    font-size: 13px; line-height: 1.5;
+    background: rgba(11,18,25,0.78); border: 1px solid rgba(239,230,213,0.14);
+    border-radius: 4px; padding: 10px 14px;
   }
   #hud b { color: #d9a441; }
-  #fps {
+  #stats {
     position: fixed; right: 14px; top: 14px; z-index: 10;
-    font: 12px/1 monospace; color: #6f7883;
-    background: rgba(11,18,25,0.76); padding: 6px 9px; border-radius: 4px;
+    background: rgba(11,18,25,0.78); border: 1px solid rgba(239,230,213,0.14);
+    border-radius: 4px; padding: 10px 14px; font-size: 13px; text-align: right;
   }
+  #panel {
+    position: fixed; right: 14px; bottom: 14px; z-index: 10; width: 220px;
+    background: rgba(11,18,25,0.86); border: 1px solid rgba(239,230,213,0.14);
+    border-radius: 4px; padding: 12px 14px; font-size: 13px;
+  }
+  #panel h3 { margin: 0 0 8px; font-family: 'Bitter', serif; font-size: 15px; }
+  #panel button {
+    width: 100%; margin-top: 6px; padding: 7px; border-radius: 3px; cursor: pointer;
+    background: rgba(239,230,213,0.08); border: 1px solid rgba(239,230,213,0.22);
+    color: #efe6d5; font-family: inherit; font-size: 12.5px;
+  }
+  #panel button:hover { background: rgba(217,164,65,0.18); border-color: #d9a441; }
+  #panel button:disabled { opacity: 0.35; cursor: default; }
+  #panel .row { display: flex; justify-content: space-between; margin: 3px 0; color: #9aa1a8; }
+  #panel .row b { color: #efe6d5; font-weight: 600; }
+
+  .fp3d-label {
+    font: 600 12px 'Barlow Semi Condensed', sans-serif; color: #efe6d5;
+    background: rgba(11,18,25,0.78); padding: 2px 6px; border-radius: 2px;
+    transform: translate(-50%, -100%); white-space: nowrap;
+  }
+  .fp3d-troop { transform: translate(-50%, -140%); }
+  .fp3d-march { font: 600 13px 'Barlow Semi Condensed', sans-serif; color: #d9a441; background: rgba(11,18,25,0.86); padding: 4px 10px; border-radius: 3px; transform: translate(-50%, -100%); white-space: nowrap; }
 </style>
 </head>
 <body>
+
 <div id="hud">
-  <b>Camera-projection spike</b> — real <code>duel</code> board data, free WebGL camera.<br>
-  Drag to orbit · right-drag / two-finger to pan · scroll to zoom.<br>
-  Not wired to the game or editor — throwaway prototype for Phase 2.
+  <b>3D engine demo</b> — real local match, real AI opponent, free camera.<br>
+  Drag your own garrison to march it (shift = send all) · orbit/pan/zoom same as before.<br>
+  Not wired into the real game yet — Phase 2a spike.
 </div>
-<div id="fps">-- fps</div>
+<div id="stats">
+  <div>tick <span id="tickVal">0</span></div>
+  <div>money <span id="moneyVal">0</span></div>
+</div>
+<div id="panel" style="display:none">
+  <h3 id="panelTitle">—</h3>
+  <div class="row"><span>Owner</span><b id="panelOwner">—</b></div>
+  <div class="row"><span>Garrison</span><b id="panelGarrison">—</b></div>
+  <button id="buildBarracks">Build Barracks</button>
+  <button id="buildIndustry">Build Industry</button>
+</div>
+
+<div id="canvasWrap"><canvas id="cv"></canvas></div>
 
 <script src="./map.js"></script>
+<script src="./sim.js"></script>
+<script src="./ai.js"></script>
 <script type="importmap">
 {
   "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
   }
 }
 </script>
 <script type="module">
-import * as THREE from 'three';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js';
+import { create } from './board-render-3d.js';
 
-/* ── real board data, straight from the production map system ──────────────
- * Deliberately reusing FPMap.build() rather than hand-authoring geometry —
- * the whole point of the spike is proving the new camera against the actual
- * data model (tile-space provinces/cities), not a stand-in. */
-const M = self.FPMap.build('duel');
+const params = new URLSearchParams(location.search);
+const boardKey = params.get('board') === 'grand' ? 'grand' : 'duel';
+const AI_LEVEL = 'Steady';
+const HUMAN_SEAT = 0;
 
-const SEAT_COLOR = { 0: 0x48a37c, 1: 0xc0483c, null: 0x8b8272 };
-const LAND = 0x6d675a;
+const F = self.FPMap, S = self.FPSim, AI = self.FPAI;
+const M = F.build(boardKey);
+const sim = S.create(M);
+const matchStartMs = Date.now();
 
-// ── scene ───────────────────────────────────────────────────────────────
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0b1219);
-scene.fog = new THREE.Fog(0x0b1219, 40, 90);
+const cv = document.getElementById('cv');
+const R3D = create(cv, M);
 
-const camera = new THREE.PerspectiveCamera(45, innerWidth / innerHeight, 0.1, 500);
-// Start near the classic isometric feel (45deg-ish look-down) so the jump
-// from the old renderer isn't jarring — MapControls takes it free from here.
-camera.position.set(M.gridW * 0.9, M.gridW * 0.85, M.gridH * 0.9);
+// ── input state ──────────────────────────────────────────────────────────
+const ui = { sel: null, dragFrom: null, dragTo: null, dragging: false, path: null };
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
-renderer.setSize(innerWidth, innerHeight);
-renderer.shadowMap.enabled = true;
-document.body.appendChild(renderer.domElement);
+function tileKeyOf(t) { return F.tileKey(t.c, t.r); }
 
-const boardCenter = new THREE.Vector3(M.gridW / 2, 0, M.gridH / 2);
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.target.copy(boardCenter);
-controls.enableDamping = true;
-controls.dampingFactor = 0.08;
-controls.maxPolarAngle = Math.PI / 2 - 0.03; // stop just short of edge-on/underneath
-controls.minDistance = 4;
-controls.maxDistance = 60;
-controls.update();
-
-// ── lighting — the thing flat 2D iso could never give us for free ─────────
-scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-const sun = new THREE.DirectionalLight(0xfff3d9, 1.05);
-sun.position.set(M.gridW * 0.4, 22, -M.gridH * 0.3);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.camera.left = -M.gridW; sun.shadow.camera.right = M.gridW;
-sun.shadow.camera.top = M.gridH; sun.shadow.camera.bottom = -M.gridH;
-scene.add(sun);
-
-// ── ground: one tinted plane per province, tile coords -> world x/z ───────
-// World axes: x = tile column, z = tile row, y = up. This is the actual
-// change from the old renderer: tile space maps straight into real 3D
-// coordinates instead of being pre-flattened into an isometric pixel offset.
-const groundMat = new THREE.MeshStandardMaterial({ color: LAND, roughness: 0.95 });
-for (const p of M.provinces) {
-  const geo = new THREE.PlaneGeometry(p.w, p.h);
-  const mesh = new THREE.Mesh(geo, groundMat.clone());
-  mesh.rotation.x = -Math.PI / 2;
-  mesh.position.set(p.c0 + p.w / 2, 0, p.r0 + p.h / 2);
-  mesh.receiveShadow = true;
-  scene.add(mesh);
-
-  const edges = new THREE.LineSegments(
-    new THREE.EdgesGeometry(geo),
-    new THREE.LineBasicMaterial({ color: 0x0c1620 })
-  );
-  edges.rotation.x = -Math.PI / 2;
-  edges.position.copy(mesh.position);
-  edges.position.y += 0.01;
-  scene.add(edges);
-}
-
-// Faint per-tile grid, just for scale/orientation while orbiting.
-scene.add(new THREE.GridHelper(M.gridW, M.gridW, 0x0c1620, 0x0c1620));
-
-// ── cities: extruded boxes, sized/coloured like the old KIT concept ───────
-for (const c of M.cities) {
-  const seatColor = SEAT_COLOR[c.seat] ?? SEAT_COLOR[null];
-  const isHome = c.seat !== null;
-  const footprint = isHome ? 0.66 : 0.44 + Math.min(0.2, (c.garrison || 0) / 300);
-  const height = isHome ? 1.4 : 0.6 + Math.min(0.6, (c.garrison || 0) / 100);
-
-  const geo = new THREE.BoxGeometry(footprint, height, footprint);
-  const mat = new THREE.MeshStandardMaterial({ color: seatColor, roughness: 0.6, metalness: 0.05 });
-  const box = new THREE.Mesh(geo, mat);
-  box.position.set(c.tc, height / 2, c.tr);
-  box.castShadow = true;
-  box.receiveShadow = true;
-  scene.add(box);
-}
-
-// ── resize + render loop ───────────────────────────────────────────────
-addEventListener('resize', () => {
-  camera.aspect = innerWidth / innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
+cv.addEventListener('mousedown', e => {
+  if (e.button !== 0) return;
+  const rect = cv.getBoundingClientRect();
+  const t = R3D.tileAt(e.clientX - rect.left, e.clientY - rect.top);
+  if (!t) return;
+  const k = tileKeyOf(t);
+  const mine = (sim.owners[k] ?? null) === HUMAN_SEAT;
+  ui.sel = t;
+  if (mine && (sim.garrisons[k] || 0) > 0) {
+    ui.dragFrom = t; ui.dragging = true; ui.dragTo = null; ui.path = null;
+    R3D.controls.enabled = false; // OrbitControls listens on the same canvas — without this, a march-drag also orbits the camera
+  }
+  renderPanel();
 });
 
-const fpsEl = document.getElementById('fps');
-let frames = 0, fpsAt = performance.now();
-function loop() {
-  requestAnimationFrame(loop);
-  controls.update();
-  renderer.render(scene, camera);
-  frames++;
-  const now = performance.now();
-  if (now - fpsAt > 500) {
-    fpsEl.textContent = Math.round((frames * 1000) / (now - fpsAt)) + ' fps';
-    frames = 0; fpsAt = now;
+addEventListener('mousemove', e => {
+  if (!ui.dragging) return;
+  const rect = cv.getBoundingClientRect();
+  const t = R3D.tileAt(e.clientX - rect.left, e.clientY - rect.top);
+  ui.dragTo = t;
+  ui.path = (t && (t.c !== ui.dragFrom.c || t.r !== ui.dragFrom.r))
+    ? F.travelPath(M, [ui.dragFrom.c, ui.dragFrom.r], [t.c, t.r], S.RULES.hopTicks, S.RULES.offRoadTicks)
+    : null;
+});
+
+addEventListener('mouseup', e => {
+  if (!ui.dragging) return;
+  if (ui.dragTo && ui.path && ui.path.length && (ui.dragTo.c !== ui.dragFrom.c || ui.dragTo.r !== ui.dragFrom.r)) {
+    const pct = e.shiftKey ? 100 : 50;
+    S.march(sim, M, HUMAN_SEAT, [ui.dragFrom.c, ui.dragFrom.r], [ui.dragTo.c, ui.dragTo.r], pct);
   }
+  ui.dragging = false; ui.dragFrom = null; ui.dragTo = null; ui.path = null;
+  R3D.controls.enabled = true;
+});
+
+document.getElementById('buildBarracks').addEventListener('click', () => {
+  if (ui.sel) S.build(sim, M, HUMAN_SEAT, ui.sel.c, ui.sel.r);
+});
+document.getElementById('buildIndustry').addEventListener('click', () => {
+  if (ui.sel) S.industry(sim, M, HUMAN_SEAT, ui.sel.c, ui.sel.r);
+});
+
+function renderPanel() {
+  const panel = document.getElementById('panel');
+  if (!ui.sel) { panel.style.display = 'none'; return; }
+  panel.style.display = 'block';
+  const k = tileKeyOf(ui.sel);
+  const p = F.territoryAt(M, ui.sel.c, ui.sel.r);
+  const owner = sim.owners[k] ?? null;
+  document.getElementById('panelTitle').textContent = p ? p.name : '—';
+  document.getElementById('panelOwner').textContent = owner === null ? 'Neutral' : `Seat ${owner}`;
+  document.getElementById('panelGarrison').textContent = String(sim.garrisons[k] || 0);
+  const mine = owner === HUMAN_SEAT;
+  document.getElementById('buildBarracks').disabled = !mine;
+  document.getElementById('buildIndustry').disabled = !mine;
 }
-loop();
+
+// ── tick loop — same cadence/shape as game.html's local (non-networked)
+// startLoop(), minus prediction/networking, since this demo has neither. ──
+const dt = 1000 / S.RULES.tickHz;
+setInterval(() => {
+  if (sim.over !== null) return;
+  const owed = Math.floor((Date.now() - matchStartMs) / dt) - sim.tick;
+  let ran = 0;
+  while (ran < owed && ran < 40 && sim.over === null) {
+    S.step(sim, M);
+    if (AI_LEVEL !== 'None') AI.think(sim, M, 1 - HUMAN_SEAT, AI_LEVEL);
+    ran++;
+  }
+  if (ran) {
+    document.getElementById('tickVal').textContent = String(sim.tick);
+    document.getElementById('moneyVal').textContent = String(Math.floor((sim.money[HUMAN_SEAT] || 0) / 1000));
+    if (ui.sel) renderPanel(); // garrison count under the panel changes every tick
+  }
+}, dt);
+
+// ── render loop ──────────────────────────────────────────────────────────
+addEventListener('resize', () => R3D.resize());
+
+let marchLabelText = '';
+function frame() {
+  requestAnimationFrame(frame);
+  R3D.controls.update();
+
+  if (ui.dragging && ui.path && ui.path.length) {
+    const k = tileKeyOf(ui.dragFrom);
+    const send = Math.floor((sim.garrisons[k] || 0) * (self._shiftHeld ? 100 : 50) / 100);
+    const ticks = ui.path.reduce((n, [c, r]) => n + S.hopCost(M, c, r), 0);
+    marchLabelText = `${send} · ${(ticks / S.RULES.tickHz).toFixed(1)}s`;
+  }
+
+  R3D.update({
+    owners: sim.owners, garrisons: sim.garrisons, barracks: sim.barracks, industry: sim.industry,
+    stacks: sim.stacks, stackAt: st => S.stackAt(sim, st, M),
+    sel: ui.sel, armed: ui.dragging ? ui.dragFrom : null,
+    marchPath: ui.dragging ? ui.path : null,
+    marchLabelText: ui.dragging ? marchLabelText : null,
+  });
+
+  R3D.renderer.render(R3D.scene, R3D.camera);
+  R3D.cssRenderer.render(R3D.scene, R3D.camera);
+}
+frame();
 </script>
 </body>
 </html>
