@@ -15,6 +15,18 @@
 <script src="./board-render.js"></script>
 <script src="./sim.js"></script>
 <script src="./ai.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+  import { create } from './board-render-3d.js';
+  self.FPRender3D = { create };
+</script>
 <style>
   body { margin: 0; background: #0b1219; overflow: hidden; }
   a { color: #d9a441; text-decoration: none; }
@@ -403,12 +415,82 @@ class Component extends DCLogic {
       e.preventDefault();
     };
 
+    // ── 3D-mode pointer handling (Phase 2b) ─────────────────────────────
+    // OrbitControls owns orbit/pan/zoom itself in 3D mode, so the only thing
+    // needed by hand is click-to-select and drag-to-march — deliberately a
+    // separate, smaller state machine rather than teaching _onDown/_onMove/
+    // _onUp about 3D: those already gate every branch on `this.cam`, which
+    // is a 2D-only instance property (only ever assigned inside paint()'s 2D
+    // branch), so reusing them would mean either loosening guards written
+    // for a different camera model or risking the 2D path most players
+    // actually use. Both sets write the same this.state.mode/dragFrom/dragTo
+    // fields, so paint3D() and the shared cursor/notice logic in
+    // _renderVals() read them identically either way.
+    this._onDown3D = e => {
+      if (e.button !== 0 || !this.sim || !this.cv || !this._r3d) return;
+      const b = this.cv.getBoundingClientRect();
+      const t = this.tileAt(e.clientX - b.left, e.clientY - b.top);
+      if (!t) { this.setState({ sel: null, armed: null }); return; }
+      // Armed via the sidebar's March 50%/100% buttons (see arm50/arm100 in
+      // _renderVals()): this click is the destination, not a fresh
+      // selection or drag — same precedence as the 2D path's selectAt().
+      const armed = this.state.armed;
+      if (armed && !(armed.c === t.c && armed.r === t.r)) {
+        const err = this.issueCmd('march', [[armed.c, armed.r], [t.c, t.r], armed.pct]);
+        this.setState({ armed: null, sel: t, notice: err || '' });
+        return;
+      }
+      const k = self.FPMap.tileKey(t.c, t.r);
+      const mine = (this.sim.owners[k] ?? null) === this.viewSeat();
+      if (mine && (this.sim.garrisons[k] || 0) > 0) {
+        this._m0 = { x: e.clientX, y: e.clientY };
+        this._r3d.controls.enabled = false; // else the same drag also orbits the camera
+        this.setState({ mode: 'maybeMarch', dragFrom: t, dragTo: null, sel: t, armed: null, notice: '' });
+      } else {
+        this.setState({ sel: t, armed: null });
+      }
+    };
+
+    this._onMove3D = e => {
+      if (!this.is3D() || !this._r3d) return;
+      const m = this.state.mode;
+      if (m !== 'maybeMarch' && m !== 'march') return;
+      if (m === 'maybeMarch' && Math.hypot(e.clientX - this._m0.x, e.clientY - this._m0.y) <= 6) return;
+      this._shift = e.shiftKey;
+      const b = this.cv.getBoundingClientRect();
+      const t = this.tileAt(e.clientX - b.left, e.clientY - b.top);
+      const cur = this.state.dragTo;
+      const same = (t && cur && t.c === cur.c && t.r === cur.r) || (!t && !cur);
+      if (m === 'march' && same) return;
+      this.setState({ mode: 'march', dragTo: t });
+    };
+
+    this._onUp3D = e => {
+      if (!this.is3D() || !this._r3d) return;
+      const dm = this.state.mode;
+      if (dm !== 'march' && dm !== 'maybeMarch') return;
+      this._r3d.controls.enabled = true;
+      const from = this.state.dragFrom;
+      const to = dm === 'march' ? this.state.dragTo : null;
+      if (from && to && !(to.c === from.c && to.r === from.r)) {
+        const pct = e.shiftKey ? 100 : 50;
+        const err = this.issueCmd('march', [[from.c, from.r], [to.c, to.r], pct]);
+        this.setState({ mode: null, dragFrom: null, dragTo: null, sel: to, notice: err || '' });
+      } else {
+        this.setState({ mode: null, dragFrom: null, dragTo: null });
+      }
+    };
+
     window.addEventListener('mousemove', this._onMove);
     window.addEventListener('mouseup', this._onUp);
+    window.addEventListener('mousemove', this._onMove3D);
+    window.addEventListener('mouseup', this._onUp3D);
     window.addEventListener('keydown', this._onKey);
 
     // map.js and board-render.js load from <helmet>, which can resolve after
-    // the first render; poll briefly rather than assume.
+    // the first render; poll briefly rather than assume. board-render-3d.js
+    // loads as an ES module (deferred relative to the classic scripts above),
+    // so ?render=3d needs its own readiness check on top of the usual ones.
     let tries = 0;
     this._boot = setInterval(() => {
       if (++tries > 100) {
@@ -417,6 +499,7 @@ class Component extends DCLogic {
         return;
       }
       if (!self.FPMap || !self.FPRender || !self.FPSim) return;
+      if (this.is3D() && !self.FPRender3D) return;
       clearInterval(this._boot);
       // There is no menu screen — the match starts as soon as the libs are
       // ready, configured from the Hub's URL params (matchId, or board/ai).
@@ -449,6 +532,8 @@ class Component extends DCLogic {
     this.unwire();
     window.removeEventListener('mousemove', this._onMove);
     window.removeEventListener('mouseup', this._onUp);
+    window.removeEventListener('mousemove', this._onMove3D);
+    window.removeEventListener('mouseup', this._onUp3D);
     window.removeEventListener('keydown', this._onKey);
   }
 
@@ -458,6 +543,30 @@ class Component extends DCLogic {
   wire() {
     if (this._wired || !this.cv) return;
     this._wired = true;
+
+    if (this.is3D()) {
+      const M = this.built();
+      this._r3d = self.FPRender3D.create(this.cv, M);
+      // Frame the player's own starting territory on join — the 3D
+      // equivalent of focusTerritory(), just a one-off camera placement
+      // instead of reproducing the 2D camera's exact analytic behaviour.
+      if (M) {
+        const start = (M.starts || []).find(s => s.seat === this.viewSeat());
+        const home = start && M.province(start.territory);
+        if (home) {
+          const cx = home.c0 + home.w / 2, cz = home.r0 + home.h / 2;
+          this._r3d.controls.target.set(cx, 0, cz);
+          this._r3d.camera.position.set(cx + M.gridW * 0.35, M.gridW * 0.55, cz + M.gridH * 0.35);
+          this._r3d.controls.update();
+        }
+      }
+      this.cv.addEventListener('mousedown', this._onDown3D);
+      this._ro = new ResizeObserver(() => this._r3d && this._r3d.resize());
+      this._ro.observe(this.cv);
+      this._r3dLoop();
+      return;
+    }
+
     this.cv.addEventListener('mousedown', this._onDown);
     this.cv.addEventListener('wheel', this._onWheel, { passive: false });
     this._onCtx = e => e.preventDefault();
@@ -468,10 +577,24 @@ class Component extends DCLogic {
     if (document.fonts) document.fonts.ready.then(() => this.draw());
   }
 
+  /** Continuous render loop, only ever running in 3D mode — game.html is
+   *  otherwise reactive (draw() fires on resize/font-load/forceUpdate),
+   *  which suits an on-demand 2D repaint but not OrbitControls' damped
+   *  momentum, which needs frames while it settles even between sim ticks. */
+  _r3dLoop() {
+    this._r3dRaf = requestAnimationFrame(() => this._r3dLoop());
+    if (!this._r3d) return;
+    this._r3d.controls.update();
+    this.draw();
+  }
+
   unwire() {
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
+    if (this._r3dRaf) { cancelAnimationFrame(this._r3dRaf); this._r3dRaf = null; }
+    if (this._r3d) { this._r3d.dispose(); this._r3d = null; }
     if (this._wired && this.cv) {
       this.cv.removeEventListener('mousedown', this._onDown);
+      this.cv.removeEventListener('mousedown', this._onDown3D);
       this.cv.removeEventListener('wheel', this._onWheel);
       if (this._onCtx) this.cv.removeEventListener('contextmenu', this._onCtx);
     }
@@ -487,6 +610,13 @@ class Component extends DCLogic {
     const m = new RegExp('[?&]' + name + '=([^&]*)').exec(q);
     return m ? decodeURIComponent(m[1]) : null;
   }
+
+  /** Opt-in flag for the Three.js renderer (Phase 2b) — off by default, so
+   *  the 2D path (what every real player actually sees) is entirely
+   *  unaffected unless this is explicitly requested. Purely a client-side
+   *  rendering choice: it never touches FPSim state, so it's equally safe to
+   *  flip for either side of an online match. */
+  is3D() { return this.param('render') === '3d'; }
 
   board() {
     const fromUrl = this.param('board');
@@ -886,6 +1016,7 @@ class Component extends DCLogic {
   /** Screen point → the province under it, or null off the board. The single
    *  lookup every pointer path shares, so selection and dragging cannot drift. */
   tileAt(mx, my) {
+    if (this.is3D()) return this._r3d ? this._r3d.tileAt(mx, my) : null;
     const M = this.built();
     if (!M || !this.cam) return null;
     const u = this.cam.unproject(mx, my);
@@ -988,6 +1119,7 @@ class Component extends DCLogic {
   }
 
   paint() {
+    if (this.is3D()) { this.paint3D(); return; }
     const M = this.built();
     if (!this.cv || !self.FPMap || !self.FPRender || !self.FPSim || !M || !this.sim || this.state.screen !== 'match') return;
     const ctx = this.cv.getContext('2d');
@@ -1139,6 +1271,42 @@ class Component extends DCLogic {
         yaw: this.viewYaw(), pitch: Component.PITCH, zoom: 1, panX: 0, panY: 0
       }), 0);
     }
+  }
+
+  /** 3D counterpart to paint() — same inputs (this.built(), this.sim, the
+   *  drag/selection state _onDown3D/_onMove3D/_onUp3D write), same
+   *  drag-to-march preview math as paint()'s (game.html's 2D branch,
+   *  travelPath/hopCost/RULES usage), just handed to board-render-3d.js's
+   *  update() instead of drawn by hand onto a 2D context. Marquee/multi-select
+   *  are deliberately not ported — see the Phase 2b plan. */
+  paint3D() {
+    const M = this.built();
+    if (!this._r3d || !M || !this.sim || this.state.screen !== 'match') return;
+    const S = this.sim;
+    const F = self.FPMap, F2 = self.FPSim;
+
+    let marchPath = null, marchLabelText = null;
+    const dragFrom = this.state.dragFrom, dragTo = this.state.dragTo;
+    if (dragFrom && this.state.mode === 'march' && dragTo && !(dragTo.c === dragFrom.c && dragTo.r === dragFrom.r)) {
+      marchPath = F.travelPath(M, [dragFrom.c, dragFrom.r], [dragTo.c, dragTo.r], F2.RULES.hopTicks, F2.RULES.offRoadTicks);
+      if (marchPath && marchPath.length) {
+        const k = F.tileKey(dragFrom.c, dragFrom.r);
+        const ticks = marchPath.reduce((n, [c, r]) => n + F2.hopCost(M, c, r), 0);
+        const send = Math.floor((S.garrisons[k] || 0) * (this._shift ? 100 : 50) / 100);
+        marchLabelText = `${send} · ${(ticks / F2.RULES.tickHz).toFixed(1)}s`;
+      }
+    }
+
+    this._r3d.update({
+      owners: S.owners, garrisons: S.garrisons, barracks: S.barracks, industry: S.industry,
+      stacks: S.stacks, stackAt: st => F2.stackAt(S, st, M),
+      seatColour: s => this.seatColour(s),
+      sel: this.state.armed || this.state.sel,
+      armed: (this.state.mode === 'maybeMarch' || this.state.mode === 'march') ? dragFrom : null,
+      marchPath, marchLabelText,
+    });
+    this._r3d.renderer.render(this._r3d.scene, this._r3d.camera);
+    this._r3d.cssRenderer.render(this._r3d.scene, this._r3d.camera);
   }
 
   // ── view values ──────────────────────────────────────────────────────────
