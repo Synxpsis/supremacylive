@@ -218,6 +218,16 @@
       for (const seat of [0, 1]) {
         if ((sc.territories[seat] || 0) >= sc.needed) S.over = seat;
       }
+      // Elimination: a seat holding zero territories has no ground left to
+      // garrison, build on, or march from — they've already lost, even if
+      // the winner hasn't yet climbed to the map's needed count (there can
+      // still be neutral or contested territory sitting on the board). Only
+      // meaningful in an actual 1v1 — solo boards have no seat 1 to eliminate,
+      // and would otherwise "end" on tick one since seat 1 never holds any.
+      if (S.over === null && M.seats === 2) {
+        if (!(sc.territories[0] > 0)) S.over = 1;
+        else if (!(sc.territories[1] > 0)) S.over = 0;
+      }
     }
     return S;
   }
@@ -228,6 +238,12 @@
     const m = F();
     const k = m.tileKey(c, r);
     if ((S.owners[k] ?? null) !== seat) return 'not yours';
+    // Owning this one province isn't enough — a territory only changes hands
+    // whole, on its capital falling (see the capture block in step()), so a
+    // held outlying province ahead of that still belongs to a contested
+    // territory until the capital does too.
+    const p = m.territoryAt(M, c, r);
+    if (!p || m.territoryOwner(M, S.owners, p) !== seat) return 'territory not secured';
     // Key tests, not truthiness: seat 0 is stored as the value 0.
     if (k in S.barracks) return 'already built';
     if (k in S.industry) return 'industry stands here';
@@ -246,10 +262,13 @@
     const m = F();
     const k = m.tileKey(c, r);
     if ((S.owners[k] ?? null) !== seat) return 'not yours';
+    // See build()'s matching check: a held outlying province doesn't secure
+    // the territory until its capital has fallen too.
+    const p = m.territoryAt(M, c, r);
+    if (!p || m.territoryOwner(M, S.owners, p) !== seat) return 'territory not secured';
     if (k in S.industry) return 'already built';
     if (k in S.barracks) return 'barracks stands here';
-    const p = m.territoryAt(M, c, r);
-    const [cc, cr] = p ? m.centreTile(M, p) : [-1, -1];
+    const [cc, cr] = m.centreTile(M, p);
     if (cc === c && cr === r) return 'capitals already pay';
     const cost = RULES.industryCost * 1000;
     if (S.money[seat] < cost) return 'not enough coin';
