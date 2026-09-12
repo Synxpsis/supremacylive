@@ -14,9 +14,10 @@ expands on this content — see the note at the bottom of this file.
 | [OVERVIEW.md](OVERVIEW.md) | What the game is, current maturity, what's live vs. shelved |
 | [GLOSSARY.md](GLOSSARY.md) | Terminology — **read this first**, the code and the UI don't always use the same words for the same thing |
 | [MECHANICS.md](MECHANICS.md) | The simulation: territories, garrisons, combat, structures, currency, win/loss |
-| [MAP_SYSTEM.md](MAP_SYSTEM.md) | Board definitions, the slot-grid model, roads, symmetry, the camera/projection math |
+| [MAP_SYSTEM.md](MAP_SYSTEM.md) | Board definitions, the slot-grid model, roads, symmetry, the camera/projection math — the standard going forward, full schema reference |
 | [AI.md](AI.md) | The opponent bot: difficulty levels, its per-tick decision passes |
-| [RENDERING.md](RENDERING.md) | The 2D isometric canvas renderer and the 3D Three.js renderer, and how each reads the design system |
+| [RENDERING.md](RENDERING.md) | The 3D Three.js rendering contract (the standard going forward) and the 2D isometric canvas renderer, and how each reads the design system |
+| [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md) | Gap list and sequencing plan for bringing the map editor up to the 3D/map standard |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Cloudflare Worker, Durable Objects, D1, the lockstep netcode model, deploy pipeline |
 | [API.md](API.md) | Every HTTP route and WebSocket message shape, client and server side |
 | [CONTENT_INVENTORY.md](CONTENT_INVENTORY.md) | Units, currencies, structures, maps, factions/cosmetics — what exists today, and what doesn't yet |
