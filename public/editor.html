@@ -32,17 +32,17 @@
     padding: 10px 18px; border-bottom: 1px solid var(--sl-seam-strong);
     background: var(--sl-ink-200);
   }
-  #topbar h1 { font-size: 16px; font-weight: 700; color: var(--sl-text); }
-  #topbar .sub { font-size: 12px; color: var(--sl-text-mute); }
+  #topbar h1 { font-size: var(--sl-fs-ui-md); font-weight: 700; color: var(--sl-text); }
+  #topbar .sub { font-size: var(--sl-fs-label); color: var(--sl-text-mute); }
   #topbar .spacer { flex: 1; }
-  #saveStatus { font-size: 12px; color: var(--sl-text-dim); min-width: 160px; text-align: right; }
+  #saveStatus { font-size: var(--sl-fs-label); color: var(--sl-text-dim); min-width: 160px; text-align: right; }
   #saveStatus.err { color: var(--sl-danger); }
   #saveStatus.ok { color: var(--sl-ok); }
 
   button.btn {
     padding: 8px 16px; cursor: pointer;
     background: var(--sl-seam); border: 1px solid var(--sl-seam-strong);
-    color: var(--sl-text-dim); font-size: 13.5px;
+    color: var(--sl-text-dim); font-size: var(--sl-fs-ui-xs);
   }
   button.btn:hover { color: var(--sl-signal-hot); border-color: rgba(255,255,255,0.55); }
   button.btn:disabled { opacity: 0.4; cursor: default; }
@@ -58,7 +58,7 @@
   #hint {
     position: absolute; left: 14px; bottom: 12px; padding: 7px 12px;
     background: color-mix(in srgb, var(--sl-ink-100) 76%, transparent); border: 1px solid var(--sl-seam-strong);
-    font-size: 12px; color: var(--sl-text-mute);
+    font-size: var(--sl-fs-label); color: var(--sl-text-mute);
   }
 
   #panel {
@@ -67,16 +67,16 @@
     padding: 16px; display: flex; flex-direction: column; gap: 18px;
   }
   .section-title {
-    font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+    font-size: var(--sl-fs-label); letter-spacing: 0.12em; text-transform: uppercase;
     color: var(--sl-text-dim); margin-bottom: 8px;
   }
   .field { display: flex; flex-direction: column; gap: 3px; margin-bottom: 8px; }
-  .field label { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sl-text-dim); }
+  .field label { font-size: var(--sl-fs-label); letter-spacing: 0.08em; text-transform: uppercase; color: var(--sl-text-dim); }
   .field input, .field select {
     width: 100%; min-width: 0;
     padding: 7px 9px; background: var(--sl-ink-300);
     border: 1px solid var(--sl-seam-strong); 
-    color: var(--sl-text); font-size: 14px;
+    color: var(--sl-text); font-size: var(--sl-fs-ui-sm);
   }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; min-width: 0; }
   .row2 .field { min-width: 0; }
@@ -87,18 +87,18 @@
   .prov-row .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
   .prov-row input {
     flex: 1; background: transparent; border: none; border-bottom: 1px solid transparent;
-    color: var(--sl-text); font-size: 13.5px; padding: 3px 2px;
+    color: var(--sl-text); font-size: var(--sl-fs-ui-xs); padding: 3px 2px;
   }
   .prov-row input:focus { outline: none; border-bottom-color: var(--sl-signal); }
 
   #symList { display: flex; flex-direction: column; gap: 6px; }
-  .sym-ok { color: var(--sl-ok); font-size: 13px; }
+  .sym-ok { color: var(--sl-ok); font-size: var(--sl-fs-ui-xs); }
   .sym-issue {
-    font-size: 12.5px; color: var(--sl-warn); background: var(--sl-warn-wash);
+    font-size: var(--sl-fs-ui-xs); color: var(--sl-warn); background: var(--sl-warn-wash);
     border: 1px solid var(--sl-warn); padding: 6px 8px;
   }
 
-  #emptyPanel { font-size: 13px; color: var(--sl-text-mute); line-height: 1.5; }
+  #emptyPanel { font-size: var(--sl-fs-ui-xs); color: var(--sl-text-mute); line-height: 1.5; }
 
   #login {
     height: 100vh; display: grid; place-items: center;
@@ -108,14 +108,14 @@
     padding: 24px; border: 1px solid var(--sl-seam-strong); 
     background: var(--sl-ink-200);
   }
-  #login .err { font-size: 12.5px; color: var(--sl-danger); min-height: 16px; }
+  #login .err { font-size: var(--sl-fs-ui-xs); color: var(--sl-danger); min-height: 16px; }
 </style>
 </head>
 <body>
 
 <div id="login">
   <form id="loginForm">
-    <h2 style="font-size: 18px; color: var(--sl-text);">Map Editor</h2>
+    <h2 style="font-size: var(--sl-fs-d4); color: var(--sl-text);">Map Editor</h2>
     <div class="field"><label>Username or email</label><input id="loginId" autocomplete="username"></div>
     <div class="field"><label>Password</label><input id="loginPw" type="password" autocomplete="current-password"></div>
     <div class="err" id="loginErr"></div>

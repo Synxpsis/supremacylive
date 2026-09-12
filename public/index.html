@@ -25,9 +25,9 @@
   <sc-if value="{{ onLanding }}" hint-placeholder-val="{{ true }}">
     <div style="position: absolute; inset: 0; display: grid; place-items: center; padding: 40px;">
       <div style="display: flex; flex-direction: column; align-items: center; gap: 30px; max-width: 620px; text-align: center;">
-        <h1 style="margin: 0; font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; font-size: 78px; line-height: 0.98; letter-spacing: var(--sl-tr-display);">Welcome to<br />Supremacy Live.<br /></h1>
-        <p style="margin: 0; font-size: 19px; line-height: 1.55; color: var(--sl-text-dim); max-width: 46ch; text-wrap: pretty;">supremacy.live is a real-time "HQ" style PVP game designed to focus entirely on the community, and the content. Completely Free To Play, runs in the browser.</p>
-        <button onClick="{{ toHub }}" style="margin-top: 6px; padding: 16px 46px; background: var(--sl-signal); border: 1px solid var(--sl-signal); color: var(--sl-text-invert); font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; font-size: 19px; letter-spacing: var(--sl-tr-display); cursor: pointer;" style-hover="background: var(--sl-signal-hot); border-color: var(--sl-signal-hot);">{{ playLabel }}</button>
+        <h1 style="margin: 0; font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; font-size: var(--sl-fs-d1); line-height: 0.98; letter-spacing: var(--sl-tr-display);">Welcome to<br />Supremacy Live.<br /></h1>
+        <p style="margin: 0; font-size: var(--sl-fs-ui-lg); line-height: 1.55; color: var(--sl-text-dim); max-width: 46ch; text-wrap: pretty;">supremacy.live is a real-time "HQ" style PVP game designed to focus entirely on the community, and the content. Completely Free To Play, runs in the browser.</p>
+        <button onClick="{{ toHub }}" style="margin-top: 6px; padding: 16px 46px; background: var(--sl-signal); border: 1px solid var(--sl-signal); color: var(--sl-text-invert); font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; font-size: var(--sl-fs-ui-lg); letter-spacing: var(--sl-tr-display); cursor: pointer;" style-hover="background: var(--sl-signal-hot); border-color: var(--sl-signal-hot);">{{ playLabel }}</button>
       </div>
     </div>
   </sc-if>
@@ -36,50 +36,50 @@
     <div style="position: absolute; inset: 0; display: grid; place-items: center; padding: 40px;">
       <div style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 22px; padding: 30px 32px; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); ">
         <div style="display: flex; flex-direction: column; gap: 5px;">
-          <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 26px;">{{ authTitle }}</span>
+          <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: var(--sl-fs-d4);">{{ authTitle }}</span>
         </div>
 
         <div style="display: flex; gap: 4px; padding: 3px; background: var(--sl-ink-100); border: 1px solid var(--sl-seam-strong); ">
-          <button onClick="{{ pickLogin }}" style="flex: 1; padding: 8px 12px; background: {{ loginTabBg }}; border: none; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14px; cursor: pointer;" style-hover="filter: brightness(1.2);">Sign in</button>
-          <button onClick="{{ pickSignup }}" style="flex: 1; padding: 8px 12px; background: {{ signupTabBg }}; border: none; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14px; cursor: pointer;" style-hover="filter: brightness(1.2);">Create account</button>
+          <button onClick="{{ pickLogin }}" style="flex: 1; padding: 8px 12px; background: {{ loginTabBg }}; border: none; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-sm); cursor: pointer;" style-hover="filter: brightness(1.2);">Sign in</button>
+          <button onClick="{{ pickSignup }}" style="flex: 1; padding: 8px 12px; background: {{ signupTabBg }}; border: none; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-sm); cursor: pointer;" style-hover="filter: brightness(1.2);">Create account</button>
         </div>
 
         <form onSubmit="{{ submitAuth }}" style="display: flex; flex-direction: column; gap: 13px;">
           <sc-if value="{{ isSignup }}" hint-placeholder-val="{{ false }}">
             <div style="display: flex; flex-direction: column; gap: 4px;">
-              <label style="font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sl-text-dim);">Username</label>
-              <input value="{{ f_username }}" onInput="{{ onUsername }}" autoComplete="username" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: var(--sl-ink-300); border: 1px solid {{ b_username }}; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 15px;" />
-              <span style="font-size: 12px; color: var(--sl-danger); min-height: 15px;">{{ e_username }}</span>
+              <label style="font-size: var(--sl-fs-label); letter-spacing: 0.14em; text-transform: uppercase; color: var(--sl-text-dim);">Username</label>
+              <input value="{{ f_username }}" onInput="{{ onUsername }}" autoComplete="username" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: var(--sl-ink-300); border: 1px solid {{ b_username }}; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-data-md);" />
+              <span style="font-size: var(--sl-fs-label); color: var(--sl-danger); min-height: 15px;">{{ e_username }}</span>
             </div>
             <div style="display: flex; flex-direction: column; gap: 4px;">
-              <label style="font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sl-text-dim);">Email</label>
-              <input type="email" value="{{ f_email }}" onInput="{{ onEmail }}" autoComplete="email" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: var(--sl-ink-300); border: 1px solid {{ b_email }}; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 15px;" />
-              <span style="font-size: 12px; color: var(--sl-danger); min-height: 15px;">{{ e_email }}</span>
+              <label style="font-size: var(--sl-fs-label); letter-spacing: 0.14em; text-transform: uppercase; color: var(--sl-text-dim);">Email</label>
+              <input type="email" value="{{ f_email }}" onInput="{{ onEmail }}" autoComplete="email" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: var(--sl-ink-300); border: 1px solid {{ b_email }}; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-data-md);" />
+              <span style="font-size: var(--sl-fs-label); color: var(--sl-danger); min-height: 15px;">{{ e_email }}</span>
             </div>
           </sc-if>
 
           <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
             <div style="display: flex; flex-direction: column; gap: 4px;">
-              <label style="font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sl-text-dim);">Username or email</label>
-              <input value="{{ f_identifier }}" onInput="{{ onIdentifier }}" autoComplete="username" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: var(--sl-ink-300); border: 1px solid {{ b_identifier }}; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 15px;" />
-              <span style="font-size: 12px; color: var(--sl-danger); min-height: 15px;">{{ e_identifier }}</span>
+              <label style="font-size: var(--sl-fs-label); letter-spacing: 0.14em; text-transform: uppercase; color: var(--sl-text-dim);">Username or email</label>
+              <input value="{{ f_identifier }}" onInput="{{ onIdentifier }}" autoComplete="username" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: var(--sl-ink-300); border: 1px solid {{ b_identifier }}; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-data-md);" />
+              <span style="font-size: var(--sl-fs-label); color: var(--sl-danger); min-height: 15px;">{{ e_identifier }}</span>
             </div>
           </sc-if>
 
           <div style="display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--sl-text-dim);">Password</label>
-            <input type="password" value="{{ f_password }}" onInput="{{ onPassword }}" autoComplete="{{ pwAutocomplete }}" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: var(--sl-ink-300); border: 1px solid {{ b_password }}; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 15px;" />
-            <span style="font-size: 12px; color: var(--sl-danger); min-height: 15px;">{{ e_password }}</span>
+            <label style="font-size: var(--sl-fs-label); letter-spacing: 0.14em; text-transform: uppercase; color: var(--sl-text-dim);">Password</label>
+            <input type="password" value="{{ f_password }}" onInput="{{ onPassword }}" autoComplete="{{ pwAutocomplete }}" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: var(--sl-ink-300); border: 1px solid {{ b_password }}; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-data-md);" />
+            <span style="font-size: var(--sl-fs-label); color: var(--sl-danger); min-height: 15px;">{{ e_password }}</span>
           </div>
 
           <sc-if value="{{ hasFormError }}" hint-placeholder-val="{{ false }}">
-            <div style="padding: 9px 12px; background: var(--sl-danger-wash); border: 1px solid var(--sl-danger); font-size: 13.5px; color: var(--sl-text);">{{ formError }}</div>
+            <div style="padding: 9px 12px; background: var(--sl-danger-wash); border: 1px solid var(--sl-danger); font-size: var(--sl-fs-ui-xs); color: var(--sl-text);">{{ formError }}</div>
           </sc-if>
 
-          <button type="submit" disabled="{{ busy }}" style="margin-top: 4px; padding: 12px 20px; background: var(--sl-signal); border: 1px solid var(--sl-signal); color: var(--sl-text-invert); font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 16px; cursor: pointer; opacity: {{ submitOpacity }};" style-hover="background: var(--sl-signal-hot); border-color: var(--sl-signal-hot);">{{ submitLabel }}</button>
+          <button type="submit" disabled="{{ busy }}" style="margin-top: 4px; padding: 12px 20px; background: var(--sl-signal); border: 1px solid var(--sl-signal); color: var(--sl-text-invert); font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: var(--sl-fs-ui-md); cursor: pointer; opacity: {{ submitOpacity }};" style-hover="background: var(--sl-signal-hot); border-color: var(--sl-signal-hot);">{{ submitLabel }}</button>
         </form>
 
-        <button onClick="{{ toLanding }}" style="align-self: flex-start; padding: 4px 0; background: transparent; border: none; color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13px; cursor: pointer;" style-hover="color: var(--sl-signal-hot);">← Back</button>
+        <button onClick="{{ toLanding }}" style="align-self: flex-start; padding: 4px 0; background: transparent; border: none; color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-xs); cursor: pointer;" style-hover="color: var(--sl-signal-hot);">← Back</button>
       </div>
     </div>
   </sc-if>
@@ -94,15 +94,15 @@
             <div style="width: 26px; height: 26px; flex: none; background: var(--sl-seam); display: flex; align-items: center; justify-content: center; color: var(--sl-text-dim);">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"></path></svg>
             </div>
-            <span style="font-size: 14px; color: var(--sl-text-dim);">{{ commander }}</span>
+            <span style="font-size: var(--sl-fs-ui-sm); color: var(--sl-text-dim);">{{ commander }}</span>
             <span style="width: 1px; height: 14px; background: var(--sl-seam-strong);"></span>
-            <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--sl-text-mute);">
+            <span style="display: flex; align-items: center; gap: 5px; font-size: var(--sl-fs-ui-xs); color: var(--sl-text-mute);">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 4H7v5a5 5 0 0 0 10 0V4Z"></path><path d="M7 6H4a1 1 0 0 0-1 1 5 5 0 0 0 4 4.9M17 6h3a1 1 0 0 1 1 1 5 5 0 0 1-4 4.9"></path></svg>
               {{ trophies }}
             </span>
           </div>
           <nav style="display: flex; align-items: center; gap: 6px;">
-            <span style="padding: 7px 14px; background: var(--sl-ink-500); border: 1px solid transparent; color: var(--sl-text); font-size: 13.5px;">Home</span>
+            <span style="padding: 7px 14px; background: var(--sl-ink-500); border: 1px solid transparent; color: var(--sl-text); font-size: var(--sl-fs-ui-xs);">Home</span>
           </nav>
         </div>
         <div style="display: flex; align-items: center; gap: 16px;">
@@ -111,17 +111,17 @@
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>
             </button>
             <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
-              <div style="position: absolute; right: 0; top: calc(100% + 8px); width: 190px; padding: 12px; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); box-shadow: 0 8px 24px rgba(0,0,0,0.4); z-index: 20;">
-                <div style="font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sl-text-mute); margin-bottom: 8px;">Board renderer</div>
+              <div style="position: absolute; right: 0; top: calc(100% + 8px); width: 190px; padding: 12px; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); z-index: 20;">
+                <div style="font-size: var(--sl-fs-label); letter-spacing: 0.1em; text-transform: uppercase; color: var(--sl-text-mute); margin-bottom: 8px;">Board renderer</div>
                 <div style="display: flex; gap: 6px; padding: 3px; background: var(--sl-ink-100); border: 1px solid var(--sl-seam); ">
                   <sc-for list="{{ renderOptions }}" as="r" hint-placeholder-count="2">
-                    <button onClick="{{ r.pick }}" style="flex: 1; padding: 6px 0; background: {{ r.bg }}; border: none; font-size: 13px; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; cursor: pointer;" style-hover="filter: brightness(1.2);">{{ r.label }}</button>
+                    <button onClick="{{ r.pick }}" style="flex: 1; padding: 6px 0; background: {{ r.bg }}; border: none; font-size: var(--sl-fs-ui-xs); color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; cursor: pointer;" style-hover="filter: brightness(1.2);">{{ r.label }}</button>
                   </sc-for>
                 </div>
               </div>
             </sc-if>
           </div>
-          <button onClick="{{ logout }}" style="padding: 7px 13px; background: var(--sl-seam); border: 1px solid var(--sl-seam-strong); color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="color: var(--sl-signal-hot); border-color: rgba(255,255,255,0.55);">Sign out</button>
+          <button onClick="{{ logout }}" style="padding: 7px 13px; background: var(--sl-seam); border: 1px solid var(--sl-seam-strong); color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-xs); cursor: pointer;" style-hover="color: var(--sl-signal-hot); border-color: rgba(255,255,255,0.55);">Sign out</button>
         </div>
       </header>
 
@@ -129,7 +129,7 @@
 
         <div style="position: relative; display: flex; flex-direction: column; justify-content: space-between; padding-top: 48px; padding-left: 44px; padding-right: 44px; padding-bottom: 50px; min-height: 0; box-sizing: border-box;">
           <div style="position: relative; display: flex; flex-direction: column; gap: 14px; max-width: 460px; min-height: 0;">
-            <div style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; font-size: 40px; line-height: 1.06; letter-spacing: var(--sl-tr-display);">Welcome back, {{ commander }}</div>
+            <div style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; font-size: var(--sl-fs-d2); line-height: 1.06; letter-spacing: var(--sl-tr-display);">Welcome back, {{ commander }}</div>
           </div>
 
           <div style="position: relative; width: 340px; padding: 20px 16px 12px; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); box-sizing: border-box; flex: none;">
@@ -137,20 +137,20 @@
             <div style="display: flex; flex-direction: column; gap: 0; max-height: 240px; overflow-y: auto;">
               <div style="display: flex; gap: 4px; padding: 3px; margin-bottom: 10px; background: var(--sl-ink-100); border: 1px solid var(--sl-seam); width: fit-content;">
                 <sc-for list="{{ challengeTabs }}" as="t" hint-placeholder-count="3">
-                  <button onClick="{{ t.pick }}" style="padding: 5px 10px; background: {{ t.bg }}; border: none; font-size: 12px; color: {{ t.colour }}; font-family: 'Barlow Semi Condensed', sans-serif; cursor: pointer;" style-hover="filter: brightness(1.2);">{{ t.label }}</button>
+                  <button onClick="{{ t.pick }}" style="padding: 5px 10px; background: {{ t.bg }}; border: none; font-size: var(--sl-fs-label); color: {{ t.colour }}; font-family: 'Barlow Semi Condensed', sans-serif; cursor: pointer;" style-hover="filter: brightness(1.2);">{{ t.label }}</button>
                 </sc-for>
               </div>
               <div style="display: flex; flex-direction: column; gap: 8px;">
                 <sc-for list="{{ challenges }}" as="c" hint-placeholder-count="3">
                   <div style="display: flex; flex-direction: column; gap: 5px; padding: 8px 0; border-top: 1px solid var(--sl-seam);">
                     <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-                      <span style="font-size: 13px; color: var(--sl-text);">{{ c.title }}</span>
-                      <span style="font-size: 11px; color: var(--sl-signal); white-space: nowrap;">{{ c.reward }}</span>
+                      <span style="font-size: var(--sl-fs-ui-xs); color: var(--sl-text);">{{ c.title }}</span>
+                      <span style="font-size: var(--sl-fs-label); color: var(--sl-signal); white-space: nowrap;">{{ c.reward }}</span>
                     </div>
                     <div style="height: 5px; background: var(--sl-seam); overflow: hidden;">
                       <div style="height: 100%; width: {{ c.pct }}; background: var(--sl-ok); "></div>
                     </div>
-                    <span style="font-size: 11px; color: var(--sl-text-mute);">{{ c.progress }}</span>
+                    <span style="font-size: var(--sl-fs-label); color: var(--sl-text-mute);">{{ c.progress }}</span>
                   </div>
                 </sc-for>
               </div>
@@ -164,15 +164,15 @@
             <span style="position: absolute; left: 14px; top: -8px; z-index: 1; padding: 0 6px; background: var(--sl-ink-200); font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); font-weight: 500; letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-mute);">News</span>
             <div style="position: absolute; inset: 0; overflow: hidden;">
               <sc-for list="{{ slides }}" as="s" hint-placeholder-count="3">
-                <div style="position: absolute; inset: 0; opacity: {{ s.opacity }}; pointer-events: {{ s.pointer }}; transition: opacity 0.7s ease; background: {{ s.bg }}; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 16px 18px 30px; box-sizing: border-box;">
-                  <span style="font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: {{ s.tagColour }};">{{ s.tag }}</span>
-                  <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 17px;">{{ s.title }}</span>
-                  <span style="font-size: 12.5px; line-height: 1.4; color: var(--sl-text-dim);">{{ s.blurb }}</span>
+                <div style="position: absolute; inset: 0; opacity: {{ s.opacity }}; pointer-events: {{ s.pointer }}; transition: opacity var(--sl-dur-5) var(--sl-ease-out); background: {{ s.bg }}; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 16px 18px 30px; box-sizing: border-box;">
+                  <span style="font-size: var(--sl-fs-label-sm); letter-spacing: 0.1em; text-transform: uppercase; color: {{ s.tagColour }};">{{ s.tag }}</span>
+                  <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: var(--sl-fs-ui-lg);">{{ s.title }}</span>
+                  <span style="font-size: var(--sl-fs-ui-xs); line-height: 1.4; color: var(--sl-text-dim);">{{ s.blurb }}</span>
                 </div>
               </sc-for>
               <div style="position: absolute; bottom: 10px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px;">
                 <sc-for list="{{ dots }}" as="d" hint-placeholder-count="3">
-                  <button onClick="{{ d.pick }}" style="width: {{ d.width }}; height: 6px; background: {{ d.bg }}; border: none; cursor: pointer; padding: 0; transition: width 0.3s, background 0.3s;"></button>
+                  <button onClick="{{ d.pick }}" style="width: {{ d.width }}; height: 6px; background: {{ d.bg }}; border: none; cursor: pointer; padding: 0; transition: width var(--sl-dur-3) var(--sl-ease-mono), background var(--sl-dur-3) var(--sl-ease-mono);"></button>
                 </sc-for>
               </div>
             </div>
@@ -181,14 +181,14 @@
           <aside style="position: relative; padding: 20px 20px 18px; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); flex: 1 1 auto; min-height: 150px; box-sizing: border-box;">
             <span style="position: absolute; left: 16px; top: -8px; padding: 0 6px; background: var(--sl-ink-200); font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); font-weight: 500; letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-mute);">Patch notes</span>
             <div style="display: flex; flex-direction: column; gap: 0; height: 100%; overflow-y: auto;">
-              <div style="padding: 16px 0; border-top: 1px solid var(--sl-seam); font-size: 13.5px; color: var(--sl-text-mute);">Nothing here yet.</div>
+              <div style="padding: 16px 0; border-top: 1px solid var(--sl-seam); font-size: var(--sl-fs-ui-xs); color: var(--sl-text-mute);">Nothing here yet.</div>
             </div>
           </aside>
 
           <sc-if value="{{ modePickerOpen }}" hint-placeholder-val="{{ false }}">
             <div style="display: flex; flex-direction: column; gap: 4px; padding: 6px; background: var(--sl-ink-100); border: 1px solid var(--sl-seam-strong); ">
               <sc-for list="{{ modeOptions }}" as="m" hint-placeholder-count="2">
-                <button onClick="{{ m.pick }}" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: {{ m.bg }}; border: 1px solid {{ m.border }}; font-size: 13.5px; color: {{ m.colour }}; font-family: 'Barlow Semi Condensed', sans-serif; cursor: pointer; text-align: left;" style-hover="filter: brightness(1.15);"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{ m.dot }};"></span>{{ m.label }}</button>
+                <button onClick="{{ m.pick }}" style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: {{ m.bg }}; border: 1px solid {{ m.border }}; font-size: var(--sl-fs-ui-xs); color: {{ m.colour }}; font-family: 'Barlow Semi Condensed', sans-serif; cursor: pointer; text-align: left;" style-hover="filter: brightness(1.15);"><span style="width: 6px; height: 6px; border-radius: 50%; background: {{ m.dot }};"></span>{{ m.label }}</button>
               </sc-for>
             </div>
           </sc-if>
@@ -196,7 +196,7 @@
           <sc-if value="{{ showLevels }}" hint-placeholder-val="{{ true }}">
             <div style="display: flex; gap: 6px; padding: 3px; background: var(--sl-ink-100); border: 1px solid var(--sl-seam); width: fit-content;">
               <sc-for list="{{ levels }}" as="l" hint-placeholder-count="3">
-                <button onClick="{{ l.pick }}" style="padding: 6px 12px; background: {{ l.bg }}; border: none; font-size: 13px; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; cursor: pointer;" style-hover="filter: brightness(1.2);">{{ l.label }}</button>
+                <button onClick="{{ l.pick }}" style="padding: 6px 12px; background: {{ l.bg }}; border: none; font-size: var(--sl-fs-ui-xs); color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; cursor: pointer;" style-hover="filter: brightness(1.2);">{{ l.label }}</button>
               </sc-for>
             </div>
           </sc-if>
@@ -205,13 +205,13 @@
             <button onClick="{{ toggleModePicker }}" title="Choose match type" style="flex: none; width: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: {{ modePickerBg }}; border: 1px solid {{ modePickerBorder }}; color: var(--sl-text-dim); cursor: pointer;" style-hover="border-color: var(--sl-signal-hot); color: var(--sl-text);">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5"></path><path d="M5 12l7-7 7 7"></path></svg>
             </button>
-            <a href="{{ launchHref }}" onClick="{{ launchClick }}" style="flex: 1; padding: 15px 30px; background: var(--sl-signal); color: var(--sl-text-invert); font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 16px; text-align: center;" style-hover="background: var(--sl-signal-hot);">{{ launchLabel }}</a>
+            <a href="{{ launchHref }}" onClick="{{ launchClick }}" style="flex: 1; padding: 15px 30px; background: var(--sl-signal); color: var(--sl-text-invert); font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: var(--sl-fs-ui-md); text-align: center;" style-hover="background: var(--sl-signal-hot);">{{ launchLabel }}</a>
           </div>
         </div>
       </div>
     </div>
   </sc-if>
-  <footer style="position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 30px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--sl-text-ghost);">© 2026 Supremacy Live</footer>
+  <footer style="position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 30px; display: flex; align-items: center; justify-content: center; font-size: var(--sl-fs-label); color: var(--sl-text-ghost);">© 2026 Supremacy Live</footer>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{
@@ -404,9 +404,9 @@ class Component extends DCLogic {
     });
 
     const slideDefs = [
-      { tag: 'Update', tagColour: 'var(--sl-text-dim)', title: 'Roads & reinforcement', blurb: 'Placeholder — supply lines now move troops between capitals each tick.', bg: 'linear-gradient(160deg, #23324a, var(--sl-ink-200))' },
-      { tag: 'Community', tagColour: 'var(--sl-text-dim)', title: 'First 1v1 season', blurb: 'Placeholder — the small board goes live for ranked queues.', bg: 'linear-gradient(160deg, #1c3428, var(--sl-ink-200))' },
-      { tag: 'Dev log', tagColour: 'var(--sl-text-dim)', title: 'Isometric board rebuild', blurb: 'Placeholder — extruded structures, real depth sort, new lighting.', bg: 'linear-gradient(160deg, #3a2420, var(--sl-ink-200))' },
+      { tag: 'Update', tagColour: 'var(--sl-text-dim)', title: 'Roads & reinforcement', blurb: 'Placeholder — supply lines now move troops between capitals each tick.', bg: 'linear-gradient(160deg, color-mix(in srgb, var(--sl-info) 30%, var(--sl-ink-200)), var(--sl-ink-200))' },
+      { tag: 'Community', tagColour: 'var(--sl-text-dim)', title: 'First 1v1 season', blurb: 'Placeholder — the small board goes live for ranked queues.', bg: 'linear-gradient(160deg, color-mix(in srgb, var(--sl-ok) 30%, var(--sl-ink-200)), var(--sl-ink-200))' },
+      { tag: 'Dev log', tagColour: 'var(--sl-text-dim)', title: 'Isometric board rebuild', blurb: 'Placeholder — extruded structures, real depth sort, new lighting.', bg: 'linear-gradient(160deg, color-mix(in srgb, var(--sl-danger) 30%, var(--sl-ink-200)), var(--sl-ink-200))' },
     ];
     const slides = slideDefs.map((s, i) => ({
       key: i, ...s,
