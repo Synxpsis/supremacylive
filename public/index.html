@@ -316,7 +316,7 @@ class Component extends DCLogic {
    *  deployed, so one hub serves both without a build step. */
   gameHref() {
     const render = this.state.renderMode === '3d' ? '&render=3d' : '';
-    const q = `?auto=1&board=grand&ai=${encodeURIComponent(this.state.level)}${render}`;
+    const q = `?auto=1&board=duel&ai=${encodeURIComponent(this.state.level)}${render}`;
     const here = (self.location && self.location.pathname) || '';
     return (/\.dc\.html$/i.test(here) ? 'Game.dc.html' : 'game.html') + q;
   }

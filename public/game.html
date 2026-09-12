@@ -659,8 +659,10 @@ class Component extends DCLogic {
 
   board() {
     const fromUrl = this.param('board');
-    const key = fromUrl === 'duel' || fromUrl === 'grand' ? fromUrl
-      : this.props.board === 'Duel (4 territories)' ? 'duel' : 'grand';
+    // Grand is shelved for now — 1v1 (duel) is the only board on offer
+    // until it comes back, so anything that isn't an explicit ?board=grand
+    // falls through to duel rather than the old grand default.
+    const key = fromUrl === 'duel' || fromUrl === 'grand' ? fromUrl : 'duel';
     return self.FPMap.MAPS[key];
   }
 
