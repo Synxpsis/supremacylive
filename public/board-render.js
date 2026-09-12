@@ -60,13 +60,10 @@
   /* The structure kit. `fp` is the share of the tile the footprint covers (the
    * remainder is the margin that stops a built-up board looking welded
    * together); `h` is height in tile units. Nothing else distinguishes the
-   * types, which is what lets new ones be added without new art. */
-  const KIT = {
-    barracks: { fp: 0.54, h: 0.40 },
-    industry: { fp: 0.74, h: 0.42 },
-    capital:  { fp: 0.66, h: 0.72 },
-    city:     { fp: 0.44, h: 0.26 }
-  };
+   * types, which is what lets new ones be added without new art.
+   * Shared with board-render-3d.js via FPMap.STRUCTURE_KIT — one source of
+   * truth for both renderers, see docs/RENDERING.md. */
+  const KIT = (typeof self !== 'undefined' ? self : this).FPMap.STRUCTURE_KIT;
 
   function shade(hex, f) {
     const n = parseInt(hex.slice(1), 16);

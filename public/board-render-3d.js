@@ -22,13 +22,13 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
-const KIT = {
-  barracks: { fp: 0.54, h: 0.40 },
-  industry: { fp: 0.74, h: 0.42 },
-  capital: { fp: 0.66, h: 0.72 },
-  city: { fp: 0.44, h: 0.26 },
-};
-const PIECE_RANK = { capital: 3, industry: 2, barracks: 1, city: 0 };
+// Shared with board-render.js via FPMap.STRUCTURE_KIT/STRUCTURE_RANK — one
+// source of truth for both renderers, see docs/RENDERING.md. Module-load
+// order is safe here: <script type="module"> always defers relative to the
+// classic <script src="./map.js"> tag that sets this, regardless of position
+// in the document.
+const KIT = self.FPMap.STRUCTURE_KIT;
+const PIECE_RANK = self.FPMap.STRUCTURE_RANK;
 
 /* Three.js materials take numeric hex, not CSS colour strings, so the faction
  * tokens are read from the DOM once (as "#rrggbb") and parsed to numbers here,

@@ -208,6 +208,22 @@
   const DEFAULT_BLOCK = { w: 7, h: 7 };
   const DEFAULT_SLOTS = { cols: 2, rows: 2 };
 
+  /* The structure kit — footprint (share of a tile's width) and height (world
+   * units) per structure kind. The one shared source of truth for both
+   * renderers: board-render.js's extruded-roof-and-walls paint and
+   * board-render-3d.js's box meshes read these same numbers, so a kit change
+   * can't drift between the 2D and 3D views the way two independent copies
+   * eventually would. See docs/RENDERING.md. */
+  const STRUCTURE_KIT = {
+    barracks: { fp: 0.54, h: 0.40 },
+    industry: { fp: 0.74, h: 0.42 },
+    capital:  { fp: 0.66, h: 0.72 },
+    city:     { fp: 0.44, h: 0.26 },
+  };
+  /* One structure wins per tile when more than one kind could occupy it in
+   * the same paint/update pass — higher rank takes precedence. */
+  const STRUCTURE_RANK = { capital: 3, industry: 2, barracks: 1, city: 0 };
+
   /** Names offered to newly created provinces and cities, in order. */
   const PROVINCE_NAMES = ['Verrand', 'Kolstig', 'Aumère', 'Dunmar', 'Ilmarsk', 'Craithe',
     'Vosgard', 'Pellamar', 'Torvhall', 'Espegny', 'Rundmark', 'Belloch'];
@@ -655,6 +671,7 @@
     centreTile, capitalOf, mirrorTile, seedOwners,
     isRoad, roadTiles, roadNeighbours, roadPath, travelPath,
     DEFAULT_BLOCK, DEFAULT_SLOTS, PROVINCE_NAMES, CITY_NAMES,
+    STRUCTURE_KIT, STRUCTURE_RANK,
     twinSlot, mirrorLocal, pickName, pickId,
   };
 });

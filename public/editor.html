@@ -10,6 +10,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Barlow+Semi+Condensed:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
 <script src="./map.js"></script>
 <script src="./board-render.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script type="module">
+  import { create } from './board-render-3d.js';
+  self.FPRender3D = { create };
+</script>
 <style>
   :root { color-scheme: dark; }
   * { box-sizing: border-box; }
@@ -130,6 +142,8 @@
     <span class="sub">·</span>
     <span class="sub">duel</span>
     <div class="spacer"></div>
+    <button class="btn" id="mode2dBtn">2D</button>
+    <button class="btn" id="mode3dBtn">3D</button>
     <span id="saveStatus"></span>
     <button class="btn" id="reloadBtn">Reload</button>
     <button class="btn primary" id="saveBtn">Save</button>
@@ -137,7 +151,8 @@
   <div id="main">
     <div id="canvasWrap">
       <canvas id="cv"></canvas>
-      <div id="hint">Click a city to edit it · Add City, then click open ground · scroll to zoom · drag to pan</div>
+      <canvas id="cv3d" style="display: none;"></canvas>
+      <div id="hint">Click a city to edit it · Add City, then click open ground · scroll to zoom · drag to pan / orbit</div>
     </div>
     <div id="panel"></div>
   </div>
@@ -159,11 +174,20 @@
     cam: { zoom: 1, panX: 0, panY: 0 },
     saving: false,
     dirty: false,
+    // The 3D renderer is the standard going forward (see docs/RENDERING.md) —
+    // this toggle lets the editor preview and edit through it directly rather
+    // than staying 2D-only. Shares the same localStorage key game.html/
+    // index.html use for their own render-mode preference, so a choice made
+    // in one place is respected in the other.
+    renderMode: (() => { try { return self.localStorage.getItem('sl_render_mode') === '3d' ? '3d' : '2d'; } catch (_) { return '2d'; } })(),
   };
 
   const cv = document.getElementById('cv');
+  const cv3d = document.getElementById('cv3d');
   const panel = document.getElementById('panel');
   const saveStatus = document.getElementById('saveStatus');
+  const mode2dBtn = document.getElementById('mode2dBtn');
+  const mode3dBtn = document.getElementById('mode3dBtn');
 
   // ── auth ───────────────────────────────────────────────────────────────
   async function me() {
@@ -197,6 +221,12 @@
     if (!r.ok || !j || !j.ok) throw new Error((j && j.error) || 'failed to load map');
     S.def = j.map.definition;
     S.dirty = false;
+    // A (re)load may bring in a differently-sized board — the 3D scene's
+    // land/water instance counts and structure meshes are sized to whatever
+    // board create() last saw, so a stale scene can't just be updated in
+    // place the way an in-place edit can. Cheap to rebuild from scratch here;
+    // this is editor-only, not the live match render loop.
+    reset3D();
     rebuild();
   }
 
@@ -235,9 +265,29 @@
     });
   }
 
+  // Seat colours read once from the design-system tokens — the 2D renderer
+  // does this lazily itself (board-render.js's own tokens()), but the 3D
+  // overlay below needs a seatColour callback handed to it explicitly, the
+  // same way game.html supplies one to board-render-3d.js.
+  let _tok = null;
+  function tokens() {
+    if (_tok) return _tok;
+    const g = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    _tok = { self: g('--sl-faction-self'), foe: g('--sl-faction-foe'), neutral: g('--sl-faction-neutral') };
+    return _tok;
+  }
+  function seatColour(seat) {
+    const t = tokens();
+    return seat === 0 ? t.self : seat === 1 ? t.foe : t.neutral;
+  }
+
   /** Sparse owners/garrisons overlay built straight from the definition's own
    *  cities — there is no sim here, this is the content being edited, not a
-   *  game in progress. */
+   *  game in progress. Shaped to satisfy both renderers' overlay contract
+   *  (board-render.js's `board()` and board-render-3d.js's `update()` — see
+   *  docs/RENDERING.md) rather than keeping two separate overlay builders:
+   *  the 2D renderer simply ignores the fields it doesn't use, defaulting
+   *  seatColour to its own house palette if this weren't supplied at all. */
   function overlay() {
     const owners = {}, garrisons = {};
     for (const c of S.built.cities) {
@@ -251,11 +301,17 @@
       const c = S.built.city(S.sel.id);
       if (c) sel = { c: Math.floor(c.tc), r: Math.floor(c.tr) };
     }
-    return { owners, garrisons, sel, labels: true, slots: true };
+    return {
+      owners, garrisons, sel, labels: true, slots: true, seatColour,
+      barracks: {}, industry: {}, stacks: [], stackAt: () => null,
+      armed: null, multi: null, marchPath: null, marchLabelText: null,
+    };
   }
 
   let cam = null;
-  function paint() {
+  function paint() { S.renderMode === '3d' ? paint3D() : paint2D(); }
+
+  function paint2D() {
     if (!S.built) return;
     const ctx = cv.getContext('2d');
     const dpr = self.devicePixelRatio || 1;
@@ -268,9 +324,80 @@
     R().board(ctx, cam, S.built, overlay());
   }
 
-  window.addEventListener('resize', paint);
+  // ── 3D preview / editing surface ─────────────────────────────────────────
+  // Lazily created on first switch to 3D — no need to pay for a WebGL
+  // context or a Three.js scene on every editor load when 2D is still the
+  // default. Once created it's kept alive (not disposed) for the rest of the
+  // session; only the render loop and canvas visibility toggle with mode.
+  let _r3d = null, _r3dRaf = null;
 
-  // ── hit testing ────────────────────────────────────────────────────────
+  function ensure3D() {
+    if (_r3d) return _r3d;
+    // Nothing to build yet — the mode toggle can fire before the initial
+    // loadMap() resolves (e.g. restoring a saved '3d' preference at boot,
+    // before the user is even confirmed signed in). paint3D() re-calls this
+    // once S.built exists, so there's nothing to do here but wait.
+    if (!S.built) return null;
+    _r3d = self.FPRender3D.create(cv3d, S.built);
+    return _r3d;
+  }
+
+  function paint3D() {
+    if (!S.built) return;
+    const r3d = ensure3D();
+    r3d.update(overlay());
+    r3d.renderer.render(r3d.scene, r3d.camera);
+    r3d.cssRenderer.render(r3d.scene, r3d.camera);
+  }
+
+  function r3dLoop() {
+    _r3dRaf = requestAnimationFrame(r3dLoop);
+    if (!_r3d) return;
+    _r3d.controls.update();
+    paint3D();
+  }
+
+  /** A board swap (reload, or a future board switcher) invalidates the whole
+   *  3D scene — land/water instance counts, city meshes, everything in it is
+   *  sized to the *previous* board. Rebuilding from scratch is simpler and
+   *  cheap enough (editor-only, not the live match loop) rather than trying
+   *  to resize an InstancedMesh in place. */
+  function reset3D() {
+    if (!_r3d) return;
+    _r3d.dispose();
+    _r3d = null;
+  }
+
+  function setRenderMode(mode) {
+    // No early-out on "already this mode" — every branch below is idempotent,
+    // and the initial sync call at boot relies on that to apply button state
+    // and canvas visibility for a mode restored from localStorage.
+    S.renderMode = mode;
+    try { self.localStorage.setItem('sl_render_mode', mode); } catch (_) {}
+    cv.style.display = mode === '3d' ? 'none' : 'block';
+    cv3d.style.display = mode === '3d' ? 'block' : 'none';
+    mode2dBtn.className = 'btn' + (mode === '2d' ? ' on' : '');
+    mode3dBtn.className = 'btn' + (mode === '3d' ? ' on' : '');
+    if (mode === '3d') {
+      ensure3D();
+      resize3D();
+      if (!_r3dRaf) r3dLoop();
+    } else if (_r3dRaf) {
+      cancelAnimationFrame(_r3dRaf);
+      _r3dRaf = null;
+    }
+    paint();
+  }
+  mode2dBtn.addEventListener('click', () => setRenderMode('2d'));
+  mode3dBtn.addEventListener('click', () => setRenderMode('3d'));
+  setRenderMode(S.renderMode); // sync button state + canvas visibility to the restored preference
+
+  function resize3D() { if (_r3d) _r3d.resize(); }
+
+  window.addEventListener('resize', () => { paint(); resize3D(); });
+  new ResizeObserver(() => { paint(); resize3D(); }).observe(document.getElementById('canvasWrap'));
+
+  // ── hit testing (2D) ──────────────────────────────────────────────────────
   function tileAt(mx, my) {
     if (!cam || !S.built) return null;
     const u = cam.unproject(mx, my);
@@ -313,8 +440,12 @@
     paint();
   }, { passive: false });
 
-  function onClick(mx, my) {
-    const t = tileAt(mx, my);
+  // Shared by both renderers' click handling — only how a screen point turns
+  // into a tile differs (the 2D camera's unproject() vs. the 3D renderer's
+  // own ray/ground-plane tileAt()). Preserves the existing 2D behaviour of
+  // doing nothing at all on a genuinely off-board click, rather than clearing
+  // the current selection.
+  function onClickTile(t) {
     if (!t) return;
     const city = cityAtTile(t.c, t.r);
     if (city) { select({ kind: 'city', id: city.id }); return; }
@@ -323,6 +454,19 @@
     if (prov) { select({ kind: 'province', id: prov.id }); return; }
     select(null);
   }
+  function onClick(mx, my) { onClickTile(tileAt(mx, my)); }
+
+  // 3D canvas: OrbitControls owns drag-to-orbit/pan/zoom on cv3d directly, so
+  // the only thing needed here is click-to-select — a genuine click (no
+  // meaningful pointer movement between down and up) still fires a native
+  // `click` event normally alongside whatever OrbitControls did with the same
+  // gesture, so no manual drag-distance bookkeeping is needed the way the 2D
+  // pan handling above needs it.
+  cv3d.addEventListener('click', e => {
+    if (!_r3d) return;
+    const b = cv3d.getBoundingClientRect();
+    onClickTile(_r3d.tileAt(e.clientX - b.left, e.clientY - b.top));
+  });
 
   function select(sel) { S.sel = sel; renderPanel(); paint(); }
 
