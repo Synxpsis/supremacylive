@@ -68,11 +68,10 @@ structures than tiles). One structure per tile, matching the sim's own one-struc
 | `barracks` | 0.54 | 0.40 | 1 |
 | `city` | 0.44 | 0.26 | 0 (lowest) |
 
-**These exact figures are already duplicated verbatim in `board-render.js`'s own `KIT` table for the
-2D renderer** — the two are consistent today by manual discipline, not by sharing a single source. A
-map-editor upgrade (or any future structure-kit change) should either keep both in sync by hand or —
-better — hoist this table into `map.js`/a shared module so it can't drift. See
-[EDITOR_UPGRADE.md](EDITOR_UPGRADE.md).
+**Shared with the 2D renderer** via `FPMap.STRUCTURE_KIT`/`STRUCTURE_RANK` — both `board-render.js`
+and `board-render-3d.js` read the same table (`map.js`) rather than keeping their own copies, so a kit
+change can't drift between the two views. (This used to be two independently hardcoded copies; hoisted
+2026-09-12, see [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md).)
 
 Piece colour is the owning seat's faction colour, or `tokens().neutral` for an unowned city.
 

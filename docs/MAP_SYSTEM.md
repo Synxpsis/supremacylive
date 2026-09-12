@@ -174,10 +174,13 @@ A standalone page (`public/editor.html`, plain JS — not the `x-dc`/React-based
 the client uses), served at `editor.supremacy.live` off the same Worker/asset bundle. Lets a signed-in,
 authorized user (`EDITOR_USERS` in `worker.js` — currently one hardcoded account) load a board by key,
 rename provinces, add/edit/delete/mirror cities, see a live symmetry check for `duel`, and save back to
-D1. It renders through the 2D canvas renderer only, and it's hardcoded to the `duel` key with no board
-switcher.
+D1. It's still hardcoded to the `duel` key with no board switcher.
 
-**This is the piece that needs to grow to match the standard above** — see
-[EDITOR_UPGRADE.md](EDITOR_UPGRADE.md) for exactly what it can't do yet (add/remove/resize a province,
-author a sparse/water board, preview in 3D, edit a board's dimensions, or touch `solo`/`grand` at all)
-and a concrete plan for closing those gaps.
+**Both renderers are fully wired up and interactive**, toggled via a header button (2026-09-12,
+`ba103ce`) — the 2D canvas and the real 3D scene both support click-to-select and Add-City-mode
+directly, not just as a passive preview. See [RENDERING.md](RENDERING.md).
+
+**This is still the piece growing to match the standard above** — see
+[EDITOR_UPGRADE.md](EDITOR_UPGRADE.md) for what's left (add/remove/resize a province, author a
+sparse/water board, edit a board's dimensions, or touch `solo`/`grand` at all) and the current plan for
+closing those gaps.
