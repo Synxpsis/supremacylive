@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html data-faction="cobalt-ember">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -14,9 +14,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700&family=Barlow+Semi+Condensed:wght@400;500;600&display=swap" rel="stylesheet" />
 <style>
   body { margin: 0; background: #0b1219; overflow: hidden; }
-  a { color: #d9a441; text-decoration: none; }
+  a { color: var(--sl-signal); text-decoration: none; }
   a:hover { color: #efe6d5; }
-  ::selection { background: rgba(217,164,65,0.28); }
+  ::selection { background: var(--sl-signal-glow); }
   @keyframes scanSweep { 0% { transform: translateX(-30%); } 100% { transform: translateX(130%); } }
   @keyframes theatreDrift { 0% { transform: scale(1.06) translate3d(0,0,0); } 50% { transform: scale(1.09) translate3d(-14px,-10px,0); } 100% { transform: scale(1.06) translate3d(0,0,0); } }
   @keyframes hazeBreathe { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
@@ -30,7 +30,7 @@
       <div style="display: flex; flex-direction: column; align-items: center; gap: 30px; max-width: 620px; text-align: center;">
         <h1 style="margin: 0; font-family: Bitter, serif; font-weight: 600; font-size: 78px; line-height: 0.98; letter-spacing: -0.025em;">Welcome to<br />Supremacy Live.<br /></h1>
         <p style="margin: 0; font-size: 19px; line-height: 1.55; color: #c8c2b4; max-width: 46ch; text-wrap: pretty;">supremacy.live is a real-time "HQ" style PVP game designed to focus entirely on the community, and the content. Completely Free To Play, runs in the browser.</p>
-        <button onClick="{{ toHub }}" style="margin-top: 6px; padding: 16px 46px; background: #d9a441; border: 1px solid #d9a441; border-radius: 3px; color: #121a22; font-family: Bitter, serif; font-weight: 600; font-size: 19px; letter-spacing: 0.02em; cursor: pointer;" style-hover="filter: brightness(1.1);">{{ playLabel }}</button>
+        <button onClick="{{ toHub }}" style="margin-top: 6px; padding: 16px 46px; background: var(--sl-signal); border: 1px solid var(--sl-signal); border-radius: 3px; color: var(--sl-text-invert); font-family: Bitter, serif; font-weight: 600; font-size: 19px; letter-spacing: 0.02em; cursor: pointer;" style-hover="background: var(--sl-signal-hot); border-color: var(--sl-signal-hot);">{{ playLabel }}</button>
       </div>
     </div>
   </sc-if>
@@ -52,12 +52,12 @@
             <div style="display: flex; flex-direction: column; gap: 4px;">
               <label style="font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #9aa1a8;">Username</label>
               <input value="{{ f_username }}" onInput="{{ onUsername }}" autoComplete="username" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: rgba(11,18,25,0.6); border: 1px solid {{ b_username }}; border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 15px;" />
-              <span style="font-size: 12px; color: #c0483c; min-height: 15px;">{{ e_username }}</span>
+              <span style="font-size: 12px; color: var(--sl-danger); min-height: 15px;">{{ e_username }}</span>
             </div>
             <div style="display: flex; flex-direction: column; gap: 4px;">
               <label style="font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #9aa1a8;">Email</label>
               <input type="email" value="{{ f_email }}" onInput="{{ onEmail }}" autoComplete="email" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: rgba(11,18,25,0.6); border: 1px solid {{ b_email }}; border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 15px;" />
-              <span style="font-size: 12px; color: #c0483c; min-height: 15px;">{{ e_email }}</span>
+              <span style="font-size: 12px; color: var(--sl-danger); min-height: 15px;">{{ e_email }}</span>
             </div>
           </sc-if>
 
@@ -65,21 +65,21 @@
             <div style="display: flex; flex-direction: column; gap: 4px;">
               <label style="font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #9aa1a8;">Username or email</label>
               <input value="{{ f_identifier }}" onInput="{{ onIdentifier }}" autoComplete="username" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: rgba(11,18,25,0.6); border: 1px solid {{ b_identifier }}; border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 15px;" />
-              <span style="font-size: 12px; color: #c0483c; min-height: 15px;">{{ e_identifier }}</span>
+              <span style="font-size: 12px; color: var(--sl-danger); min-height: 15px;">{{ e_identifier }}</span>
             </div>
           </sc-if>
 
           <div style="display: flex; flex-direction: column; gap: 4px;">
             <label style="font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase; color: #9aa1a8;">Password</label>
             <input type="password" value="{{ f_password }}" onInput="{{ onPassword }}" autoComplete="{{ pwAutocomplete }}" style="width: 100%; box-sizing: border-box; padding: 10px 12px; background: rgba(11,18,25,0.6); border: 1px solid {{ b_password }}; border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 15px;" />
-            <span style="font-size: 12px; color: #c0483c; min-height: 15px;">{{ e_password }}</span>
+            <span style="font-size: 12px; color: var(--sl-danger); min-height: 15px;">{{ e_password }}</span>
           </div>
 
           <sc-if value="{{ hasFormError }}" hint-placeholder-val="{{ false }}">
-            <div style="padding: 9px 12px; background: rgba(192,72,60,0.12); border: 1px solid rgba(192,72,60,0.45); border-radius: 3px; font-size: 13.5px; color: #e7b3ac;">{{ formError }}</div>
+            <div style="padding: 9px 12px; background: var(--sl-danger-wash); border: 1px solid var(--sl-danger); border-radius: 3px; font-size: 13.5px; color: #e7b3ac;">{{ formError }}</div>
           </sc-if>
 
-          <button type="submit" disabled="{{ busy }}" style="margin-top: 4px; padding: 12px 20px; background: #d9a441; border: 1px solid #d9a441; border-radius: 3px; color: #121a22; font-family: Bitter, serif; font-weight: 600; font-size: 16px; cursor: pointer; opacity: {{ submitOpacity }};" style-hover="filter: brightness(1.1);">{{ submitLabel }}</button>
+          <button type="submit" disabled="{{ busy }}" style="margin-top: 4px; padding: 12px 20px; background: var(--sl-signal); border: 1px solid var(--sl-signal); border-radius: 3px; color: var(--sl-text-invert); font-family: Bitter, serif; font-weight: 600; font-size: 16px; cursor: pointer; opacity: {{ submitOpacity }};" style-hover="background: var(--sl-signal-hot); border-color: var(--sl-signal-hot);">{{ submitLabel }}</button>
         </form>
 
         <button onClick="{{ toLanding }}" style="align-self: flex-start; padding: 4px 0; background: transparent; border: none; color: #9aa1a8; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13px; cursor: pointer;" style-hover="color: #efe6d5;">← Back</button>
@@ -120,12 +120,12 @@
             </span>
           </div>
           <nav style="display: flex; align-items: center; gap: 6px;">
-            <span style="padding: 7px 14px; background: rgba(217,164,65,0.14); border: 1px solid #d9a441; border-radius: 3px; color: #efe6d5; font-size: 13.5px;">Home</span>
+            <span style="padding: 7px 14px; background: var(--sl-ink-500); border: 1px solid transparent; border-radius: 3px; color: #efe6d5; font-size: 13.5px;">Home</span>
           </nav>
         </div>
         <div style="display: flex; align-items: center; gap: 16px;">
           <div style="position: relative;">
-            <button onClick="{{ toggleSettings }}" title="Settings" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: {{ settingsBg }}; border: 1px solid {{ settingsBorder }}; border-radius: 3px; color: #9aa1a8; cursor: pointer;" style-hover="border-color: #d9a441; color: #efe6d5;">
+            <button onClick="{{ toggleSettings }}" title="Settings" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: {{ settingsBg }}; border: 1px solid {{ settingsBorder }}; border-radius: 3px; color: #9aa1a8; cursor: pointer;" style-hover="border-color: var(--sl-signal-hot); color: #efe6d5;">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>
             </button>
             <sc-if value="{{ settingsOpen }}" hint-placeholder-val="{{ false }}">
@@ -162,10 +162,10 @@
                 <div style="display: flex; flex-direction: column; gap: 5px; padding: 8px 0; border-top: 1px solid rgba(239,230,213,0.08);">
                   <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
                     <span style="font-size: 13px; color: #efe6d5;">{{ c.title }}</span>
-                    <span style="font-size: 11px; color: #d9a441; white-space: nowrap;">{{ c.reward }}</span>
+                    <span style="font-size: 11px; color: var(--sl-signal); white-space: nowrap;">{{ c.reward }}</span>
                   </div>
                   <div style="height: 5px; background: rgba(239,230,213,0.08); border-radius: 3px; overflow: hidden;">
-                    <div style="height: 100%; width: {{ c.pct }}; background: #48a37c; border-radius: 3px;"></div>
+                    <div style="height: 100%; width: {{ c.pct }}; background: var(--sl-ok); border-radius: 3px;"></div>
                   </div>
                   <span style="font-size: 11px; color: #6f7883;">{{ c.progress }}</span>
                 </div>
@@ -213,10 +213,10 @@
           </sc-if>
 
           <div style="display: flex; gap: 10px;">
-            <button onClick="{{ toggleModePicker }}" title="Choose match type" style="flex: none; width: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: {{ modePickerBg }}; border: 1px solid {{ modePickerBorder }}; border-radius: 3px; color: #9aa1a8; cursor: pointer;" style-hover="border-color: #d9a441; color: #efe6d5;">
+            <button onClick="{{ toggleModePicker }}" title="Choose match type" style="flex: none; width: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: {{ modePickerBg }}; border: 1px solid {{ modePickerBorder }}; border-radius: 3px; color: #9aa1a8; cursor: pointer;" style-hover="border-color: var(--sl-signal-hot); color: #efe6d5;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5"></path><path d="M5 12l7-7 7 7"></path></svg>
             </button>
-            <a href="{{ launchHref }}" onClick="{{ launchClick }}" style="flex: 1; padding: 15px 30px; background: #d9a441; border-radius: 3px; color: #121a22; font-family: Bitter, serif; font-weight: 600; font-size: 16px; text-align: center;" style-hover="filter: brightness(1.1);">{{ launchLabel }}</a>
+            <a href="{{ launchHref }}" onClick="{{ launchClick }}" style="flex: 1; padding: 15px 30px; background: var(--sl-signal); border-radius: 3px; color: var(--sl-text-invert); font-family: Bitter, serif; font-weight: 600; font-size: 16px; text-align: center;" style-hover="background: var(--sl-signal-hot);">{{ launchLabel }}</a>
           </div>
         </div>
       </div>
@@ -406,18 +406,18 @@ class Component extends DCLogic {
       const on = st.mode === m.id;
       return {
         key: m.id, label: m.title,
-        dot: '#48a37c',
-        bg: on ? 'rgba(217,164,65,0.14)' : 'rgba(239,230,213,0.04)',
-        border: on ? '#d9a441' : 'rgba(239,230,213,0.1)',
+        dot: 'var(--sl-signal-dim)',
+        bg: on ? 'var(--sl-signal-wash)' : 'rgba(239,230,213,0.04)',
+        border: on ? 'var(--sl-signal)' : 'rgba(239,230,213,0.1)',
         colour: on ? '#efe6d5' : '#6f7883',
         pick: () => this.setState({ mode: m.id, queueStatus: null, queueMessage: '', modePickerOpen: false }),
       };
     });
 
     const slideDefs = [
-      { tag: 'Update', tagColour: '#d9a441', title: 'Roads & reinforcement', blurb: 'Placeholder — supply lines now move troops between capitals each tick.', bg: 'linear-gradient(160deg, #23324a, #101a23)' },
-      { tag: 'Community', tagColour: '#48a37c', title: 'First 1v1 season', blurb: 'Placeholder — the small board goes live for ranked queues.', bg: 'linear-gradient(160deg, #1c3428, #101a23)' },
-      { tag: 'Dev log', tagColour: '#c0483c', title: 'Isometric board rebuild', blurb: 'Placeholder — extruded structures, real depth sort, new lighting.', bg: 'linear-gradient(160deg, #3a2420, #101a23)' },
+      { tag: 'Update', tagColour: 'var(--sl-text-dim)', title: 'Roads & reinforcement', blurb: 'Placeholder — supply lines now move troops between capitals each tick.', bg: 'linear-gradient(160deg, #23324a, #101a23)' },
+      { tag: 'Community', tagColour: 'var(--sl-text-dim)', title: 'First 1v1 season', blurb: 'Placeholder — the small board goes live for ranked queues.', bg: 'linear-gradient(160deg, #1c3428, #101a23)' },
+      { tag: 'Dev log', tagColour: 'var(--sl-text-dim)', title: 'Isometric board rebuild', blurb: 'Placeholder — extruded structures, real depth sort, new lighting.', bg: 'linear-gradient(160deg, #3a2420, #101a23)' },
     ];
     const slides = slideDefs.map((s, i) => ({
       key: i, ...s,
@@ -427,7 +427,7 @@ class Component extends DCLogic {
     const dots = slideDefs.map((_, i) => ({
       key: i,
       width: st.newsIndex === i ? '18px' : '6px',
-      bg: st.newsIndex === i ? '#d9a441' : 'rgba(239,230,213,0.3)',
+      bg: st.newsIndex === i ? 'var(--sl-signal)' : 'rgba(239,230,213,0.3)',
       pick: () => this.setState({ newsIndex: i }),
     }));
 
@@ -454,7 +454,7 @@ class Component extends DCLogic {
       const on = st.challengeTab === t.id;
       return {
         key: t.id, label: t.label,
-        bg: on ? 'rgba(217,164,65,0.16)' : 'transparent',
+        bg: on ? 'var(--sl-ink-500)' : 'transparent',
         colour: on ? '#efe6d5' : '#9aa1a8',
         pick: () => this.setState({ challengeTab: t.id }),
       };
@@ -486,8 +486,8 @@ class Component extends DCLogic {
       }
     }
 
-    const chip = (active, colour) => ({
-      bg: active ? `${colour}26` : 'rgba(239,230,213,0.05)',
+    const chip = active => ({
+      bg: active ? 'var(--sl-signal-wash)' : 'rgba(239,230,213,0.05)',
     });
     const levelDefs = [
       { id: 'Passive', label: 'Passive' },
@@ -495,7 +495,7 @@ class Component extends DCLogic {
       { id: 'Ruthless', label: 'Ruthless' },
     ];
     const levels = levelDefs.map(l => {
-      const c = chip(st.level === l.id, '#c0483c');
+      const c = chip(st.level === l.id);
       return { key: l.id, label: l.label, bg: c.bg, pick: () => this.setState({ level: l.id }) };
     });
 
@@ -504,13 +504,13 @@ class Component extends DCLogic {
       { id: '3d', label: '3D' },
     ];
     const renderOptions = renderDefs.map(r => {
-      const c = chip(st.renderMode === r.id, '#d9a441');
+      const c = chip(st.renderMode === r.id);
       return { key: r.id, label: r.label, bg: c.bg, pick: () => this.setRenderMode(r.id) };
     });
 
     const queueing = st.queueStatus === 'connecting' || st.queueStatus === 'searching';
     const f = st.f, fe = st.fieldErrors;
-    const border = has => has ? '#c0483c' : 'rgba(239,230,213,0.18)';
+    const border = has => has ? 'var(--sl-danger)' : 'rgba(239,230,213,0.18)';
     const setField = k => e => this.setState({
       f: { ...st.f, [k]: e.target.value },
       fieldErrors: { ...fe, [k]: undefined },
@@ -532,8 +532,8 @@ class Component extends DCLogic {
       authTitle: st.authMode === 'signup' ? 'Create your account' : 'Welcome back',
       isSignup: st.authMode === 'signup',
       isLogin: st.authMode === 'login',
-      loginTabBg: st.authMode === 'login' ? 'rgba(217,164,65,0.16)' : 'transparent',
-      signupTabBg: st.authMode === 'signup' ? 'rgba(217,164,65,0.16)' : 'transparent',
+      loginTabBg: st.authMode === 'login' ? 'var(--sl-ink-500)' : 'transparent',
+      signupTabBg: st.authMode === 'signup' ? 'var(--sl-ink-500)' : 'transparent',
       pickLogin: () => this.setState({ authMode: 'login', fieldErrors: {}, formError: '' }),
       pickSignup: () => this.setState({ authMode: 'signup', fieldErrors: {}, formError: '' }),
       submitAuth: e => this.submitAuth(e),
@@ -564,13 +564,13 @@ class Component extends DCLogic {
       renderOptions,
       settingsOpen: st.settingsOpen,
       toggleSettings: () => this.setState(s => ({ settingsOpen: !s.settingsOpen })),
-      settingsBg: st.settingsOpen ? 'rgba(217,164,65,0.14)' : 'rgba(239,230,213,0.05)',
-      settingsBorder: st.settingsOpen ? '#d9a441' : 'rgba(239,230,213,0.16)',
+      settingsBg: st.settingsOpen ? 'var(--sl-signal-wash)' : 'rgba(239,230,213,0.05)',
+      settingsBorder: st.settingsOpen ? 'var(--sl-signal)' : 'rgba(239,230,213,0.16)',
       modeOptions,
       modePickerOpen: st.modePickerOpen,
       toggleModePicker: () => this.setState(s => ({ modePickerOpen: !s.modePickerOpen })),
-      modePickerBg: st.modePickerOpen ? 'rgba(217,164,65,0.14)' : 'rgba(239,230,213,0.05)',
-      modePickerBorder: st.modePickerOpen ? '#d9a441' : 'rgba(239,230,213,0.16)',
+      modePickerBg: st.modePickerOpen ? 'var(--sl-signal-wash)' : 'rgba(239,230,213,0.05)',
+      modePickerBorder: st.modePickerOpen ? 'var(--sl-signal)' : 'rgba(239,230,213,0.16)',
       challengeTabs, challenges,
       overhead,
     };

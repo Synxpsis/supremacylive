@@ -32,8 +32,31 @@ const PIECE_RANK = { capital: 3, industry: 2, barracks: 1, city: 0 };
 const LAND = 0x6d675a;
 const BORDER_NEUTRAL = 0x0c1620;
 
+/* Three.js materials take numeric hex, not CSS colour strings, so the faction
+ * tokens are read from the DOM once (as "#rrggbb") and parsed to numbers here,
+ * then cached — the same reasoning as board-render.js's tokens(). Re-run this
+ * if the palette (data-faction) ever changes at runtime; nothing does yet. */
+let _tok = null;
+function tokens() {
+  if (_tok) return _tok;
+  const toHex = (v, fallback) => {
+    const m = /^#([0-9a-f]{6})$/i.exec((v || '').trim());
+    return m ? parseInt(m[1], 16) : fallback;
+  };
+  const root = typeof document !== 'undefined' ? document.documentElement : null;
+  const g = n => root ? getComputedStyle(root).getPropertyValue(n) : '';
+  _tok = {
+    self: toHex(g('--sl-faction-self'), 0x3d8fd4),
+    foe: toHex(g('--sl-faction-foe'), 0xe0574a),
+    neutral: toHex(g('--sl-faction-neutral'), 0x7d8683),
+    signal: toHex(g('--sl-signal'), 0xd5d9d4),
+  };
+  return _tok;
+}
+
 function seatColorHex(seat) {
-  return seat === 0 ? 0x48a37c : seat === 1 ? 0xc0483c : 0x8b8272;
+  const t = tokens();
+  return seat === 0 ? t.self : seat === 1 ? t.foe : t.neutral;
 }
 
 function labelDiv(text, cls) {
@@ -175,7 +198,7 @@ export function create(canvas, M) {
     if (cur) { scene.remove(cur.mesh); cur.mesh.geometry.dispose(); cur.mesh.material.dispose(); }
     const k = KIT[kind];
     const mesh = new THREE.Mesh(pieceGeo[kind], new THREE.MeshStandardMaterial({
-      color: owner === null ? 0x8b8272 : seatColorHex(owner), roughness: 0.6,
+      color: owner === null ? tokens().neutral : seatColorHex(owner), roughness: 0.6,
     }));
     mesh.position.set(c + 0.5, k.h / 2, r + 0.5);
     mesh.castShadow = true; mesh.receiveShadow = true;
@@ -195,7 +218,7 @@ export function create(canvas, M) {
 
   const selRing = new THREE.Mesh(
     new THREE.RingGeometry(0.32, 0.42, 24),
-    new THREE.MeshBasicMaterial({ color: 0xd9a441, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
+    new THREE.MeshBasicMaterial({ color: tokens().signal, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
   );
   selRing.rotation.x = -Math.PI / 2;
   selRing.visible = false;
@@ -208,7 +231,7 @@ export function create(canvas, M) {
 
   const multiGroup = new THREE.Group();
   scene.add(multiGroup);
-  const multiMat = new THREE.MeshBasicMaterial({ color: 0xd9a441, transparent: true, opacity: 0.22, side: THREE.DoubleSide });
+  const multiMat = new THREE.MeshBasicMaterial({ color: tokens().signal, transparent: true, opacity: 0.22, side: THREE.DoubleSide });
 
   // Drag-to-march preview: a thin box strip per path segment (cheap, no
   // extra geometry types to load) plus a floating label at the destination.
@@ -329,7 +352,7 @@ export function create(canvas, M) {
     if (marchLabel) { scene.remove(marchLabel); marchLabel = null; }
     if (o.marchPath && o.marchPath.length > 1) {
       const pts = o.marchPath.map(([c, r]) => new THREE.Vector3(c + 0.5, 0.08, r + 0.5));
-      const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xd9a441, linewidth: 2 }));
+      const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: tokens().signal, linewidth: 2 }));
       marchGroup.add(line);
       if (o.marchLabelText) {
         marchLabel = new CSS2DObject(labelDiv(o.marchLabelText, 'fp3d-march'));

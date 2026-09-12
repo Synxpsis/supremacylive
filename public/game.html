@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html data-faction="cobalt-ember">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -30,10 +30,10 @@
 </script>
 <style>
   body { margin: 0; background: #0b1219; overflow: hidden; }
-  a { color: #d9a441; text-decoration: none; }
+  a { color: var(--sl-signal); text-decoration: none; }
   a:hover { color: #efe6d5; }
-  ::selection { background: rgba(217,164,65,0.28); }
-  input[type="range"] { accent-color: #d9a441; height: 16px; }
+  ::selection { background: var(--sl-signal-glow); }
+  input[type="range"] { accent-color: var(--sl-signal); height: 16px; }
 </style>
 </helmet>
 
@@ -60,10 +60,10 @@
       <header style="grid-column: 1 / -1; display: flex; align-items: stretch; background: #101a23; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; overflow: hidden;">
 
         <div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-right: 1px solid rgba(239,230,213,0.12);">
-          <div style="width: 22px; height: 22px; flex: none; border-radius: 50%; background: rgba(217,164,65,0.16); display: flex; align-items: center; justify-content: center; color: #d9a441;">
+          <div style="width: 22px; height: 22px; flex: none; border-radius: 50%; background: var(--sl-coin-wash); display: flex; align-items: center; justify-content: center; color: var(--sl-coin);">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4.5"></circle></svg>
           </div>
-          <span style="font-family: Bitter, serif; font-size: 16px; font-weight: 600; color: #d9a441;">{{ myCoin }}</span>
+          <span style="font-family: Bitter, serif; font-size: 16px; font-weight: 600; color: var(--sl-coin);">{{ myCoin }}</span>
         </div>
 
         <div style="flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 32px; padding: 0 20px;">
@@ -99,7 +99,7 @@
         </div>
 
         <div style="flex: none; display: flex; align-items: center; padding: 0 14px; border-left: 1px solid rgba(239,230,213,0.12);">
-          <button onClick="{{ exit }}" style="white-space: nowrap; padding: 8px 14px; background: rgba(192,72,60,0.14); border: 1px solid rgba(192,72,60,0.5); border-radius: 3px; color: #e7b3ac; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="filter: brightness(1.25);">Forfeit</button>
+          <button onClick="{{ exit }}" style="white-space: nowrap; padding: 8px 14px; background: var(--sl-danger-wash); border: 1px solid var(--sl-danger); border-radius: 3px; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="filter: brightness(1.25);">Forfeit</button>
         </div>
 
       </header>
@@ -129,7 +129,7 @@
               </div>
 
               <sc-if value="{{ showCapNote }}" hint-placeholder-val="{{ false }}">
-                <p style="margin: 0; padding: 12px 14px; background: rgba(217,164,65,0.1); border: 1px solid rgba(217,164,65,0.4); border-radius: 3px; font-size: 14px; line-height: 1.5; color: #e8d3a8; text-wrap: pretty;">{{ capNote }}</p>
+                <p style="margin: 0; padding: 12px 14px; background: var(--sl-warn-wash); border: 1px solid var(--sl-warn); border-radius: 3px; font-size: 14px; line-height: 1.5; color: var(--sl-text); text-wrap: pretty;">{{ capNote }}</p>
               </sc-if>
 
               <div style="display: flex; flex-direction: column; gap: 9px;">
@@ -143,7 +143,7 @@
                 </sc-if>
 
                 <sc-if value="{{ canReinforce }}" hint-placeholder-val="{{ false }}">
-                  <button onClick="{{ reinforceHere }}" style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; background: rgba(74,127,163,0.16); border: 1px solid rgba(74,127,163,0.55); border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14.5px; text-align: left; cursor: pointer;" style-hover="filter: brightness(1.22);">
+                  <button onClick="{{ reinforceHere }}" style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; background: var(--sl-info-wash); border: 1px solid var(--sl-info); border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14.5px; text-align: left; cursor: pointer;" style-hover="filter: brightness(1.22);">
                     <span>Reinforce</span>
                     <span style="font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #9aa1a8;">{{ reinforceCount }}</span>
                   </button>
@@ -159,21 +159,21 @@
                 <sc-if value="{{ canMarch }}" hint-placeholder-val="{{ false }}">
                   <div style="display: flex; flex-direction: column; gap: 7px;">
                     <sc-if value="{{ armedHere }}" hint-placeholder-val="{{ false }}">
-                      <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px 13px; background: rgba(217,164,65,0.12); border: 1px solid rgba(217,164,65,0.5); border-radius: 3px;">
-                        <span style="font-size: 14px; color: #e8d3a8;">Sending {{ armedPct }}% — click any province as the destination.</span>
+                      <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px 13px; background: var(--sl-signal-wash); border: 1px solid var(--sl-signal); border-radius: 3px;">
+                        <span style="font-size: 14px; color: var(--sl-text);">Sending {{ armedPct }}% — click any province as the destination.</span>
                         <button onClick="{{ cancelMarch }}" style="align-self: flex-start; padding: 6px 12px; background: rgba(239,230,213,0.07); border: 1px solid rgba(239,230,213,0.2); border-radius: 3px; color: #c8c2b4; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13px; cursor: pointer;" style-hover="color: #efe6d5;">Cancel</button>
                       </div>
                     </sc-if>
                     <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #9aa1a8; text-wrap: pretty;">Drag from this province to send half its garrison. Hold <strong style="color: #c8c2b4; font-weight: 600;">Shift</strong> while releasing to send all of it.</p>
                     <div style="display: flex; gap: 7px;">
-                      <button onClick="{{ arm50 }}" style="flex: 1; padding: 9px 12px; background: rgba(239,230,213,0.05); border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; color: #c8c2b4; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="color: #efe6d5; border-color: rgba(217,164,65,0.5);">Click-to-send half</button>
-                      <button onClick="{{ arm100 }}" style="flex: 1; padding: 9px 12px; background: rgba(239,230,213,0.05); border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; color: #c8c2b4; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="color: #efe6d5; border-color: rgba(217,164,65,0.5);">All</button>
+                      <button onClick="{{ arm50 }}" style="flex: 1; padding: 9px 12px; background: rgba(239,230,213,0.05); border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; color: #c8c2b4; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="color: #efe6d5; border-color: var(--sl-signal);">Click-to-send half</button>
+                      <button onClick="{{ arm100 }}" style="flex: 1; padding: 9px 12px; background: rgba(239,230,213,0.05); border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; color: #c8c2b4; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="color: #efe6d5; border-color: var(--sl-signal);">All</button>
                     </div>
                   </div>
                 </sc-if>
 
                 <sc-if value="{{ showNotice }}" hint-placeholder-val="{{ false }}">
-                  <p style="margin: 0; padding: 10px 13px; background: rgba(192,72,60,0.12); border: 1px solid rgba(192,72,60,0.45); border-radius: 3px; font-size: 13.5px; color: #e7b3ac;">{{ notice }}</p>
+                  <p style="margin: 0; padding: 10px 13px; background: var(--sl-danger-wash); border: 1px solid var(--sl-danger); border-radius: 3px; font-size: 13.5px; color: var(--sl-text);">{{ notice }}</p>
                 </sc-if>
               </div>
 
@@ -181,10 +181,10 @@
           </sc-if>
 
           <sc-if value="{{ hasMulti }}" hint-placeholder-val="{{ false }}">
-            <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px; background: rgba(217,164,65,0.08); border: 1px solid rgba(217,164,65,0.5); border-radius: 3px;">
+            <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px; background: var(--sl-signal-wash); border: 1px solid var(--sl-signal); border-radius: 3px;">
               <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;">
                 <span style="font-family: Bitter, serif; font-size: 18px; font-weight: 600; color: #efe6d5;">{{ multiCount }} provinces</span>
-                <span style="font-size: 12.5px; letter-spacing: 0.12em; text-transform: uppercase; color: #d9a441;">Group</span>
+                <span style="font-size: 12.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sl-signal);">Group</span>
               </div>
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px;">
                 <span style="color: #9aa1a8;">Total troops</span>
@@ -260,6 +260,7 @@ class Component extends DCLogic {
   };
 
   componentDidMount() {
+    this.readTokens();
     fetch('/api/auth/me', { credentials: 'same-origin' })
       .then(r => r.ok ? r.json() : { user: null })
       .then(j => this.setState({ commander: (j.user && j.user.username) || null }))
@@ -985,10 +986,26 @@ class Component extends DCLogic {
    *  either of you was actually assigned. */
   seatName(seat) { return seat === this.viewSeat() ? 'Green' : 'Red'; }
 
+  /** The canvas can't resolve var(--sl-*) — its 2D context only takes literal
+   *  colour strings — so the faction/signal/status tokens it needs are read
+   *  once here and cached, then reused by seatColour() and every ctx.fillStyle
+   *  / strokeStyle literal in paint(). Re-run this if the palette (data-faction)
+   *  ever changes at runtime; nothing does yet, so a one-time read at mount is
+   *  enough for now. */
+  readTokens() {
+    const g = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    this._tok = {
+      self: g('--sl-faction-self'), foe: g('--sl-faction-foe'), neutral: g('--sl-faction-neutral'),
+      signal: g('--sl-signal'), signalWash: g('--sl-signal-wash'), danger: g('--sl-danger'),
+    };
+    return this._tok;
+  }
+
   seatColour(seat) {
-    if (seat === this.viewSeat()) return this.props.seatOneColour ?? '#48a37c';
-    if (seat === (1 - this.viewSeat())) return this.props.seatTwoColour ?? '#c0483c';
-    return '#8b8272';
+    const t = this._tok || this.readTokens();
+    if (seat === this.viewSeat()) return this.props.seatOneColour ?? t.self;
+    if (seat === (1 - this.viewSeat())) return this.props.seatTwoColour ?? t.foe;
+    return t.neutral;
   }
 
   // ── camera ───────────────────────────────────────────────────────────────
@@ -1188,7 +1205,7 @@ class Component extends DCLogic {
         const path = self.FPMap.travelPath(M, [dFrom.c, dFrom.r], [dTo.c, dTo.r],
           self.FPSim.RULES.hopTicks, self.FPSim.RULES.offRoadTicks);
         if (path && path.length) {
-          ctx.strokeStyle = 'rgba(217,164,65,0.9)';
+          ctx.strokeStyle = this._tok.signal;
           ctx.lineWidth = Math.max(2, 0.1 * cam.scale);
           ctx.lineJoin = 'round'; ctx.lineCap = 'round';
           ctx.beginPath();
@@ -1207,11 +1224,11 @@ class Component extends DCLogic {
           if (ctx.roundRect) ctx.roundRect(end[0] - w / 2, end[1] - 0.5 * cam.scale - 11, w, 22, 3);
           else ctx.rect(end[0] - w / 2, end[1] - 0.5 * cam.scale - 11, w, 22);
           ctx.fill();
-          ctx.fillStyle = '#d9a441';
+          ctx.fillStyle = this._tok.signal;
           ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
           ctx.fillText(label, end[0], end[1] - 0.5 * cam.scale);
         } else {
-          ctx.strokeStyle = 'rgba(192,72,60,0.9)';
+          ctx.strokeStyle = this._tok.danger;
           ctx.lineWidth = 2;
           ctx.setLineDash([6, 5]);
           const z = cam.project(dTo.c + 0.5, dTo.r + 0.5);
@@ -1219,7 +1236,7 @@ class Component extends DCLogic {
           ctx.setLineDash([]);
         }
       }
-      ctx.strokeStyle = '#d9a441';
+      ctx.strokeStyle = this._tok.signal;
       ctx.lineWidth = 2.4;
       ctx.beginPath();
       ctx.arc(a[0], a[1], Math.max(8, 0.44 * cam.scale), 0, Math.PI * 2);
@@ -1230,7 +1247,7 @@ class Component extends DCLogic {
     const armed = this.state.armed;
     if (armed) {
       const mid = cam.project(armed.c + 0.5, armed.r + 0.5);
-      ctx.strokeStyle = '#d9a441';
+      ctx.strokeStyle = this._tok.signal;
       ctx.lineWidth = 2;
       ctx.setLineDash([5, 4]);
       ctx.beginPath();
@@ -1239,12 +1256,12 @@ class Component extends DCLogic {
       ctx.setLineDash([]);
     }
 
-    // Multi-selection: paint the tiles gold-outlined so a group dispatch is
+    // Multi-selection: paint the tiles signal-outlined so a group dispatch is
     // legible against ownership colour.
     const multi = this.state.multi;
     if (multi && multi.size) {
-      ctx.strokeStyle = '#d9a441';
-      ctx.fillStyle = 'rgba(217,164,65,0.16)';
+      ctx.strokeStyle = this._tok.signal;
+      ctx.fillStyle = this._tok.signalWash;
       ctx.lineWidth = Math.max(1.5, 0.06 * cam.scale);
       for (const k of multi) {
         const [c, r] = k.split(',').map(Number);
@@ -1261,8 +1278,8 @@ class Component extends DCLogic {
     if (mq && this.state.mode === 'marquee') {
       const x = Math.min(mq.x0, mq.x1), y = Math.min(mq.y0, mq.y1);
       const w = Math.abs(mq.x1 - mq.x0), h = Math.abs(mq.y1 - mq.y0);
-      ctx.fillStyle = 'rgba(217,164,65,0.1)';
-      ctx.strokeStyle = '#d9a441';
+      ctx.fillStyle = this._tok.signalWash;
+      ctx.strokeStyle = this._tok.signal;
       ctx.lineWidth = 1.4;
       ctx.setLineDash([5, 3]);
       ctx.fillRect(x, y, w, h);
@@ -1339,13 +1356,13 @@ class Component extends DCLogic {
       exit: () => this.exit(),
       fit: () => this.fit(),
     };
-    const blankPill = { name: '—', colour: '#8b8272', nameColour: '#9aa1a8', terr: '0', trophies: 0 };
+    const blankPill = { name: '—', colour: 'var(--sl-faction-neutral)', nameColour: '#9aa1a8', terr: '0', trophies: 0 };
     const blank = {
       headerLeft: blankPill, headerRight: blankPill,
       myCoin: 0, gridCols: '0px 1fr', asideBorder: 'none',
       hasSel: false, hasMulti: false, noSel: true, selCoord: '—',
       multiCount: '', multiTroops: '', clearMulti: () => {},
-      selHeading: '', selOwnerLine: '', selOwnerColour: '#8b8272', selRows: [],
+      selHeading: '', selOwnerLine: '', selOwnerColour: 'var(--sl-faction-neutral)', selRows: [],
       capNote: '', showCapNote: false, canBuild: false, canMarch: false,
       marchBlocked: false, armedHere: false, armedPct: 0,
       barrackCost: '', barrackBg: 'rgba(239,230,213,0.04)',
@@ -1356,7 +1373,7 @@ class Component extends DCLogic {
       buildBarracks: () => {}, buildIndustry: () => {}, reinforceHere: () => {},
       arm50: () => {}, arm100: () => {}, cancelMarch: () => {},
       notice: '', showNotice: false, clock: '',
-      showOver: false, overColour: '#d9a441', overTitle: '',
+      showOver: false, overColour: 'var(--sl-ok)', overTitle: '',
     };
     if (!F) {
       return { ...base, ...blank, statTerritories: '—', statProvinces: '—', statWin: '—' };
@@ -1402,7 +1419,7 @@ class Component extends DCLogic {
       hasSel: false, hasMulti: false, noSel: true, selCoord: '—',
       multiCount: '', multiTroops: '', clearMulti: () => this.setState({ multi: null }),
       selHeading: '', selOwnerLine: '',
-      selOwnerColour: '#8b8272', selRows: [], capNote: '', showCapNote: false,
+      selOwnerColour: 'var(--sl-faction-neutral)', selRows: [], capNote: '', showCapNote: false,
       canBuild: false, canMarch: false, marchBlocked: false, armedHere: false, armedPct: 0,
       barrackCost: '', barrackBg: 'rgba(239,230,213,0.04)',
       barrackBorder: 'rgba(239,230,213,0.14)', barrackColour: '#6f7883',
@@ -1429,10 +1446,10 @@ class Component extends DCLogic {
       detail.selOwnerColour = this.seatColour(own);
       detail.selOwnerLine = `${own === null ? 'Unclaimed province' : mine ? 'Held by you' : `Held by seat ${own}`} · ${sel.c}, ${sel.r}`;
       detail.selRows = [
-        { key: 'kind', label: 'Province', value: isCap ? 'Territory capital' : 'Open ground', colour: isCap ? '#d9a441' : '#6f7883' },
+        { key: 'kind', label: 'Province', value: isCap ? 'Territory capital' : 'Open ground', colour: isCap ? 'var(--sl-signal)' : '#6f7883' },
         { key: 'terr', label: 'Territory held by', value: terrOwn === null ? 'No one' : terrOwn === seat ? 'You' : `Seat ${terrOwn}`, colour: '#c8c2b4' },
-        { key: 'coin', label: 'Coin / sec', value: city ? city.wealth.toFixed(1) : '—', colour: city ? '#d9a441' : '#6f7883' },
-        { key: 'reach', label: 'In reach', value: mine ? 'Held' : reachable ? 'Yes' : 'No', colour: mine ? '#c8c2b4' : reachable ? '#48a37c' : '#6f7883' },
+        { key: 'coin', label: 'Coin / sec', value: city ? city.wealth.toFixed(1) : '—', colour: city ? 'var(--sl-coin)' : '#6f7883' },
+        { key: 'reach', label: 'In reach', value: mine ? 'Held' : reachable ? 'Yes' : 'No', colour: mine ? '#c8c2b4' : reachable ? 'var(--sl-ok)' : '#6f7883' },
       ];
       detail.capNote = isCap
         ? (mine ? 'Losing this capital loses the whole territory.'
@@ -1448,7 +1465,7 @@ class Component extends DCLogic {
 
       detail.selRows.splice(2, 0,
         { key: 'gar', label: 'Garrison', value: garrison ? String(garrison) : '—', colour: garrison ? '#efe6d5' : '#6f7883' },
-        { key: 'brk', label: 'Structure', value: hasBarracks ? 'Barracks' : hasIndustry ? `Industry · +${F2.RULES.industryYield}/s` : 'None', colour: hasBarracks ? '#48a37c' : hasIndustry ? '#d9a441' : '#6f7883' },
+        { key: 'brk', label: 'Structure', value: hasBarracks ? 'Barracks' : hasIndustry ? `Industry · +${F2.RULES.industryYield}/s` : 'None', colour: hasBarracks ? 'var(--sl-ok)' : hasIndustry ? 'var(--sl-coin)' : '#6f7883' },
         { key: 'road', label: 'Ground', value: onRoad ? 'Road' : 'Open country', colour: onRoad ? '#c8c2b4' : '#6f7883' },
       );
 
@@ -1458,14 +1475,14 @@ class Component extends DCLogic {
       const bAfford = this.sim.money[seat] >= bCost;
       detail.canBuild = mine && !hasBarracks && !hasIndustry;
       detail.barrackCost = `${Math.round(bCost / 1000)} coin`;
-      detail.barrackBg = bAfford ? 'rgba(72,163,124,0.14)' : 'rgba(239,230,213,0.04)';
-      detail.barrackBorder = bAfford ? 'rgba(72,163,124,0.5)' : 'rgba(239,230,213,0.14)';
-      detail.barrackColour = bAfford ? '#9aa1a8' : '#c0483c';
+      detail.barrackBg = bAfford ? 'var(--sl-ok-wash)' : 'rgba(239,230,213,0.04)';
+      detail.barrackBorder = bAfford ? 'var(--sl-ok)' : 'rgba(239,230,213,0.14)';
+      detail.barrackColour = bAfford ? '#9aa1a8' : 'var(--sl-danger)';
       detail.canIndustry = mine && !hasBarracks && !hasIndustry && !isCap;
       detail.industryCost = `${F2.RULES.industryCost} coin`;
       detail.industryAfford = canAfford;
-      detail.industryBg = canAfford ? 'rgba(217,164,65,0.14)' : 'rgba(239,230,213,0.04)';
-      detail.industryBorder = canAfford ? 'rgba(217,164,65,0.5)' : 'rgba(239,230,213,0.14)';
+      detail.industryBg = canAfford ? 'var(--sl-ok-wash)' : 'rgba(239,230,213,0.04)';
+      detail.industryBorder = canAfford ? 'var(--sl-ok)' : 'rgba(239,230,213,0.14)';
       detail.industryColour = canAfford ? '#efe6d5' : '#6f7883';
       detail.canMarch = mine && garrison > 0;
 
@@ -1512,7 +1529,7 @@ class Component extends DCLogic {
       showNotice: !!this.state.notice,
       clock: `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`,
       showOver: this.sim.over !== null,
-      overColour: this.sim.over === seat ? '#48a37c' : this.seatColour(this.sim.over),
+      overColour: this.sim.over === seat ? 'var(--sl-ok)' : 'var(--sl-danger)',
       overTitle: this.sim.over === seat ? 'You win' : 'You lose',
       buildBarracks: () => sel && this.order(() => this.issueCmd('build', [sel.c, sel.r])),
       buildIndustry: () => sel && this.order(() => this.issueCmd('industry', [sel.c, sel.r])),

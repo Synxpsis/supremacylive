@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html data-faction="cobalt-ember">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -21,8 +21,8 @@
   }
   h1, h2, h3 { font-family: 'Bitter', serif; margin: 0; }
   input, select, button { font-family: inherit; }
-  a { color: #d9a441; }
-  ::selection { background: rgba(217,164,65,0.28); }
+  a { color: var(--sl-signal); }
+  ::selection { background: var(--sl-signal-glow); }
 
   #app { display: none; height: 100vh; flex-direction: column; }
   #app.ready { display: flex; }
@@ -36,8 +36,8 @@
   #topbar .sub { font-size: 12px; color: #6f7883; }
   #topbar .spacer { flex: 1; }
   #saveStatus { font-size: 12px; color: #9aa1a8; min-width: 160px; text-align: right; }
-  #saveStatus.err { color: #c0483c; }
-  #saveStatus.ok { color: #48a37c; }
+  #saveStatus.err { color: var(--sl-danger); }
+  #saveStatus.ok { color: var(--sl-ok); }
 
   button.btn {
     padding: 8px 16px; border-radius: 3px; cursor: pointer;
@@ -46,11 +46,11 @@
   }
   button.btn:hover { color: #efe6d5; border-color: rgba(239,230,213,0.35); }
   button.btn:disabled { opacity: 0.4; cursor: default; }
-  button.btn.primary { background: #d9a441; border-color: #d9a441; color: #0b1219; font-weight: 600; }
-  button.btn.primary:hover { background: #e8b658; }
-  button.btn.on { background: rgba(217,164,65,0.24); border-color: #d9a441; color: #efe6d5; }
-  button.btn.danger { border-color: rgba(192,72,60,0.5); color: #c0483c; }
-  button.btn.danger:hover { color: #e0685a; border-color: #e0685a; }
+  button.btn.primary { background: var(--sl-signal); border-color: var(--sl-signal); color: var(--sl-text-invert); font-weight: 600; }
+  button.btn.primary:hover { background: var(--sl-signal-hot); border-color: var(--sl-signal-hot); }
+  button.btn.on { background: var(--sl-signal-wash); border-color: var(--sl-signal); color: #efe6d5; }
+  button.btn.danger { border-color: var(--sl-danger); color: var(--sl-danger); }
+  button.btn.danger:hover { filter: brightness(1.15); }
 
   #main { flex: 1; display: flex; min-height: 0; }
   #canvasWrap { flex: 1; position: relative; background: #0b1219; }
@@ -89,13 +89,13 @@
     flex: 1; background: transparent; border: none; border-bottom: 1px solid transparent;
     color: #efe6d5; font-size: 13.5px; padding: 3px 2px;
   }
-  .prov-row input:focus { outline: none; border-bottom-color: #d9a441; }
+  .prov-row input:focus { outline: none; border-bottom-color: var(--sl-signal); }
 
   #symList { display: flex; flex-direction: column; gap: 6px; }
-  .sym-ok { color: #48a37c; font-size: 13px; }
+  .sym-ok { color: var(--sl-ok); font-size: 13px; }
   .sym-issue {
-    font-size: 12.5px; color: #d9a441; background: rgba(217,164,65,0.08);
-    border: 1px solid rgba(217,164,65,0.2); border-radius: 3px; padding: 6px 8px;
+    font-size: 12.5px; color: var(--sl-warn); background: var(--sl-warn-wash);
+    border: 1px solid var(--sl-warn); border-radius: 3px; padding: 6px 8px;
   }
 
   #emptyPanel { font-size: 13px; color: #6f7883; line-height: 1.5; }
@@ -108,7 +108,7 @@
     padding: 24px; border: 1px solid rgba(239,230,213,0.14); border-radius: 6px;
     background: #0d151d;
   }
-  #login .err { font-size: 12.5px; color: #c0483c; min-height: 16px; }
+  #login .err { font-size: 12.5px; color: var(--sl-danger); min-height: 16px; }
 </style>
 </head>
 <body>
@@ -381,7 +381,7 @@
     for (const p of S.def.provinces) {
       parts.push(
         '<div class="prov-row">' +
-        '<span class="dot" style="background:#8b8272"></span>' +
+        '<span class="dot" style="background:var(--sl-faction-neutral)"></span>' +
         '<input data-prov-name="' + p.id + '" value="' + escapeAttr(p.name) + '">' +
         '</div>'
       );

@@ -17,7 +17,29 @@
 })(typeof self !== 'undefined' ? self : this, function () {
 
   const LAND = '#6d675a';
-  const NEUTRAL = '#8b8272';
+
+  /* Canvas can't resolve var(--sl-*), so the faction tokens board-render.js
+   * needs are read from the DOM once and cached here, then reused on every
+   * paint. Re-run readTokens() if the palette (data-faction) ever changes at
+   * runtime — nothing does yet, so a lazy first-call read is enough for now.
+   * Fallbacks mirror tokens.css's own defaults, for the rare non-browser
+   * (test) context where there is no computed style to read. */
+  let _tok = null;
+  function tokens() {
+    if (_tok) return _tok;
+    const root = typeof document !== 'undefined' ? document.documentElement : null;
+    const g = (n, fallback) => {
+      const v = root ? getComputedStyle(root).getPropertyValue(n).trim() : '';
+      return v || fallback;
+    };
+    _tok = {
+      self: g('--sl-faction-self', '#3d8fd4'),
+      foe: g('--sl-faction-foe', '#e0574a'),
+      neutral: g('--sl-faction-neutral', '#7d8683'),
+    };
+    return _tok;
+  }
+  const NEUTRAL = () => tokens().neutral;
 
   /* The structure kit. `fp` is the share of the tile the footprint covers (the
    * remainder is the margin that stops a built-up board looking welded
@@ -40,8 +62,10 @@
     return '#' + c.map(v => v.toString(16).padStart(2, '0')).join('');
   }
 
-  const defaultSeatColour = seat =>
-    seat === 0 ? '#48a37c' : seat === 1 ? '#c0483c' : NEUTRAL;
+  const defaultSeatColour = seat => {
+    const t = tokens();
+    return seat === 0 ? t.self : seat === 1 ? t.foe : t.neutral;
+  };
 
   /**
    * @param ctx   2D context, already cleared and DPR-transformed
@@ -103,7 +127,7 @@
     const piece = (c, r, kind, own) => {
       const k = KIT[kind] || KIT.city;
       const m = (1 - k.fp) / 2;
-      const roof = own === null ? shade(NEUTRAL, 1.3) : shade(seatColour(own), 1.5);
+      const roof = own === null ? shade(NEUTRAL(), 1.3) : shade(seatColour(own), 1.5);
       prism(c + m, r + m, k.fp, k.fp, k.h, roof, WALL_NEAR, WALL_SIDE);
     };
 
