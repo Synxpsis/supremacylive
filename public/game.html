@@ -589,13 +589,32 @@ class Component extends DCLogic {
       // Frame the player's own starting territory on join — the 3D
       // equivalent of focusTerritory(), just a one-off camera placement
       // instead of reproducing the 2D camera's exact analytic behaviour.
+      //
+      // The approach direction has to mirror per seat the way the 2D
+      // camera's viewYaw() does, not use one fixed world-space offset: home
+      // sits in a different corner for each seat, so a fixed "+x,+z" offset
+      // only happens to look right for whichever seat's home is on that
+      // side. For the other seat it pushes the camera *away* from the board
+      // entirely, off past their own home's outer corner, into a grazing,
+      // near-horizontal angle across the whole map — which was the real
+      // cause of both the "camera looks backwards" and "everything looks
+      // black" reports from live seat-1 testing (a steep raking angle lights
+      // mostly tile side-walls, not tops). Offsetting along the vector from
+      // home toward the board's centre — the same direction for every
+      // board, mirrored automatically per corner — reproduces the seat-0
+      // framing exactly and mirrors it correctly for every other seat.
       if (M) {
         const start = (M.starts || []).find(s => s.seat === this.viewSeat());
         const home = start && M.province(start.territory);
         if (home) {
           const cx = home.c0 + home.w / 2, cz = home.r0 + home.h / 2;
+          const bx = M.gridW / 2, bz = M.gridH / 2;
+          let dx = bx - cx, dz = bz - cz;
+          const len = Math.hypot(dx, dz) || 1;
+          dx /= len; dz /= len;
+          const reach = M.gridW * 0.35 * Math.SQRT2; // same diagonal magnitude the old fixed offset had
           this._r3d.controls.target.set(cx, 0, cz);
-          this._r3d.camera.position.set(cx + M.gridW * 0.35, M.gridW * 0.55, cz + M.gridH * 0.35);
+          this._r3d.camera.position.set(cx + dx * reach, M.gridW * 0.55, cz + dz * reach);
           this._r3d.controls.update();
         }
       }
