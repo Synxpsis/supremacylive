@@ -17,9 +17,6 @@
   a { color: var(--sl-signal); text-decoration: none; }
   a:hover { color: var(--sl-signal-hot); }
   ::selection { background: var(--sl-signal-glow); }
-  @keyframes scanSweep { 0% { transform: translateX(-30%); } 100% { transform: translateX(130%); } }
-  @keyframes theatreDrift { 0% { transform: scale(1.06) translate3d(0,0,0); } 50% { transform: scale(1.09) translate3d(-14px,-10px,0); } 100% { transform: scale(1.06) translate3d(0,0,0); } }
-  @keyframes hazeBreathe { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
 </style>
 </helmet>
 
@@ -88,22 +85,7 @@
   </sc-if>
 
   <sc-if value="{{ onHub }}" hint-placeholder-val="{{ false }}">
-    <div style="position: absolute; inset: 0; background: radial-gradient(ellipse 1200px 800px at 50% 45%, var(--sl-ink-300), #080c12 75%);"></div>
-    <div style="position: absolute; inset: -40px; display: grid; grid-template-columns: repeat(18, 1fr); grid-template-rows: repeat(11, 1fr); gap: 3px; filter: blur(7px); animation: theatreDrift 70s ease-in-out infinite; will-change: transform;">
-      <sc-for list="{{ overhead }}" as="t" hint-placeholder-count="198">
-        <div style="background: {{ t.bg }}; box-shadow: {{ t.glow }};"></div>
-      </sc-for>
-    </div>
-    <div style="position: absolute; inset: 0; background: radial-gradient(ellipse 340px 260px at 22% 30%, rgba(0,0,0,0.45), transparent 70%), radial-gradient(ellipse 380px 280px at 74% 68%, rgba(0,0,0,0.45), transparent 70%), radial-gradient(ellipse 260px 200px at 55% 18%, rgba(255,255,255,0.05), transparent 70%); animation: hazeBreathe 24s ease-in-out infinite; pointer-events: none;"></div>
-    <div style="position: absolute; left: 21%; top: 40%; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #a8c8f5, #2f4f86); box-shadow: 5px 7px 14px rgba(0,0,0,0.6); filter: blur(3px); pointer-events: none;"></div>
-    <div style="position: absolute; left: 30%; top: 63%; width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #8fb4f0, #26406e); box-shadow: 5px 7px 14px rgba(0,0,0,0.6); filter: blur(3px); pointer-events: none;"></div>
-    <div style="position: absolute; left: 15%; top: 72%; width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #8fb4f0, #26406e); box-shadow: 5px 7px 14px rgba(0,0,0,0.6); filter: blur(3px); pointer-events: none;"></div>
-    <div style="position: absolute; right: 22%; top: 36%; width: 22px; height: 22px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #f0a396, #8d2f27); box-shadow: 5px 7px 14px rgba(0,0,0,0.6); filter: blur(3px); pointer-events: none;"></div>
-    <div style="position: absolute; right: 31%; top: 66%; width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #e88476, #7d251e); box-shadow: 5px 7px 14px rgba(0,0,0,0.6); filter: blur(3px); pointer-events: none;"></div>
-    <div style="position: absolute; right: 14%; top: 74%; width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #e88476, #7d251e); box-shadow: 5px 7px 14px rgba(0,0,0,0.6); filter: blur(3px); pointer-events: none;"></div>
-    <div style="position: absolute; top: 0; bottom: 0; left: 0; width: 220px; background: linear-gradient(90deg, transparent, rgba(200,220,245,0.07), transparent); animation: scanSweep 22s linear infinite; pointer-events: none;"></div>
-    <div style="position: absolute; inset: 0; box-shadow: inset 0 0 200px 100px rgba(4,6,9,0.85); pointer-events: none;"></div>
-    <div style="position: absolute; inset: 0; background: linear-gradient(180deg, rgba(4,6,9,0.7) 0%, rgba(4,6,9,0.15) 26%, rgba(4,6,9,0.15) 62%, rgba(4,6,9,0.8) 100%); pointer-events: none;"></div>
+    <div style="position: absolute; inset: 0; background: var(--sl-ink-100);"></div>
     <div style="position: absolute; inset: 0; display: grid; grid-template-rows: auto 1fr; padding: 24px 30px 30px; gap: 22px; box-sizing: border-box;">
 
       <header style="display: flex; align-items: center; justify-content: space-between; gap: 24px;">
@@ -150,50 +132,57 @@
             <div style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; font-size: 40px; line-height: 1.06; letter-spacing: var(--sl-tr-display);">Welcome back, {{ commander }}</div>
           </div>
 
-          <div style="width: 340px; display: flex; flex-direction: column; gap: 0; padding: 16px 18px 12px; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); box-sizing: border-box; max-height: 240px; overflow-y: auto; flex: none;">
-            <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 14px; margin-bottom: 10px;">Challenges</span>
-            <div style="display: flex; gap: 4px; padding: 3px; margin-bottom: 10px; background: var(--sl-ink-100); border: 1px solid var(--sl-seam); width: fit-content;">
-              <sc-for list="{{ challengeTabs }}" as="t" hint-placeholder-count="3">
-                <button onClick="{{ t.pick }}" style="padding: 5px 10px; background: {{ t.bg }}; border: none; font-size: 12px; color: {{ t.colour }}; font-family: 'Barlow Semi Condensed', sans-serif; cursor: pointer;" style-hover="filter: brightness(1.2);">{{ t.label }}</button>
-              </sc-for>
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 8px;">
-              <sc-for list="{{ challenges }}" as="c" hint-placeholder-count="3">
-                <div style="display: flex; flex-direction: column; gap: 5px; padding: 8px 0; border-top: 1px solid var(--sl-seam);">
-                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
-                    <span style="font-size: 13px; color: var(--sl-text);">{{ c.title }}</span>
-                    <span style="font-size: 11px; color: var(--sl-signal); white-space: nowrap;">{{ c.reward }}</span>
+          <div style="position: relative; width: 340px; padding: 20px 16px 12px; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); box-sizing: border-box; flex: none;">
+            <span style="position: absolute; left: 14px; top: -8px; padding: 0 6px; background: var(--sl-ink-200); font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); font-weight: 500; letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-mute);">Challenges</span>
+            <div style="display: flex; flex-direction: column; gap: 0; max-height: 240px; overflow-y: auto;">
+              <div style="display: flex; gap: 4px; padding: 3px; margin-bottom: 10px; background: var(--sl-ink-100); border: 1px solid var(--sl-seam); width: fit-content;">
+                <sc-for list="{{ challengeTabs }}" as="t" hint-placeholder-count="3">
+                  <button onClick="{{ t.pick }}" style="padding: 5px 10px; background: {{ t.bg }}; border: none; font-size: 12px; color: {{ t.colour }}; font-family: 'Barlow Semi Condensed', sans-serif; cursor: pointer;" style-hover="filter: brightness(1.2);">{{ t.label }}</button>
+                </sc-for>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <sc-for list="{{ challenges }}" as="c" hint-placeholder-count="3">
+                  <div style="display: flex; flex-direction: column; gap: 5px; padding: 8px 0; border-top: 1px solid var(--sl-seam);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px;">
+                      <span style="font-size: 13px; color: var(--sl-text);">{{ c.title }}</span>
+                      <span style="font-size: 11px; color: var(--sl-signal); white-space: nowrap;">{{ c.reward }}</span>
+                    </div>
+                    <div style="height: 5px; background: var(--sl-seam); overflow: hidden;">
+                      <div style="height: 100%; width: {{ c.pct }}; background: var(--sl-ok); "></div>
+                    </div>
+                    <span style="font-size: 11px; color: var(--sl-text-mute);">{{ c.progress }}</span>
                   </div>
-                  <div style="height: 5px; background: var(--sl-seam); overflow: hidden;">
-                    <div style="height: 100%; width: {{ c.pct }}; background: var(--sl-ok); "></div>
-                  </div>
-                  <span style="font-size: 11px; color: var(--sl-text-mute);">{{ c.progress }}</span>
-                </div>
-              </sc-for>
+                </sc-for>
+              </div>
             </div>
           </div>
         </div>
 
         <div style="display: flex; flex-direction: column; justify-content: flex-end; gap: 14px; min-height: 0; margin-bottom: 50px;">
 
-          <div style="position: relative; height: 176px; min-height: 120px; overflow: hidden; border: 1px solid var(--sl-seam-strong); flex: 0 1 176px;">
-            <sc-for list="{{ slides }}" as="s" hint-placeholder-count="3">
-              <div style="position: absolute; inset: 0; opacity: {{ s.opacity }}; pointer-events: {{ s.pointer }}; transition: opacity 0.7s ease; background: {{ s.bg }}; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 16px 18px 30px; box-sizing: border-box;">
-                <span style="font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: {{ s.tagColour }};">{{ s.tag }}</span>
-                <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 17px;">{{ s.title }}</span>
-                <span style="font-size: 12.5px; line-height: 1.4; color: var(--sl-text-dim);">{{ s.blurb }}</span>
-              </div>
-            </sc-for>
-            <div style="position: absolute; bottom: 10px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px;">
-              <sc-for list="{{ dots }}" as="d" hint-placeholder-count="3">
-                <button onClick="{{ d.pick }}" style="width: {{ d.width }}; height: 6px; background: {{ d.bg }}; border: none; cursor: pointer; padding: 0; transition: width 0.3s, background 0.3s;"></button>
+          <div style="position: relative; height: 176px; min-height: 120px; border: 1px solid var(--sl-seam-strong); flex: 0 1 176px;">
+            <span style="position: absolute; left: 14px; top: -8px; z-index: 1; padding: 0 6px; background: var(--sl-ink-200); font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); font-weight: 500; letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-mute);">News</span>
+            <div style="position: absolute; inset: 0; overflow: hidden;">
+              <sc-for list="{{ slides }}" as="s" hint-placeholder-count="3">
+                <div style="position: absolute; inset: 0; opacity: {{ s.opacity }}; pointer-events: {{ s.pointer }}; transition: opacity 0.7s ease; background: {{ s.bg }}; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 16px 18px 30px; box-sizing: border-box;">
+                  <span style="font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: {{ s.tagColour }};">{{ s.tag }}</span>
+                  <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 17px;">{{ s.title }}</span>
+                  <span style="font-size: 12.5px; line-height: 1.4; color: var(--sl-text-dim);">{{ s.blurb }}</span>
+                </div>
               </sc-for>
+              <div style="position: absolute; bottom: 10px; left: 0; right: 0; display: flex; justify-content: center; gap: 6px;">
+                <sc-for list="{{ dots }}" as="d" hint-placeholder-count="3">
+                  <button onClick="{{ d.pick }}" style="width: {{ d.width }}; height: 6px; background: {{ d.bg }}; border: none; cursor: pointer; padding: 0; transition: width 0.3s, background 0.3s;"></button>
+                </sc-for>
+              </div>
             </div>
           </div>
 
-          <aside style="display: flex; flex-direction: column; gap: 0; padding: 22px 24px 18px; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); overflow-y: auto; flex: 1 1 auto; min-height: 150px; box-sizing: border-box;">
-            <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 15px; margin-bottom: 18px;">Patch notes</span>
-            <div style="padding: 16px 0; border-top: 1px solid var(--sl-seam); font-size: 13.5px; color: var(--sl-text-mute);">Nothing here yet.</div>
+          <aside style="position: relative; padding: 20px 20px 18px; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); flex: 1 1 auto; min-height: 150px; box-sizing: border-box;">
+            <span style="position: absolute; left: 16px; top: -8px; padding: 0 6px; background: var(--sl-ink-200); font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); font-weight: 500; letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-mute);">Patch notes</span>
+            <div style="display: flex; flex-direction: column; gap: 0; height: 100%; overflow-y: auto;">
+              <div style="padding: 16px 0; border-top: 1px solid var(--sl-seam); font-size: 13.5px; color: var(--sl-text-mute);">Nothing here yet.</div>
+            </div>
           </aside>
 
           <sc-if value="{{ modePickerOpen }}" hint-placeholder-val="{{ false }}">
@@ -461,31 +450,6 @@ class Component extends DCLogic {
     });
     const challenges = challengeSets[st.challengeTab].map((c, i) => ({ key: i, ...c }));
 
-    // Top-down theatre backdrop: blue holdings west, red east, ragged neutral band between.
-    const ocols = 18, orows = 11;
-    const overhead = [];
-    for (let r = 0; r < orows; r++) {
-      for (let c = 0; c < ocols; c++) {
-        const front = 8.5 + 2.2 * Math.sin(r * 0.62) + 0.9 * Math.cos(r * 1.7);
-        const d = c - front;
-        const v = Math.abs((Math.sin(r * 12.9898 + c * 78.233) * 43758.5453) % 1);
-        let bg, glow = 'none';
-        if (Math.abs(d) < 1.2) {
-          bg = v > 0.6 ? '#66717e' : '#59636f';
-          glow = '0 0 14px rgba(239,230,213,0.28)';
-        } else if (Math.abs(d) < 2.4) {
-          bg = v > 0.5 ? '#414952' : '#39404a';
-        } else if (d < 0) {
-          bg = ['#3b5f9c', '#345489', '#2c4874', '#253c61', '#1f334f'][Math.min(Math.floor(-d) - 2, 4)];
-        } else {
-          bg = ['#9e4237', '#8d3930', '#7c3129', '#6b2922', '#5a221c'][Math.min(Math.floor(d) - 2, 4)];
-        }
-        if ((r === 2 && c === 13) || (r === 3 && c === 14)) bg = '#345489';
-        if ((r === 8 && c === 4) || (r === 7 && c === 3)) bg = '#8d3930';
-        overhead.push({ key: `o${r}-${c}`, bg, glow });
-      }
-    }
-
     const chip = active => ({
       bg: active ? 'var(--sl-signal-wash)' : 'var(--sl-seam)',
     });
@@ -572,7 +536,6 @@ class Component extends DCLogic {
       modePickerBg: st.modePickerOpen ? 'var(--sl-signal-wash)' : 'var(--sl-seam)',
       modePickerBorder: st.modePickerOpen ? 'var(--sl-signal)' : 'var(--sl-seam-strong)',
       challengeTabs, challenges,
-      overhead,
     };
   }
 }
