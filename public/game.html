@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="./tokens.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
-<link href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700&amp;family=Barlow+Semi+Condensed:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Barlow+Semi+Condensed:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet">
 <script src="./map.js"></script>
 <script src="./board-render.js"></script>
 <script src="./sim.js"></script>
@@ -34,6 +34,20 @@
   a:hover { color: var(--sl-signal-hot); }
   ::selection { background: var(--sl-signal-glow); }
   input[type="range"] { accent-color: var(--sl-signal); height: 16px; }
+  /* 3D-mode (?render=3d) CSS2DObject labels for garrison/troop counts and the
+     march preview — board-render-3d.js only assigns classes, not style, so
+     these numbers were rendering in the browser's unstyled default font. */
+  .fp3d-label {
+    font-family: var(--sl-font-mono); font-weight: var(--sl-fw-mono); font-size: var(--sl-fs-label);
+    color: var(--sl-text); background: color-mix(in srgb, var(--sl-ink-100) 78%, transparent);
+    padding: 2px 6px; transform: translate(-50%, -100%); white-space: nowrap;
+  }
+  .fp3d-troop { transform: translate(-50%, -140%); }
+  .fp3d-march {
+    font-family: var(--sl-font-mono); font-weight: var(--sl-fw-mono); font-size: var(--sl-fs-ui-xs);
+    color: var(--sl-signal); background: color-mix(in srgb, var(--sl-ink-100) 86%, transparent);
+    padding: 4px 10px; transform: translate(-50%, -100%); white-space: nowrap;
+  }
 </style>
 </helmet>
 
@@ -63,7 +77,7 @@
           <div style="width: 22px; height: 22px; flex: none; background: var(--sl-coin-wash); display: flex; align-items: center; justify-content: center; color: var(--sl-coin);">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4.5"></circle></svg>
           </div>
-          <span style="font-family: Bitter, serif; font-size: 16px; font-weight: 600; color: var(--sl-coin);">{{ myCoin }}</span>
+          <span style="font-family: var(--sl-font-mono); font-weight: var(--sl-fw-mono); font-size: 16px; color: var(--sl-coin);">{{ myCoin }}</span>
         </div>
 
         <div style="flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 32px; padding: 0 20px;">
@@ -81,8 +95,8 @@
           </div>
 
           <div style="flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px;">
-            <span style="font-family: ui-monospace, Menlo, monospace; font-size: 19px; color: var(--sl-text);">{{ clock }}</span>
-            <span style="font-family: Bitter, serif; font-size: 21px; font-weight: 600; color: var(--sl-text);">{{ headerLeft.terr }} <span style="color: var(--sl-text-mute); font-weight: 400;">·</span> {{ headerRight.terr }}</span>
+            <span style="font-family: var(--sl-font-mono); font-weight: var(--sl-fw-mono); font-size: 19px; color: var(--sl-text);">{{ clock }}</span>
+            <span style="font-family: var(--sl-font-mono); font-size: 21px; font-weight: var(--sl-fw-mono); color: var(--sl-text);">{{ headerLeft.terr }} <span style="color: var(--sl-text-mute); font-weight: 400;">·</span> {{ headerRight.terr }}</span>
           </div>
 
           <div style="display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px; background: var(--sl-ink-300); border: 1px solid var(--sl-seam-strong); ">
@@ -114,7 +128,7 @@
               <div style="display: flex; flex-direction: column; gap: 9px;">
                 <div style="display: flex; align-items: center; gap: 9px;">
                   <span style="width: 11px; height: 11px; flex: none; background: {{ selOwnerColour }};"></span>
-                  <span style="font-family: Bitter, serif; font-size: 23px; font-weight: 600; letter-spacing: -0.01em;">{{ selHeading }}</span>
+                  <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 23px;">{{ selHeading }}</span>
                 </div>
                 <span style="font-size: 14px; color: var(--sl-text-dim);">{{ selOwnerLine }}</span>
               </div>
@@ -183,12 +197,12 @@
           <sc-if value="{{ hasMulti }}" hint-placeholder-val="{{ false }}">
             <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px; background: var(--sl-signal-wash); border: 1px solid var(--sl-signal); ">
               <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;">
-                <span style="font-family: Bitter, serif; font-size: 18px; font-weight: 600; color: var(--sl-text);">{{ multiCount }} provinces</span>
+                <span style="font-size: 18px; font-weight: 600; color: var(--sl-text);"><span style="font-family: var(--sl-font-mono); font-weight: var(--sl-fw-mono);">{{ multiCount }}</span> provinces</span>
                 <span style="font-size: 12.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sl-signal);">Group</span>
               </div>
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px;">
                 <span style="color: var(--sl-text-dim);">Total troops</span>
-                <span style="font-family: Bitter, serif; font-size: 17px; font-weight: 600; color: var(--sl-text);">{{ multiTroops }}</span>
+                <span style="font-family: var(--sl-font-mono); font-weight: var(--sl-fw-mono); font-size: 17px; color: var(--sl-text);">{{ multiTroops }}</span>
               </div>
               <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--sl-text-dim); text-wrap: pretty;">Left-click any province to send half from every selected source — hold Shift to send all. Esc to clear.</p>
               <button onClick="{{ clearMulti }}" style="padding: 8px 12px; background: var(--sl-seam); border: 1px solid var(--sl-seam-strong); color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="color: var(--sl-signal-hot);">Clear</button>
@@ -197,7 +211,7 @@
 
           <sc-if value="{{ noSel }}" hint-placeholder-val="{{ true }}">
             <div style="display: flex; flex-direction: column; gap: 11px; padding: 18px; background: var(--sl-ink-300); border: 1px dashed var(--sl-seam-strong); ">
-              <span style="font-family: Bitter, serif; font-size: 17px; font-weight: 600; color: var(--sl-text-dim);">Nothing selected</span>
+              <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 17px; color: var(--sl-text-dim);">Nothing selected</span>
               <p style="margin: 0; font-size: 14px; line-height: 1.55; color: var(--sl-text-dim); text-wrap: pretty;">Click a province on the map. Its holder, its territory, and anything built on it appear here.</p>
             </div>
           </sc-if>
@@ -212,7 +226,7 @@
         <sc-if value="{{ showOver }}" hint-placeholder-val="{{ false }}">
           <div style="position: absolute; inset: 0; display: grid; place-items: center; background: rgba(8,14,20,0.82); backdrop-filter: blur(3px);">
             <div style="display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 40px 52px; background: var(--sl-ink-200); border: 1px solid {{ overColour }}; ">
-              <span style="font-family: Bitter, serif; font-size: 40px; font-weight: 600; line-height: 1; color: {{ overColour }};">{{ overTitle }}</span>
+              <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 40px; line-height: 1; color: {{ overColour }};">{{ overTitle }}</span>
               <button onClick="{{ exit }}" style="padding: 12px 22px; background: var(--sl-seam); border: 1px solid var(--sl-seam-strong); color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 16px; cursor: pointer;" style-hover="color: var(--sl-text); border-color: rgba(255,255,255,0.55);">Menu</button>
             </div>
           </div>
@@ -1224,7 +1238,7 @@ class Component extends DCLogic {
           const send = Math.floor((S.garrisons[k] || 0) * (this._shift ? 100 : 50) / 100);
           ctx.fillStyle = this._tok.ink100Wash;
           const label = `${send} · ${(ticks / self.FPSim.RULES.tickHz).toFixed(1)}s`;
-          ctx.font = `600 ${Math.max(11, 0.2 * cam.scale)}px 'Barlow Semi Condensed', sans-serif`;
+          ctx.font = `500 ${Math.max(11, 0.2 * cam.scale)}px 'JetBrains Mono', monospace`;
           const w = ctx.measureText(label).width + 14;
           ctx.beginPath();
           ctx.rect(end[0] - w / 2, end[1] - 0.5 * cam.scale - 11, w, 22);

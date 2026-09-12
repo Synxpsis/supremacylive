@@ -282,7 +282,7 @@
     if (S > 18) {
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const fs = Math.max(9, Math.min(15, 0.2 * S));
-      ctx.font = `600 ${fs}px 'Barlow Semi Condensed', sans-serif`;
+      ctx.font = `500 ${fs}px 'JetBrains Mono', monospace`;
       for (const k of Object.keys(garrisons)) {
         const n = garrisons[k];
         if (!n) continue;
@@ -313,7 +313,7 @@
       if (S > 18) {
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         const fs = Math.max(9, Math.min(14, 0.18 * S));
-        ctx.font = `600 ${fs}px 'Barlow Semi Condensed', sans-serif`;
+        ctx.font = `500 ${fs}px 'JetBrains Mono', monospace`;
         ctx.fillStyle = tokens().textInvert;
         ctx.fillText(String(st.count), mid[0], mid[1] + 0.5);
       }
@@ -341,17 +341,18 @@
     if (labels && labelPx > 46) {
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const fs = Math.max(10, Math.min(20, 0.2 * labelPx));
-      ctx.font = `600 ${fs}px Bitter, serif`;
+      ctx.font = `700 ${fs}px 'Barlow Condensed', sans-serif`;
       for (const p of M.provinces) {
         const own = F.territoryOwner(M, owners, p);
+        const name = p.name.toUpperCase();
         const mid = P(p.c0 + p.w / 2, p.r0 + 0.5);
-        const w = ctx.measureText(p.name).width + fs * 0.9, h = fs * 1.5;
+        const w = ctx.measureText(name).width + fs * 0.9, h = fs * 1.5;
         ctx.fillStyle = tokens().ink000Wash(0.5);
         ctx.beginPath();
         ctx.rect(mid[0] - w / 2, mid[1] - h / 2, w, h);
         ctx.fill();
         ctx.fillStyle = own === null ? tokens().text : shade(seatColour(own), 1.7);
-        ctx.fillText(p.name, mid[0], mid[1]);
+        ctx.fillText(name, mid[0], mid[1]);
       }
     }
   }

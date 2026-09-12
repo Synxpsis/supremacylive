@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="./tokens.css">
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
-<link href="https://fonts.googleapis.com/css2?family=Bitter:wght@500;600;700&family=Barlow+Semi+Condensed:wght@400;500;600&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow+Semi+Condensed:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   body { margin: 0; background: var(--sl-ink-100); overflow: hidden; }
   a { color: var(--sl-signal); text-decoration: none; }
@@ -28,9 +28,9 @@
   <sc-if value="{{ onLanding }}" hint-placeholder-val="{{ true }}">
     <div style="position: absolute; inset: 0; display: grid; place-items: center; padding: 40px;">
       <div style="display: flex; flex-direction: column; align-items: center; gap: 30px; max-width: 620px; text-align: center;">
-        <h1 style="margin: 0; font-family: Bitter, serif; font-weight: 600; font-size: 78px; line-height: 0.98; letter-spacing: -0.025em;">Welcome to<br />Supremacy Live.<br /></h1>
+        <h1 style="margin: 0; font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; font-size: 78px; line-height: 0.98; letter-spacing: var(--sl-tr-display);">Welcome to<br />Supremacy Live.<br /></h1>
         <p style="margin: 0; font-size: 19px; line-height: 1.55; color: var(--sl-text-dim); max-width: 46ch; text-wrap: pretty;">supremacy.live is a real-time "HQ" style PVP game designed to focus entirely on the community, and the content. Completely Free To Play, runs in the browser.</p>
-        <button onClick="{{ toHub }}" style="margin-top: 6px; padding: 16px 46px; background: var(--sl-signal); border: 1px solid var(--sl-signal); color: var(--sl-text-invert); font-family: Bitter, serif; font-weight: 600; font-size: 19px; letter-spacing: 0.02em; cursor: pointer;" style-hover="background: var(--sl-signal-hot); border-color: var(--sl-signal-hot);">{{ playLabel }}</button>
+        <button onClick="{{ toHub }}" style="margin-top: 6px; padding: 16px 46px; background: var(--sl-signal); border: 1px solid var(--sl-signal); color: var(--sl-text-invert); font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; font-size: 19px; letter-spacing: var(--sl-tr-display); cursor: pointer;" style-hover="background: var(--sl-signal-hot); border-color: var(--sl-signal-hot);">{{ playLabel }}</button>
       </div>
     </div>
   </sc-if>
@@ -39,7 +39,7 @@
     <div style="position: absolute; inset: 0; display: grid; place-items: center; padding: 40px;">
       <div style="width: 100%; max-width: 400px; display: flex; flex-direction: column; gap: 22px; padding: 30px 32px; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); ">
         <div style="display: flex; flex-direction: column; gap: 5px;">
-          <span style="font-family: Bitter, serif; font-size: 26px; font-weight: 600;">{{ authTitle }}</span>
+          <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 26px;">{{ authTitle }}</span>
         </div>
 
         <div style="display: flex; gap: 4px; padding: 3px; background: var(--sl-ink-100); border: 1px solid var(--sl-seam-strong); ">
@@ -79,7 +79,7 @@
             <div style="padding: 9px 12px; background: var(--sl-danger-wash); border: 1px solid var(--sl-danger); font-size: 13.5px; color: var(--sl-text);">{{ formError }}</div>
           </sc-if>
 
-          <button type="submit" disabled="{{ busy }}" style="margin-top: 4px; padding: 12px 20px; background: var(--sl-signal); border: 1px solid var(--sl-signal); color: var(--sl-text-invert); font-family: Bitter, serif; font-weight: 600; font-size: 16px; cursor: pointer; opacity: {{ submitOpacity }};" style-hover="background: var(--sl-signal-hot); border-color: var(--sl-signal-hot);">{{ submitLabel }}</button>
+          <button type="submit" disabled="{{ busy }}" style="margin-top: 4px; padding: 12px 20px; background: var(--sl-signal); border: 1px solid var(--sl-signal); color: var(--sl-text-invert); font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 16px; cursor: pointer; opacity: {{ submitOpacity }};" style-hover="background: var(--sl-signal-hot); border-color: var(--sl-signal-hot);">{{ submitLabel }}</button>
         </form>
 
         <button onClick="{{ toLanding }}" style="align-self: flex-start; padding: 4px 0; background: transparent; border: none; color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13px; cursor: pointer;" style-hover="color: var(--sl-signal-hot);">← Back</button>
@@ -147,11 +147,11 @@
 
         <div style="position: relative; display: flex; flex-direction: column; justify-content: space-between; padding-top: 48px; padding-left: 44px; padding-right: 44px; padding-bottom: 50px; min-height: 0; box-sizing: border-box;">
           <div style="position: relative; display: flex; flex-direction: column; gap: 14px; max-width: 460px; min-height: 0;">
-            <div style="font-family: Bitter, serif; font-size: 40px; font-weight: 600; line-height: 1.06; letter-spacing: -0.02em;">Welcome back, {{ commander }}</div>
+            <div style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; font-size: 40px; line-height: 1.06; letter-spacing: var(--sl-tr-display);">Welcome back, {{ commander }}</div>
           </div>
 
           <div style="width: 340px; display: flex; flex-direction: column; gap: 0; padding: 16px 18px 12px; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); box-sizing: border-box; max-height: 240px; overflow-y: auto; flex: none;">
-            <span style="font-family: Bitter, serif; font-size: 14px; font-weight: 600; margin-bottom: 10px;">Challenges</span>
+            <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 14px; margin-bottom: 10px;">Challenges</span>
             <div style="display: flex; gap: 4px; padding: 3px; margin-bottom: 10px; background: var(--sl-ink-100); border: 1px solid var(--sl-seam); width: fit-content;">
               <sc-for list="{{ challengeTabs }}" as="t" hint-placeholder-count="3">
                 <button onClick="{{ t.pick }}" style="padding: 5px 10px; background: {{ t.bg }}; border: none; font-size: 12px; color: {{ t.colour }}; font-family: 'Barlow Semi Condensed', sans-serif; cursor: pointer;" style-hover="filter: brightness(1.2);">{{ t.label }}</button>
@@ -180,7 +180,7 @@
             <sc-for list="{{ slides }}" as="s" hint-placeholder-count="3">
               <div style="position: absolute; inset: 0; opacity: {{ s.opacity }}; pointer-events: {{ s.pointer }}; transition: opacity 0.7s ease; background: {{ s.bg }}; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 16px 18px 30px; box-sizing: border-box;">
                 <span style="font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: {{ s.tagColour }};">{{ s.tag }}</span>
-                <span style="font-family: Bitter, serif; font-size: 17px; font-weight: 600;">{{ s.title }}</span>
+                <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 17px;">{{ s.title }}</span>
                 <span style="font-size: 12.5px; line-height: 1.4; color: var(--sl-text-dim);">{{ s.blurb }}</span>
               </div>
             </sc-for>
@@ -192,7 +192,7 @@
           </div>
 
           <aside style="display: flex; flex-direction: column; gap: 0; padding: 22px 24px 18px; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); overflow-y: auto; flex: 1 1 auto; min-height: 150px; box-sizing: border-box;">
-            <span style="font-family: Bitter, serif; font-size: 15px; font-weight: 600; margin-bottom: 18px;">Patch notes</span>
+            <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 15px; margin-bottom: 18px;">Patch notes</span>
             <div style="padding: 16px 0; border-top: 1px solid var(--sl-seam); font-size: 13.5px; color: var(--sl-text-mute);">Nothing here yet.</div>
           </aside>
 
@@ -216,7 +216,7 @@
             <button onClick="{{ toggleModePicker }}" title="Choose match type" style="flex: none; width: 52px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; background: {{ modePickerBg }}; border: 1px solid {{ modePickerBorder }}; color: var(--sl-text-dim); cursor: pointer;" style-hover="border-color: var(--sl-signal-hot); color: var(--sl-text);">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5"></path><path d="M5 12l7-7 7 7"></path></svg>
             </button>
-            <a href="{{ launchHref }}" onClick="{{ launchClick }}" style="flex: 1; padding: 15px 30px; background: var(--sl-signal); color: var(--sl-text-invert); font-family: Bitter, serif; font-weight: 600; font-size: 16px; text-align: center;" style-hover="background: var(--sl-signal-hot);">{{ launchLabel }}</a>
+            <a href="{{ launchHref }}" onClick="{{ launchClick }}" style="flex: 1; padding: 15px 30px; background: var(--sl-signal); color: var(--sl-text-invert); font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: 16px; text-align: center;" style-hover="background: var(--sl-signal-hot);">{{ launchLabel }}</a>
           </div>
         </div>
       </div>
