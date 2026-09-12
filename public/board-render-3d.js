@@ -227,13 +227,21 @@ export function create(canvas, M) {
   }
   const pieces = new Map(); // tileKey -> { mesh, kind, owner }
 
-  function upsertPiece(key, c, r, kind, owner) {
+  /** `seatColour` is the caller's viewer-relative mapping (from update()'s
+   *  own closure, not the bare module-level seatColorHex below) — a piece
+   *  must render in *your* self colour when you own it and the opponent's
+   *  foe colour when they do, same as every ground tile already does. Taking
+   *  the module-level absolute seat→colour function here instead was a real
+   *  bug: seat 0 always rendered as self-blue and seat 1 always as foe-red,
+   *  regardless of who was actually looking — a seat-1 player saw their own
+   *  capital in the opponent's colour. Fixed 2026-09-12; see docs/KNOWN_ISSUES.md. */
+  function upsertPiece(key, c, r, kind, owner, seatColour) {
     const cur = pieces.get(key);
     if (cur && cur.kind === kind && cur.owner === owner) return;
     if (cur) { scene.remove(cur.mesh); cur.mesh.geometry.dispose(); cur.mesh.material.dispose(); }
     const k = KIT[kind];
     const mesh = new THREE.Mesh(pieceGeo[kind], new THREE.MeshStandardMaterial({
-      color: owner === null ? tokens().neutral : seatColorHex(owner), roughness: 0.6,
+      color: owner === null ? tokens().neutral : seatColour(owner), roughness: 0.6,
     }));
     mesh.position.set(c + 0.5, k.h / 2, r + 0.5);
     mesh.castShadow = true; mesh.receiveShadow = true;
@@ -322,7 +330,7 @@ export function create(canvas, M) {
     for (const k of Object.keys(o.industry || {})) { const [c, r] = k.split(',').map(Number); if (F.territoryAt(M, c, r)) put(c, r, 'industry', o.industry[k]); }
 
     for (const key of [...pieces.keys()]) if (!wanted.has(key)) removePiece(key);
-    for (const [key, w] of wanted) upsertPiece(key, w.c, w.r, w.kind, w.own);
+    for (const [key, w] of wanted) upsertPiece(key, w.c, w.r, w.kind, w.own, seatColour);
 
     // Garrison labels.
     const garrisons = o.garrisons || {};
