@@ -51,6 +51,10 @@ function tokens() {
     land: toHex(g('--sl-ink-300'), 0x141a1f),
     ink000: toHex(g('--sl-ink-000'), 0x06080a),
     ink100: toHex(g('--sl-ink-100'), 0x0a0d10),
+    // Water is the one deliberate exception to the board's achromatic
+    // palette — it borrows the existing --sl-info token (status blue)
+    // rather than inventing a new hue, so there's no new gap to flag.
+    water: toHex(g('--sl-info'), 0x4aa8c8),
   };
   return _tok;
 }
@@ -120,31 +124,53 @@ export function create(canvas, M) {
   scene.add(sun);
 
   // ── ground: one instance per tile, so cost stays flat as boards grow ────
-  // (196 tiles for duel, 625 for grand — one draw call either way.)
+  // (196 tiles for duel, 625 for grand — two draw calls either way, one per
+  // mesh below.) Land is an extruded slab, not a flat sheet — the box's top
+  // face still sits at
+  // y=0 (every overlay above this — pieces, rings, labels, march paths —
+  // anchors to that plane), so it reads as ground raised out of the world
+  // rather than a floating sheet, and every existing y-offset stays correct.
+  // Gap tiles (outside any province — none exist on today's maps, but the
+  // map editor will introduce them) get a second, thinner instanced mesh
+  // recessed below land level instead of being hidden, so the world can be
+  // filled with water once boards have irregular coastlines.
   const TILE_COUNT = gridW * gridH;
-  const tileGeo = new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+  const LAND_DEPTH = 0.26, WATER_DEPTH = 0.05, WATER_SINK = 0.14;
+  const tileGeo = new THREE.BoxGeometry(1, LAND_DEPTH, 1);
+  const waterGeo = new THREE.BoxGeometry(1, WATER_DEPTH, 1);
   // No `vertexColors: true` here — that flag reads a per-vertex `color`
-  // BufferAttribute, which this plane geometry doesn't have; WebGL fills the
+  // BufferAttribute, which these box geometries don't have; WebGL fills the
   // missing attribute with zero, which multiplies straight through to black
   // before instanceColor is even applied. Instance colours apply on their
   // own whenever mesh.isInstancedMesh && mesh.instanceColor exist, regardless
   // of this flag — it isn't needed and was actively wrong to set.
   const tileMesh = new THREE.InstancedMesh(tileGeo, new THREE.MeshStandardMaterial({ roughness: 0.95 }), TILE_COUNT);
   tileMesh.receiveShadow = true;
+  tileMesh.castShadow = true; // land now has real volume, so it can shadow the water it rises out of
+  const waterMesh = new THREE.InstancedMesh(waterGeo, new THREE.MeshStandardMaterial({ roughness: 0.3, metalness: 0.05 }), TILE_COUNT);
+  waterMesh.receiveShadow = true;
   // InstancedMesh's bounding sphere is derived from the base (untransformed)
-  // geometry — a 1x1 plane at the origin — not the actual spread of instance
+  // geometry — a 1x1 box at the origin — not the actual spread of instance
   // positions, so the default frustum-culling check thinks the whole mesh
   // occupies a sliver near world origin and culls it once the camera is
   // positioned to see the real, much larger board.
   tileMesh.frustumCulled = false;
+  waterMesh.frustumCulled = false;
   const dummy = new THREE.Object3D();
   const tileColor = new THREE.Color();
   const LAND_COLOR = new THREE.Color(tokens().land);
+  const WATER_COLOR = new THREE.Color(tokens().water);
   const tileIndex = (c, r) => r * gridW + c;
   for (let r = 0; r < gridH; r++) for (let c = 0; c < gridW; c++) {
-    dummy.position.set(c + 0.5, 0, r + 0.5);
+    const i = tileIndex(c, r);
+    const onLand = !!F.territoryAt(M, c, r);
+
+    // Land, and gap tiles hidden (scaled to zero) rather than coloured —
+    // see the water block below for the inverse.
+    dummy.position.set(c + 0.5, -LAND_DEPTH / 2, r + 0.5);
+    dummy.scale.setScalar(onLand ? 1 : 0);
     dummy.updateMatrix();
-    tileMesh.setMatrixAt(tileIndex(c, r), dummy.matrix);
+    tileMesh.setMatrixAt(i, dummy.matrix);
     // Seeding instanceColor here, before the mesh is ever rendered, matters:
     // the material's shader is compiled on first render, keyed in part on
     // whether mesh.instanceColor exists yet. Leaving it to update()'s first
@@ -152,15 +178,23 @@ export function create(canvas, M) {
     // without instance-colour support ever baked in — every tile then
     // renders unlit black forever after, no amount of instanceColor.needsUpdate
     // fixes a shader that was never compiled to read it.
-    tileMesh.setColorAt(tileIndex(c, r), LAND_COLOR);
+    tileMesh.setColorAt(i, LAND_COLOR);
+
+    // Water fills exactly the gap tiles, recessed below land level so a
+    // coastline reads as a cliff edge rather than two coplanar sheets. It
+    // never changes at runtime (territory shape is fixed for a match), so
+    // this seeding is the only place its instanceColor is ever set.
+    dummy.position.set(c + 0.5, -WATER_SINK - WATER_DEPTH / 2, r + 0.5);
+    dummy.scale.setScalar(onLand ? 0 : 1);
+    dummy.updateMatrix();
+    waterMesh.setMatrixAt(i, dummy.matrix);
+    waterMesh.setColorAt(i, WATER_COLOR);
   }
-  // Tiles outside any province (grid padding, if a board ever has gaps)
-  // stay hidden — scale to zero rather than colouring them.
-  for (let r = 0; r < gridH; r++) for (let c = 0; c < gridW; c++) {
-    if (!F.territoryAt(M, c, r)) { dummy.scale.set(0, 0, 0); dummy.updateMatrix(); tileMesh.setMatrixAt(tileIndex(c, r), dummy.matrix); dummy.scale.set(1, 1, 1); }
-  }
+  dummy.scale.setScalar(1);
   tileMesh.instanceMatrix.needsUpdate = true;
   scene.add(tileMesh);
+  waterMesh.instanceMatrix.needsUpdate = true;
+  scene.add(waterMesh);
 
   // Ground plane for raycasting — math only, no mesh needed.
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
