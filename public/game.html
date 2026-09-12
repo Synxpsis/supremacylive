@@ -29,38 +29,38 @@
   self.FPRender3D = { create };
 </script>
 <style>
-  body { margin: 0; background: #0b1219; overflow: hidden; }
+  body { margin: 0; background: var(--sl-ink-100); overflow: hidden; }
   a { color: var(--sl-signal); text-decoration: none; }
-  a:hover { color: #efe6d5; }
+  a:hover { color: var(--sl-signal-hot); }
   ::selection { background: var(--sl-signal-glow); }
   input[type="range"] { accent-color: var(--sl-signal); height: 16px; }
 </style>
 </helmet>
 
-<div style="height: 100vh; overflow: hidden; background: #0b1219; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-variant-numeric: tabular-nums;">
+<div style="height: 100vh; overflow: hidden; background: var(--sl-ink-100); color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-variant-numeric: tabular-nums;">
 
   <sc-if value="{{ onMenu }}" hint-placeholder-val="{{ true }}">
-    <div style="height: 100vh; display: grid; place-items: center; background: #0b1219;">
-      <span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: #6f7883;">Loading match…</span>
+    <div style="height: 100vh; display: grid; place-items: center; background: var(--sl-ink-100);">
+      <span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sl-text-mute);">Loading match…</span>
     </div>
   </sc-if>
 
   <sc-if value="{{ connecting }}" hint-placeholder-val="{{ false }}">
-    <div style="height: 100vh; display: grid; place-items: center; background: #0b1219;">
+    <div style="height: 100vh; display: grid; place-items: center; background: var(--sl-ink-100);">
       <div style="display: flex; flex-direction: column; align-items: center; gap: 18px;">
-        <span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: #6f7883;">{{ connectMsg }}</span>
-        <button onClick="{{ cancelConnect }}" style="padding: 10px 22px; background: rgba(239,230,213,0.06); border: 1px solid rgba(239,230,213,0.2); border-radius: 3px; color: #c8c2b4; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14px; cursor: pointer;" style-hover="color: #efe6d5; border-color: rgba(239,230,213,0.35);">Cancel</button>
+        <span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--sl-text-mute);">{{ connectMsg }}</span>
+        <button onClick="{{ cancelConnect }}" style="padding: 10px 22px; background: var(--sl-seam); border: 1px solid var(--sl-seam-strong); color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14px; cursor: pointer;" style-hover="color: var(--sl-text); border-color: rgba(255,255,255,0.55);">Cancel</button>
       </div>
     </div>
   </sc-if>
 
   <sc-if value="{{ inMatch }}" hint-placeholder-val="{{ false }}">
-    <div style="height: 100vh; display: grid; grid-template-columns: {{ gridCols }}; grid-template-rows: auto 1fr; gap: 10px; padding: 10px; box-sizing: border-box; background: #080e14;">
+    <div style="height: 100vh; display: grid; grid-template-columns: {{ gridCols }}; grid-template-rows: auto 1fr; gap: 10px; padding: 10px; box-sizing: border-box; background: var(--sl-ink-000);">
 
-      <header style="grid-column: 1 / -1; display: flex; align-items: stretch; background: #101a23; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; overflow: hidden;">
+      <header style="grid-column: 1 / -1; display: flex; align-items: stretch; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); overflow: hidden;">
 
-        <div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-right: 1px solid rgba(239,230,213,0.12);">
-          <div style="width: 22px; height: 22px; flex: none; border-radius: 50%; background: var(--sl-coin-wash); display: flex; align-items: center; justify-content: center; color: var(--sl-coin);">
+        <div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-right: 1px solid var(--sl-seam-strong);">
+          <div style="width: 22px; height: 22px; flex: none; background: var(--sl-coin-wash); display: flex; align-items: center; justify-content: center; color: var(--sl-coin);">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="4.5"></circle></svg>
           </div>
           <span style="font-family: Bitter, serif; font-size: 16px; font-weight: 600; color: var(--sl-coin);">{{ myCoin }}</span>
@@ -68,43 +68,43 @@
 
         <div style="flex: 1 1 auto; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 32px; padding: 0 20px;">
 
-          <div style="display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; background: #131e28; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px;">
-            <div style="width: 26px; height: 26px; flex: none; border-radius: 50%; background: rgba(239,230,213,0.1); display: flex; align-items: center; justify-content: center; color: {{ headerLeft.colour }};">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; background: var(--sl-ink-300); border: 1px solid var(--sl-seam-strong); ">
+            <div style="width: 26px; height: 26px; flex: none; background: var(--sl-seam); display: flex; align-items: center; justify-content: center; color: {{ headerLeft.colour }};">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"></path></svg>
             </div>
             <span style="font-size: 14px; color: {{ headerLeft.nameColour }};">{{ headerLeft.name }}</span>
-            <span style="width: 1px; height: 14px; background: rgba(239,230,213,0.14);"></span>
-            <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: #6f7883;">
+            <span style="width: 1px; height: 14px; background: var(--sl-seam-strong);"></span>
+            <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--sl-text-mute);">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 4H7v5a5 5 0 0 0 10 0V4Z"></path><path d="M7 6H4a1 1 0 0 0-1 1 5 5 0 0 0 4 4.9M17 6h3a1 1 0 0 1 1 1 5 5 0 0 1-4 4.9"></path></svg>
               {{ headerLeft.trophies }}
             </span>
           </div>
 
           <div style="flex: none; display: flex; flex-direction: column; align-items: center; gap: 1px;">
-            <span style="font-family: ui-monospace, Menlo, monospace; font-size: 19px; color: #efe6d5;">{{ clock }}</span>
-            <span style="font-family: Bitter, serif; font-size: 21px; font-weight: 600; color: #efe6d5;">{{ headerLeft.terr }} <span style="color: #6f7883; font-weight: 400;">·</span> {{ headerRight.terr }}</span>
+            <span style="font-family: ui-monospace, Menlo, monospace; font-size: 19px; color: var(--sl-text);">{{ clock }}</span>
+            <span style="font-family: Bitter, serif; font-size: 21px; font-weight: 600; color: var(--sl-text);">{{ headerLeft.terr }} <span style="color: var(--sl-text-mute); font-weight: 400;">·</span> {{ headerRight.terr }}</span>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px; background: #131e28; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px;">
-            <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: #6f7883;">
+          <div style="display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 14px; background: var(--sl-ink-300); border: 1px solid var(--sl-seam-strong); ">
+            <span style="display: flex; align-items: center; gap: 5px; font-size: 13px; color: var(--sl-text-mute);">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 4H7v5a5 5 0 0 0 10 0V4Z"></path><path d="M7 6H4a1 1 0 0 0-1 1 5 5 0 0 0 4 4.9M17 6h3a1 1 0 0 1 1 1 5 5 0 0 1-4 4.9"></path></svg>
               {{ headerRight.trophies }}
             </span>
-            <span style="width: 1px; height: 14px; background: rgba(239,230,213,0.14);"></span>
+            <span style="width: 1px; height: 14px; background: var(--sl-seam-strong);"></span>
             <span style="font-size: 14px; color: {{ headerRight.nameColour }};">{{ headerRight.name }}</span>
-            <div style="width: 26px; height: 26px; flex: none; border-radius: 50%; background: rgba(239,230,213,0.1); display: flex; align-items: center; justify-content: center; color: {{ headerRight.colour }};">
+            <div style="width: 26px; height: 26px; flex: none; background: var(--sl-seam); display: flex; align-items: center; justify-content: center; color: {{ headerRight.colour }};">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"></path></svg>
             </div>
           </div>
         </div>
 
-        <div style="flex: none; display: flex; align-items: center; padding: 0 14px; border-left: 1px solid rgba(239,230,213,0.12);">
-          <button onClick="{{ exit }}" style="white-space: nowrap; padding: 8px 14px; background: var(--sl-danger-wash); border: 1px solid var(--sl-danger); border-radius: 3px; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="filter: brightness(1.25);">Forfeit</button>
+        <div style="flex: none; display: flex; align-items: center; padding: 0 14px; border-left: 1px solid var(--sl-seam-strong);">
+          <button onClick="{{ exit }}" style="white-space: nowrap; padding: 8px 14px; background: var(--sl-danger-wash); border: 1px solid var(--sl-danger); color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="filter: brightness(1.25);">Forfeit</button>
         </div>
 
       </header>
 
-      <aside style="min-width: 0; display: grid; grid-template-rows: 1fr; background: #101a23; border: {{ asideBorder }}; border-radius: 3px; overflow: hidden;">
+      <aside style="min-width: 0; display: grid; grid-template-rows: 1fr; background: var(--sl-ink-200); border: {{ asideBorder }}; overflow: hidden;">
 
         <div style="min-height: 0; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 18px;">
 
@@ -113,67 +113,67 @@
 
               <div style="display: flex; flex-direction: column; gap: 9px;">
                 <div style="display: flex; align-items: center; gap: 9px;">
-                  <span style="width: 11px; height: 11px; border-radius: 2px; flex: none; background: {{ selOwnerColour }};"></span>
+                  <span style="width: 11px; height: 11px; flex: none; background: {{ selOwnerColour }};"></span>
                   <span style="font-family: Bitter, serif; font-size: 23px; font-weight: 600; letter-spacing: -0.01em;">{{ selHeading }}</span>
                 </div>
-                <span style="font-size: 14px; color: #9aa1a8;">{{ selOwnerLine }}</span>
+                <span style="font-size: 14px; color: var(--sl-text-dim);">{{ selOwnerLine }}</span>
               </div>
 
-              <div style="display: flex; flex-direction: column; gap: 1px; background: rgba(239,230,213,0.09); border: 1px solid rgba(239,230,213,0.09); border-radius: 3px; overflow: hidden;">
+              <div style="display: flex; flex-direction: column; gap: 1px; background: var(--sl-seam); border: 1px solid var(--sl-seam); overflow: hidden;">
                 <sc-for list="{{ selRows }}" as="row" hint-placeholder-count="4">
-                  <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 10px 13px; background: #131e28;">
-                    <span style="flex: none; font-size: 14px; color: #9aa1a8;">{{ row.label }}</span>
+                  <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 10px 13px; background: var(--sl-ink-300);">
+                    <span style="flex: none; font-size: 14px; color: var(--sl-text-dim);">{{ row.label }}</span>
                     <span style="flex: 1 1 auto; min-width: 0; text-align: right; font-size: 14.5px; text-wrap: pretty; color: {{ row.colour }};">{{ row.value }}</span>
                   </div>
                 </sc-for>
               </div>
 
               <sc-if value="{{ showCapNote }}" hint-placeholder-val="{{ false }}">
-                <p style="margin: 0; padding: 12px 14px; background: var(--sl-warn-wash); border: 1px solid var(--sl-warn); border-radius: 3px; font-size: 14px; line-height: 1.5; color: var(--sl-text); text-wrap: pretty;">{{ capNote }}</p>
+                <p style="margin: 0; padding: 12px 14px; background: var(--sl-warn-wash); border: 1px solid var(--sl-warn); font-size: 14px; line-height: 1.5; color: var(--sl-text); text-wrap: pretty;">{{ capNote }}</p>
               </sc-if>
 
               <div style="display: flex; flex-direction: column; gap: 9px;">
-                <span style="font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: #9aa1a8;">Orders</span>
+                <span style="font-size: 11.5px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--sl-text-dim);">Orders</span>
 
                 <sc-if value="{{ canBuild }}" hint-placeholder-val="{{ false }}">
-                  <button onClick="{{ buildBarracks }}" style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; background: {{ barrackBg }}; border: 1px solid {{ barrackBorder }}; border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14.5px; text-align: left; cursor: pointer;" style-hover="filter: brightness(1.22);">
+                  <button onClick="{{ buildBarracks }}" style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; background: {{ barrackBg }}; border: 1px solid {{ barrackBorder }}; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14.5px; text-align: left; cursor: pointer;" style-hover="filter: brightness(1.22);">
                     <span>Build barracks</span>
                     <span style="font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: {{ barrackColour }};">{{ barrackCost }}</span>
                   </button>
                 </sc-if>
 
                 <sc-if value="{{ canReinforce }}" hint-placeholder-val="{{ false }}">
-                  <button onClick="{{ reinforceHere }}" style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; background: var(--sl-info-wash); border: 1px solid var(--sl-info); border-radius: 3px; color: #efe6d5; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14.5px; text-align: left; cursor: pointer;" style-hover="filter: brightness(1.22);">
+                  <button onClick="{{ reinforceHere }}" style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; background: var(--sl-info-wash); border: 1px solid var(--sl-info); color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14.5px; text-align: left; cursor: pointer;" style-hover="filter: brightness(1.22);">
                     <span>Reinforce</span>
-                    <span style="font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #9aa1a8;">{{ reinforceCount }}</span>
+                    <span style="font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sl-text-dim);">{{ reinforceCount }}</span>
                   </button>
                 </sc-if>
 
                 <sc-if value="{{ canIndustry }}" hint-placeholder-val="{{ false }}">
-                  <button onClick="{{ buildIndustry }}" style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; background: {{ industryBg }}; border: 1px solid {{ industryBorder }}; border-radius: 3px; color: {{ industryColour }}; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14.5px; text-align: left; cursor: pointer;" style-hover="filter: brightness(1.22);">
+                  <button onClick="{{ buildIndustry }}" style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; background: {{ industryBg }}; border: 1px solid {{ industryBorder }}; color: {{ industryColour }}; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 14.5px; text-align: left; cursor: pointer;" style-hover="filter: brightness(1.22);">
                     <span>Develop industry</span>
-                    <span style="font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: #9aa1a8;">{{ industryCost }}</span>
+                    <span style="font-size: 12.5px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--sl-text-dim);">{{ industryCost }}</span>
                   </button>
                 </sc-if>
 
                 <sc-if value="{{ canMarch }}" hint-placeholder-val="{{ false }}">
                   <div style="display: flex; flex-direction: column; gap: 7px;">
                     <sc-if value="{{ armedHere }}" hint-placeholder-val="{{ false }}">
-                      <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px 13px; background: var(--sl-signal-wash); border: 1px solid var(--sl-signal); border-radius: 3px;">
+                      <div style="display: flex; flex-direction: column; gap: 8px; padding: 12px 13px; background: var(--sl-signal-wash); border: 1px solid var(--sl-signal); ">
                         <span style="font-size: 14px; color: var(--sl-text);">Sending {{ armedPct }}% — click any province as the destination.</span>
-                        <button onClick="{{ cancelMarch }}" style="align-self: flex-start; padding: 6px 12px; background: rgba(239,230,213,0.07); border: 1px solid rgba(239,230,213,0.2); border-radius: 3px; color: #c8c2b4; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13px; cursor: pointer;" style-hover="color: #efe6d5;">Cancel</button>
+                        <button onClick="{{ cancelMarch }}" style="align-self: flex-start; padding: 6px 12px; background: var(--sl-seam); border: 1px solid var(--sl-seam-strong); color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13px; cursor: pointer;" style-hover="color: var(--sl-signal-hot);">Cancel</button>
                       </div>
                     </sc-if>
-                    <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #9aa1a8; text-wrap: pretty;">Drag from this province to send half its garrison. Hold <strong style="color: #c8c2b4; font-weight: 600;">Shift</strong> while releasing to send all of it.</p>
+                    <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--sl-text-dim); text-wrap: pretty;">Drag from this province to send half its garrison. Hold <strong style="color: var(--sl-text-dim); font-weight: 600;">Shift</strong> while releasing to send all of it.</p>
                     <div style="display: flex; gap: 7px;">
-                      <button onClick="{{ arm50 }}" style="flex: 1; padding: 9px 12px; background: rgba(239,230,213,0.05); border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; color: #c8c2b4; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="color: #efe6d5; border-color: var(--sl-signal);">Click-to-send half</button>
-                      <button onClick="{{ arm100 }}" style="flex: 1; padding: 9px 12px; background: rgba(239,230,213,0.05); border: 1px solid rgba(239,230,213,0.14); border-radius: 3px; color: #c8c2b4; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="color: #efe6d5; border-color: var(--sl-signal);">All</button>
+                      <button onClick="{{ arm50 }}" style="flex: 1; padding: 9px 12px; background: var(--sl-seam); border: 1px solid var(--sl-seam-strong); color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="color: var(--sl-text); border-color: var(--sl-signal);">Click-to-send half</button>
+                      <button onClick="{{ arm100 }}" style="flex: 1; padding: 9px 12px; background: var(--sl-seam); border: 1px solid var(--sl-seam-strong); color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="color: var(--sl-text); border-color: var(--sl-signal);">All</button>
                     </div>
                   </div>
                 </sc-if>
 
                 <sc-if value="{{ showNotice }}" hint-placeholder-val="{{ false }}">
-                  <p style="margin: 0; padding: 10px 13px; background: var(--sl-danger-wash); border: 1px solid var(--sl-danger); border-radius: 3px; font-size: 13.5px; color: var(--sl-text);">{{ notice }}</p>
+                  <p style="margin: 0; padding: 10px 13px; background: var(--sl-danger-wash); border: 1px solid var(--sl-danger); font-size: 13.5px; color: var(--sl-text);">{{ notice }}</p>
                 </sc-if>
               </div>
 
@@ -181,24 +181,24 @@
           </sc-if>
 
           <sc-if value="{{ hasMulti }}" hint-placeholder-val="{{ false }}">
-            <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px; background: var(--sl-signal-wash); border: 1px solid var(--sl-signal); border-radius: 3px;">
+            <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px; background: var(--sl-signal-wash); border: 1px solid var(--sl-signal); ">
               <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 12px;">
-                <span style="font-family: Bitter, serif; font-size: 18px; font-weight: 600; color: #efe6d5;">{{ multiCount }} provinces</span>
+                <span style="font-family: Bitter, serif; font-size: 18px; font-weight: 600; color: var(--sl-text);">{{ multiCount }} provinces</span>
                 <span style="font-size: 12.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--sl-signal);">Group</span>
               </div>
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 14px;">
-                <span style="color: #9aa1a8;">Total troops</span>
-                <span style="font-family: Bitter, serif; font-size: 17px; font-weight: 600; color: #efe6d5;">{{ multiTroops }}</span>
+                <span style="color: var(--sl-text-dim);">Total troops</span>
+                <span style="font-family: Bitter, serif; font-size: 17px; font-weight: 600; color: var(--sl-text);">{{ multiTroops }}</span>
               </div>
-              <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: #c8c2b4; text-wrap: pretty;">Left-click any province to send half from every selected source — hold Shift to send all. Esc to clear.</p>
-              <button onClick="{{ clearMulti }}" style="padding: 8px 12px; background: rgba(239,230,213,0.06); border: 1px solid rgba(239,230,213,0.16); border-radius: 3px; color: #c8c2b4; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="color: #efe6d5;">Clear</button>
+              <p style="margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--sl-text-dim); text-wrap: pretty;">Left-click any province to send half from every selected source — hold Shift to send all. Esc to clear.</p>
+              <button onClick="{{ clearMulti }}" style="padding: 8px 12px; background: var(--sl-seam); border: 1px solid var(--sl-seam-strong); color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 13.5px; cursor: pointer;" style-hover="color: var(--sl-signal-hot);">Clear</button>
             </div>
           </sc-if>
 
           <sc-if value="{{ noSel }}" hint-placeholder-val="{{ true }}">
-            <div style="display: flex; flex-direction: column; gap: 11px; padding: 18px; background: #131e28; border: 1px dashed rgba(239,230,213,0.16); border-radius: 3px;">
-              <span style="font-family: Bitter, serif; font-size: 17px; font-weight: 600; color: #c8c2b4;">Nothing selected</span>
-              <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #9aa1a8; text-wrap: pretty;">Click a province on the map. Its holder, its territory, and anything built on it appear here.</p>
+            <div style="display: flex; flex-direction: column; gap: 11px; padding: 18px; background: var(--sl-ink-300); border: 1px dashed var(--sl-seam-strong); ">
+              <span style="font-family: Bitter, serif; font-size: 17px; font-weight: 600; color: var(--sl-text-dim);">Nothing selected</span>
+              <p style="margin: 0; font-size: 14px; line-height: 1.55; color: var(--sl-text-dim); text-wrap: pretty;">Click a province on the map. Its holder, its territory, and anything built on it appear here.</p>
             </div>
           </sc-if>
 
@@ -206,19 +206,19 @@
 
       </aside>
 
-      <div style="position: relative; min-width: 0; overflow: hidden; background: #0b1219; border: 1px solid rgba(239,230,213,0.14); border-radius: 3px;">
+      <div style="position: relative; min-width: 0; overflow: hidden; background: var(--sl-ink-100); border: 1px solid var(--sl-seam-strong); ">
         <canvas ref="{{ canvasRef }}" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: {{ cursor }};"></canvas>
 
         <sc-if value="{{ showOver }}" hint-placeholder-val="{{ false }}">
           <div style="position: absolute; inset: 0; display: grid; place-items: center; background: rgba(8,14,20,0.82); backdrop-filter: blur(3px);">
-            <div style="display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 40px 52px; background: #101a23; border: 1px solid {{ overColour }}; border-radius: 3px;">
+            <div style="display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 40px 52px; background: var(--sl-ink-200); border: 1px solid {{ overColour }}; ">
               <span style="font-family: Bitter, serif; font-size: 40px; font-weight: 600; line-height: 1; color: {{ overColour }};">{{ overTitle }}</span>
-              <button onClick="{{ exit }}" style="padding: 12px 22px; background: rgba(239,230,213,0.06); border: 1px solid rgba(239,230,213,0.2); border-radius: 3px; color: #c8c2b4; font-family: 'Barlow Semi Condensed', sans-serif; font-size: 16px; cursor: pointer;" style-hover="color: #efe6d5; border-color: rgba(239,230,213,0.35);">Menu</button>
+              <button onClick="{{ exit }}" style="padding: 12px 22px; background: var(--sl-seam); border: 1px solid var(--sl-seam-strong); color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: 16px; cursor: pointer;" style-hover="color: var(--sl-text); border-color: rgba(255,255,255,0.55);">Menu</button>
             </div>
           </div>
         </sc-if>
 
-        <div style="position: absolute; left: 14px; bottom: 12px; max-width: calc(100% - 28px); box-sizing: border-box; padding: 8px 12px; background: rgba(11,18,25,0.76); border: 1px solid rgba(239,230,213,0.12); border-radius: 3px; font-size: 12.5px; color: #6f7883; backdrop-filter: blur(6px);">
+        <div style="position: absolute; left: 14px; bottom: 12px; max-width: calc(100% - 28px); box-sizing: border-box; padding: 8px 12px; background: color-mix(in srgb, var(--sl-ink-100) 76%, transparent); border: 1px solid var(--sl-seam-strong); font-size: 12.5px; color: var(--sl-text-mute); backdrop-filter: blur(6px);">
 Drag a garrison to march it · Shift to send all · roads are twice the pace · scroll to zoom · R to fit
         </div>
       </div>
@@ -994,9 +994,15 @@ class Component extends DCLogic {
    *  enough for now. */
   readTokens() {
     const g = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    const rgba = (hex, a) => {
+      const n = parseInt(hex.replace('#', ''), 16);
+      return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
+    };
+    const ink100 = g('--sl-ink-100');
     this._tok = {
       self: g('--sl-faction-self'), foe: g('--sl-faction-foe'), neutral: g('--sl-faction-neutral'),
       signal: g('--sl-signal'), signalWash: g('--sl-signal-wash'), danger: g('--sl-danger'),
+      ink100Wash: rgba(ink100, 0.86),
     };
     return this._tok;
   }
@@ -1216,13 +1222,12 @@ class Component extends DCLogic {
           const ticks = path.reduce((n, [c, r]) => n + self.FPSim.hopCost(M, c, r), 0);
           const k = self.FPMap.tileKey(dFrom.c, dFrom.r);
           const send = Math.floor((S.garrisons[k] || 0) * (this._shift ? 100 : 50) / 100);
-          ctx.fillStyle = 'rgba(11,18,25,0.86)';
+          ctx.fillStyle = this._tok.ink100Wash;
           const label = `${send} · ${(ticks / self.FPSim.RULES.tickHz).toFixed(1)}s`;
           ctx.font = `600 ${Math.max(11, 0.2 * cam.scale)}px 'Barlow Semi Condensed', sans-serif`;
           const w = ctx.measureText(label).width + 14;
           ctx.beginPath();
-          if (ctx.roundRect) ctx.roundRect(end[0] - w / 2, end[1] - 0.5 * cam.scale - 11, w, 22, 3);
-          else ctx.rect(end[0] - w / 2, end[1] - 0.5 * cam.scale - 11, w, 22);
+          ctx.rect(end[0] - w / 2, end[1] - 0.5 * cam.scale - 11, w, 22);
           ctx.fill();
           ctx.fillStyle = this._tok.signal;
           ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
@@ -1356,7 +1361,7 @@ class Component extends DCLogic {
       exit: () => this.exit(),
       fit: () => this.fit(),
     };
-    const blankPill = { name: '—', colour: 'var(--sl-faction-neutral)', nameColour: '#9aa1a8', terr: '0', trophies: 0 };
+    const blankPill = { name: '—', colour: 'var(--sl-faction-neutral)', nameColour: 'var(--sl-text-dim)', terr: '0', trophies: 0 };
     const blank = {
       headerLeft: blankPill, headerRight: blankPill,
       myCoin: 0, gridCols: '0px 1fr', asideBorder: 'none',
@@ -1365,10 +1370,10 @@ class Component extends DCLogic {
       selHeading: '', selOwnerLine: '', selOwnerColour: 'var(--sl-faction-neutral)', selRows: [],
       capNote: '', showCapNote: false, canBuild: false, canMarch: false,
       marchBlocked: false, armedHere: false, armedPct: 0,
-      barrackCost: '', barrackBg: 'rgba(239,230,213,0.04)',
-      barrackBorder: 'rgba(239,230,213,0.14)', barrackColour: '#6f7883',
+      barrackCost: '', barrackBg: 'var(--sl-seam)',
+      barrackBorder: 'var(--sl-seam-strong)', barrackColour: 'var(--sl-text-mute)',
       canIndustry: false, industryCost: '', industryAfford: false,
-      industryBg: 'rgba(239,230,213,0.04)', industryBorder: 'rgba(239,230,213,0.14)', industryColour: '#6f7883',
+      industryBg: 'var(--sl-seam)', industryBorder: 'var(--sl-seam-strong)', industryColour: 'var(--sl-text-mute)',
       canReinforce: false, reinforceCount: '',
       buildBarracks: () => {}, buildIndustry: () => {}, reinforceHere: () => {},
       arm50: () => {}, arm100: () => {}, cancelMarch: () => {},
@@ -1401,14 +1406,14 @@ class Component extends DCLogic {
     const headerLeft = {
       colour: this.seatColour(seat),
       name: this.state.commander || 'Guest commander',
-      nameColour: '#efe6d5',
+      nameColour: 'var(--sl-text)',
       terr: String(sc.territories[seat] || 0),
       trophies: 0,
     };
     const headerRight = {
       colour: this.seatColour(1 - seat),
       name: opponentName,
-      nameColour: '#9aa1a8',
+      nameColour: 'var(--sl-text-dim)',
       terr: String(sc.territories[1 - seat] || 0),
       trophies: 0,
     };
@@ -1421,10 +1426,10 @@ class Component extends DCLogic {
       selHeading: '', selOwnerLine: '',
       selOwnerColour: 'var(--sl-faction-neutral)', selRows: [], capNote: '', showCapNote: false,
       canBuild: false, canMarch: false, marchBlocked: false, armedHere: false, armedPct: 0,
-      barrackCost: '', barrackBg: 'rgba(239,230,213,0.04)',
-      barrackBorder: 'rgba(239,230,213,0.14)', barrackColour: '#6f7883',
+      barrackCost: '', barrackBg: 'var(--sl-seam)',
+      barrackBorder: 'var(--sl-seam-strong)', barrackColour: 'var(--sl-text-mute)',
       canIndustry: false, industryCost: '', industryAfford: false,
-      industryBg: 'rgba(239,230,213,0.04)', industryBorder: 'rgba(239,230,213,0.14)', industryColour: '#6f7883',
+      industryBg: 'var(--sl-seam)', industryBorder: 'var(--sl-seam-strong)', industryColour: 'var(--sl-text-mute)',
       canReinforce: false, reinforceCount: '',
     };
 
@@ -1446,10 +1451,10 @@ class Component extends DCLogic {
       detail.selOwnerColour = this.seatColour(own);
       detail.selOwnerLine = `${own === null ? 'Unclaimed province' : mine ? 'Held by you' : `Held by seat ${own}`} · ${sel.c}, ${sel.r}`;
       detail.selRows = [
-        { key: 'kind', label: 'Province', value: isCap ? 'Territory capital' : 'Open ground', colour: isCap ? 'var(--sl-signal)' : '#6f7883' },
-        { key: 'terr', label: 'Territory held by', value: terrOwn === null ? 'No one' : terrOwn === seat ? 'You' : `Seat ${terrOwn}`, colour: '#c8c2b4' },
-        { key: 'coin', label: 'Coin / sec', value: city ? city.wealth.toFixed(1) : '—', colour: city ? 'var(--sl-coin)' : '#6f7883' },
-        { key: 'reach', label: 'In reach', value: mine ? 'Held' : reachable ? 'Yes' : 'No', colour: mine ? '#c8c2b4' : reachable ? 'var(--sl-ok)' : '#6f7883' },
+        { key: 'kind', label: 'Province', value: isCap ? 'Territory capital' : 'Open ground', colour: isCap ? 'var(--sl-signal)' : 'var(--sl-text-mute)' },
+        { key: 'terr', label: 'Territory held by', value: terrOwn === null ? 'No one' : terrOwn === seat ? 'You' : `Seat ${terrOwn}`, colour: 'var(--sl-text-dim)' },
+        { key: 'coin', label: 'Coin / sec', value: city ? city.wealth.toFixed(1) : '—', colour: city ? 'var(--sl-coin)' : 'var(--sl-text-mute)' },
+        { key: 'reach', label: 'In reach', value: mine ? 'Held' : reachable ? 'Yes' : 'No', colour: mine ? 'var(--sl-text-dim)' : reachable ? 'var(--sl-ok)' : 'var(--sl-text-mute)' },
       ];
       detail.capNote = isCap
         ? (mine ? 'Losing this capital loses the whole territory.'
@@ -1464,9 +1469,9 @@ class Component extends DCLogic {
       const onRoad = F.isRoad(M, sel.c, sel.r);
 
       detail.selRows.splice(2, 0,
-        { key: 'gar', label: 'Garrison', value: garrison ? String(garrison) : '—', colour: garrison ? '#efe6d5' : '#6f7883' },
-        { key: 'brk', label: 'Structure', value: hasBarracks ? 'Barracks' : hasIndustry ? `Industry · +${F2.RULES.industryYield}/s` : 'None', colour: hasBarracks ? 'var(--sl-ok)' : hasIndustry ? 'var(--sl-coin)' : '#6f7883' },
-        { key: 'road', label: 'Ground', value: onRoad ? 'Road' : 'Open country', colour: onRoad ? '#c8c2b4' : '#6f7883' },
+        { key: 'gar', label: 'Garrison', value: garrison ? String(garrison) : '—', colour: garrison ? 'var(--sl-text)' : 'var(--sl-text-mute)' },
+        { key: 'brk', label: 'Structure', value: hasBarracks ? 'Barracks' : hasIndustry ? `Industry · +${F2.RULES.industryYield}/s` : 'None', colour: hasBarracks ? 'var(--sl-ok)' : hasIndustry ? 'var(--sl-coin)' : 'var(--sl-text-mute)' },
+        { key: 'road', label: 'Ground', value: onRoad ? 'Road' : 'Open country', colour: onRoad ? 'var(--sl-text-dim)' : 'var(--sl-text-mute)' },
       );
 
       // Barracks escalate on how many this seat already holds, so the price
@@ -1475,15 +1480,15 @@ class Component extends DCLogic {
       const bAfford = this.sim.money[seat] >= bCost;
       detail.canBuild = mine && !hasBarracks && !hasIndustry;
       detail.barrackCost = `${Math.round(bCost / 1000)} coin`;
-      detail.barrackBg = bAfford ? 'var(--sl-ok-wash)' : 'rgba(239,230,213,0.04)';
-      detail.barrackBorder = bAfford ? 'var(--sl-ok)' : 'rgba(239,230,213,0.14)';
-      detail.barrackColour = bAfford ? '#9aa1a8' : 'var(--sl-danger)';
+      detail.barrackBg = bAfford ? 'var(--sl-ok-wash)' : 'var(--sl-seam)';
+      detail.barrackBorder = bAfford ? 'var(--sl-ok)' : 'var(--sl-seam-strong)';
+      detail.barrackColour = bAfford ? 'var(--sl-text-dim)' : 'var(--sl-danger)';
       detail.canIndustry = mine && !hasBarracks && !hasIndustry && !isCap;
       detail.industryCost = `${F2.RULES.industryCost} coin`;
       detail.industryAfford = canAfford;
-      detail.industryBg = canAfford ? 'var(--sl-ok-wash)' : 'rgba(239,230,213,0.04)';
-      detail.industryBorder = canAfford ? 'var(--sl-ok)' : 'rgba(239,230,213,0.14)';
-      detail.industryColour = canAfford ? '#efe6d5' : '#6f7883';
+      detail.industryBg = canAfford ? 'var(--sl-ok-wash)' : 'var(--sl-seam)';
+      detail.industryBorder = canAfford ? 'var(--sl-ok)' : 'var(--sl-seam-strong)';
+      detail.industryColour = canAfford ? 'var(--sl-text)' : 'var(--sl-text-mute)';
       detail.canMarch = mine && garrison > 0;
 
       // Reinforce: how many troopers could actually answer the call, so the
@@ -1524,7 +1529,7 @@ class Component extends DCLogic {
       ...base, ...menuStats, headerLeft, headerRight, ...detail,
       myCoin: money[seat] ?? 0,
       gridCols: detail.noSel ? '0px 1fr' : '348px 1fr',
-      asideBorder: detail.noSel ? 'none' : '1px solid rgba(239,230,213,0.14)',
+      asideBorder: detail.noSel ? 'none' : '1px solid var(--sl-seam-strong)',
       notice: this.state.notice,
       showNotice: !!this.state.notice,
       clock: `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`,

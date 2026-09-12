@@ -16,11 +16,9 @@
   root.FPRender = api;
 })(typeof self !== 'undefined' ? self : this, function () {
 
-  const LAND = '#6d675a';
-
-  /* Canvas can't resolve var(--sl-*), so the faction tokens board-render.js
-   * needs are read from the DOM once and cached here, then reused on every
-   * paint. Re-run readTokens() if the palette (data-faction) ever changes at
+  /* Canvas can't resolve var(--sl-*), so every token board-render.js needs is
+   * read from the DOM once and cached here, then reused on every paint.
+   * Re-run readTokens() if the palette (data-faction) ever changes at
    * runtime — nothing does yet, so a lazy first-call read is enough for now.
    * Fallbacks mirror tokens.css's own defaults, for the rare non-browser
    * (test) context where there is no computed style to read. */
@@ -32,10 +30,28 @@
       const v = root ? getComputedStyle(root).getPropertyValue(n).trim() : '';
       return v || fallback;
     };
+    const rgba = (hex, a) => {
+      const n = parseInt(hex.replace('#', ''), 16);
+      return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
+    };
+    const ink000 = g('--sl-ink-000', '#06080a');
+    const seamBase = '239,230,213'; // legacy seam hue predates the token system's own seam RGB; alpha is what actually carries weight here
     _tok = {
       self: g('--sl-faction-self', '#3d8fd4'),
       foe: g('--sl-faction-foe', '#e0574a'),
       neutral: g('--sl-faction-neutral', '#7d8683'),
+      signal: g('--sl-signal', '#d5d9d4'),
+      signalWash: g('--sl-signal-wash', 'rgba(255,255,255,0.10)'),
+      text: g('--sl-text', '#e6e8e4'),
+      textInvert: g('--sl-text-invert', '#06080a'),
+      land: g('--sl-ink-300', '#141a1f'),
+      wallNear: g('--sl-ink-400', '#1b2328'),
+      wallSide: g('--sl-ink-300', '#141a1f'),
+      boardEdge: ink000,
+      ink000Wash: a => rgba(ink000, a),
+      seam: `rgba(${seamBase},0.09)`,
+      seamDash: `rgba(${seamBase},0.14)`,
+      seamWash: a => `rgba(${seamBase},${a})`,
     };
     return _tok;
   }
@@ -51,9 +67,6 @@
     capital:  { fp: 0.66, h: 0.72 },
     city:     { fp: 0.44, h: 0.26 }
   };
-  const WALL_NEAR = '#8f887a';   // wall facing the viewer down-screen
-  const WALL_SIDE = '#68624f';   // the other visible wall, one step darker
-  const BOARD_EDGE = '#0c1620';
 
   function shade(hex, f) {
     const n = parseInt(hex.slice(1), 16);
@@ -128,7 +141,7 @@
       const k = KIT[kind] || KIT.city;
       const m = (1 - k.fp) / 2;
       const roof = own === null ? shade(NEUTRAL(), 1.3) : shade(seatColour(own), 1.5);
-      prism(c + m, r + m, k.fp, k.fp, k.h, roof, WALL_NEAR, WALL_SIDE);
+      prism(c + m, r + m, k.fp, k.fp, k.h, roof, tokens().wallNear, tokens().wallSide);
     };
 
     const block = (c0, r0, w, h) => {
@@ -153,8 +166,8 @@
         ctx.closePath();
         ctx.fillStyle = fill; ctx.fill();
       };
-      face([P(0, rEdge, 0), P(gw, rEdge, 0), P(gw, rEdge, t), P(0, rEdge, t)], BOARD_EDGE);
-      face([P(cEdge, 0, 0), P(cEdge, gh, 0), P(cEdge, gh, t), P(cEdge, 0, t)], shade(BOARD_EDGE, 0.72));
+      face([P(0, rEdge, 0), P(gw, rEdge, 0), P(gw, rEdge, t), P(0, rEdge, t)], tokens().boardEdge);
+      face([P(cEdge, 0, 0), P(cEdge, gh, 0), P(cEdge, gh, t), P(cEdge, 0, t)], shade(tokens().boardEdge, 0.72));
     }
 
     // Provinces. Ownership carries the colour; the jitter is deterministic so
@@ -166,7 +179,7 @@
       const terr = F.territoryOwner(M, owners, p);
       for (let r = p.r0; r < p.r0 + p.h; r++) for (let c = p.c0; c < p.c0 + p.w; c++) {
         const own = terr !== null ? terr : (owners[F.tileKey(c, r)] ?? null);
-        const base = own === null ? LAND
+        const base = own === null ? tokens().land
           : shade(seatColour(own), terr !== null ? 0.82 : 0.62);
         ctx.fillStyle = shade(base, 1 + F.tileJitter(c, r));
         quad(c, r); ctx.fill();
@@ -175,10 +188,10 @@
 
     // Roads: the centre cross of each territory, joined into highways. Drawn
     // over the land but under everything that stands on it.
-    ctx.fillStyle = 'rgba(239,230,213,0.07)';
+    ctx.fillStyle = tokens().seam;
     for (const [c, r] of F.roadTiles(M)) { quad(c, r); ctx.fill(); }
 
-    ctx.strokeStyle = 'rgba(11,18,25,0.34)'; ctx.lineWidth = 1;
+    ctx.strokeStyle = tokens().ink000Wash(0.34); ctx.lineWidth = 1;
     for (const p of M.provinces) {
       for (let i = 0; i <= p.w; i++) {
         const a = P(p.c0 + i, p.r0), z = P(p.c0 + i, p.r0 + p.h);
@@ -196,21 +209,21 @@
         if (M.provinceAtSlot(sc, sr)) continue;
         const c0 = sc * M.block.w, r0 = sr * M.block.h;
         block(c0, r0, M.block.w, M.block.h);
-        ctx.fillStyle = 'rgba(239,230,213,0.03)'; ctx.fill();
+        ctx.fillStyle = tokens().seam; ctx.fill();
         ctx.setLineDash([6, 5]);
-        ctx.strokeStyle = 'rgba(239,230,213,0.28)'; ctx.lineWidth = 1.3; ctx.stroke();
+        ctx.strokeStyle = tokens().seamDash; ctx.lineWidth = 1.3; ctx.stroke();
         ctx.setLineDash([]);
         const mid = P(c0 + M.block.w / 2, r0 + M.block.h / 2);
         ctx.font = `400 ${Math.max(15, 1.4 * S)}px 'Barlow Semi Condensed', sans-serif`;
-        ctx.fillStyle = 'rgba(239,230,213,0.36)';
+        ctx.fillStyle = tokens().seamWash(0.36);
         ctx.fillText('+', mid[0], mid[1]);
       }
     }
 
     // Exactly the provinces the reach rule allows that seat to attack.
     if (o.frontier !== null && o.frontier !== undefined) {
-      ctx.fillStyle = 'rgba(217,164,65,0.16)';
-      ctx.strokeStyle = 'rgba(217,164,65,0.85)';
+      ctx.fillStyle = tokens().signalWash;
+      ctx.strokeStyle = tokens().signal;
       ctx.lineWidth = 1.6;
       for (const [c, r] of F.frontier(M, owners, o.frontier)) {
         if (!F.territoryAt(M, c, r)) continue;
@@ -278,12 +291,11 @@
         const mid = P(c + 0.5, r + 0.5);
         const y = mid[1] + 0.34 * S;
         const w = ctx.measureText(String(n)).width + fs * 0.8;
-        ctx.fillStyle = 'rgba(11,18,25,0.78)';
+        ctx.fillStyle = tokens().ink000Wash(0.78);
         ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(mid[0] - w / 2, y - fs * 0.7, w, fs * 1.4, 2);
-        else ctx.rect(mid[0] - w / 2, y - fs * 0.7, w, fs * 1.4);
+        ctx.rect(mid[0] - w / 2, y - fs * 0.7, w, fs * 1.4);
         ctx.fill();
-        ctx.fillStyle = '#efe6d5';
+        ctx.fillStyle = tokens().text;
         ctx.fillText(String(n), mid[0], y);
       }
     }
@@ -294,7 +306,7 @@
       if (!at) continue;
       const mid = P(at[0] + 0.5, at[1] + 0.5);
       const rad = Math.max(3.5, 0.19 * S);
-      ctx.fillStyle = 'rgba(11,18,25,0.6)';
+      ctx.fillStyle = tokens().ink000Wash(0.6);
       ctx.beginPath(); ctx.arc(mid[0], mid[1], rad * 1.3, 0, Math.PI * 2); ctx.fill();
       ctx.fillStyle = shade(seatColour(st.seat), 1.55);
       ctx.beginPath(); ctx.arc(mid[0], mid[1], rad, 0, Math.PI * 2); ctx.fill();
@@ -302,7 +314,7 @@
         ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
         const fs = Math.max(9, Math.min(14, 0.18 * S));
         ctx.font = `600 ${fs}px 'Barlow Semi Condensed', sans-serif`;
-        ctx.fillStyle = '#0b1219';
+        ctx.fillStyle = tokens().textInvert;
         ctx.fillText(String(st.count), mid[0], mid[1] + 0.5);
       }
     }
@@ -312,14 +324,14 @@
       const own = F.territoryOwner(M, owners, p);
       block(p.c0, p.r0, p.w, p.h);
       if (own !== null) { ctx.strokeStyle = shade(seatColour(own), 1.5); ctx.lineWidth = 3; }
-      else { ctx.strokeStyle = 'rgba(11,18,25,0.8)'; ctx.lineWidth = 2; }
+      else { ctx.strokeStyle = tokens().ink000Wash(0.8); ctx.lineWidth = 2; }
       ctx.stroke();
     }
 
     if (o.sel && F.territoryAt(M, o.sel.c, o.sel.r)) {
       quad(o.sel.c, o.sel.r);
-      ctx.fillStyle = 'rgba(217,164,65,0.24)'; ctx.fill();
-      ctx.strokeStyle = '#d9a441'; ctx.lineWidth = 2.2; ctx.stroke();
+      ctx.fillStyle = tokens().signalWash; ctx.fill();
+      ctx.strokeStyle = tokens().signal; ctx.lineWidth = 2.2; ctx.stroke();
     }
 
     // Labels last, and only when a territory is big enough on screen to hold
@@ -334,16 +346,15 @@
         const own = F.territoryOwner(M, owners, p);
         const mid = P(p.c0 + p.w / 2, p.r0 + 0.5);
         const w = ctx.measureText(p.name).width + fs * 0.9, h = fs * 1.5;
-        ctx.fillStyle = 'rgba(11,18,25,0.5)';
+        ctx.fillStyle = tokens().ink000Wash(0.5);
         ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(mid[0] - w / 2, mid[1] - h / 2, w, h, 3);
-        else ctx.rect(mid[0] - w / 2, mid[1] - h / 2, w, h);
+        ctx.rect(mid[0] - w / 2, mid[1] - h / 2, w, h);
         ctx.fill();
-        ctx.fillStyle = own === null ? 'rgba(239,230,213,0.6)' : shade(seatColour(own), 1.7);
+        ctx.fillStyle = own === null ? tokens().text : shade(seatColour(own), 1.7);
         ctx.fillText(p.name, mid[0], mid[1]);
       }
     }
   }
 
-  return { board, shade, defaultSeatColour, KIT, LAND, NEUTRAL };
+  return { board, shade, defaultSeatColour, KIT, NEUTRAL };
 });

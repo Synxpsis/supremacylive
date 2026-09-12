@@ -29,8 +29,6 @@ const KIT = {
   city: { fp: 0.44, h: 0.26 },
 };
 const PIECE_RANK = { capital: 3, industry: 2, barracks: 1, city: 0 };
-const LAND = 0x6d675a;
-const BORDER_NEUTRAL = 0x0c1620;
 
 /* Three.js materials take numeric hex, not CSS colour strings, so the faction
  * tokens are read from the DOM once (as "#rrggbb") and parsed to numbers here,
@@ -50,6 +48,9 @@ function tokens() {
     foe: toHex(g('--sl-faction-foe'), 0xe0574a),
     neutral: toHex(g('--sl-faction-neutral'), 0x7d8683),
     signal: toHex(g('--sl-signal'), 0xd5d9d4),
+    land: toHex(g('--sl-ink-300'), 0x141a1f),
+    ink000: toHex(g('--sl-ink-000'), 0x06080a),
+    ink100: toHex(g('--sl-ink-100'), 0x0a0d10),
   };
   return _tok;
 }
@@ -75,8 +76,8 @@ export function create(canvas, M) {
 
   // ── renderers ─────────────────────────────────────────────────────────
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0b1219);
-  scene.fog = new THREE.Fog(0x0b1219, Math.max(gridW, gridH) * 2.4, Math.max(gridW, gridH) * 5);
+  scene.background = new THREE.Color(tokens().ink100);
+  scene.fog = new THREE.Fog(tokens().ink100, Math.max(gridW, gridH) * 2.4, Math.max(gridW, gridH) * 5);
 
   const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
   camera.position.set(boardCenter.x + gridW * 0.55, gridW * 0.6, boardCenter.z + gridH * 0.55);
@@ -138,7 +139,7 @@ export function create(canvas, M) {
   tileMesh.frustumCulled = false;
   const dummy = new THREE.Object3D();
   const tileColor = new THREE.Color();
-  const LAND_COLOR = new THREE.Color(LAND);
+  const LAND_COLOR = new THREE.Color(tokens().land);
   const tileIndex = (c, r) => r * gridW + c;
   for (let r = 0; r < gridH; r++) for (let c = 0; c < gridW; c++) {
     dummy.position.set(c + 0.5, 0, r + 0.5);
@@ -165,7 +166,7 @@ export function create(canvas, M) {
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
   // ── province grid lines + territory borders ──────────────────────────
-  const gridLineMat = new THREE.LineBasicMaterial({ color: 0x0c1620, transparent: true, opacity: 0.5 });
+  const gridLineMat = new THREE.LineBasicMaterial({ color: tokens().ink000, transparent: true, opacity: 0.5 });
   for (const p of M.provinces) {
     const pts = [];
     for (let i = 0; i <= p.w; i++) pts.push(new THREE.Vector3(p.c0 + i, 0.01, p.r0), new THREE.Vector3(p.c0 + i, 0.01, p.r0 + p.h));
@@ -178,7 +179,7 @@ export function create(canvas, M) {
       new THREE.Vector3(p.c0, 0.02, p.r0), new THREE.Vector3(p.c0 + p.w, 0.02, p.r0),
       new THREE.Vector3(p.c0 + p.w, 0.02, p.r0 + p.h), new THREE.Vector3(p.c0, 0.02, p.r0 + p.h),
     ];
-    const line = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: BORDER_NEUTRAL }));
+    const line = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: tokens().ink000 }));
     scene.add(line);
     borders.set(p.id, line);
   }
@@ -253,10 +254,10 @@ export function create(canvas, M) {
     for (const p of M.provinces) {
       const terr = F.territoryOwner(M, owners, p);
       const borderLine = borders.get(p.id);
-      borderLine.material.color.set(terr !== null ? seatColour(terr) : BORDER_NEUTRAL);
+      borderLine.material.color.set(terr !== null ? seatColour(terr) : tokens().ink000);
       for (let r = p.r0; r < p.r0 + p.h; r++) for (let c = p.c0; c < p.c0 + p.w; c++) {
         const own = terr !== null ? terr : (owners[F.tileKey(c, r)] ?? null);
-        tileColor.set(own === null ? LAND : seatColour(own));
+        tileColor.set(own === null ? tokens().land : seatColour(own));
         if (own !== null) tileColor.multiplyScalar(terr !== null ? 0.82 : 0.62); // dimmer once fully held, dimmer still while contested — same weighting as board-render.js
         tileMesh.setColorAt(tileIndex(c, r), tileColor);
       }
