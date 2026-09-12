@@ -7,8 +7,8 @@ model covers a fraction of what the data format and the 3D renderer already supp
 inventories exactly where editor.html stands today and lays out what closing that gap looks like.
 
 This is a living plan, not a one-time spec — checklist items are marked done (with a commit
-reference) as they land, the way [KNOWN_ISSUES.md](KNOWN_ISSUES.md) tracks fixes. Two items are done
-as of 2026-09-12 (`ba103ce`); the rest are still open.
+reference) as they land, the way [KNOWN_ISSUES.md](KNOWN_ISSUES.md) tracks fixes. Five items are done
+as of 2026-09-12 (`ba103ce`, `a4c2834`); the rest are still open.
 
 ## What `editor.html` can do today
 
@@ -29,6 +29,17 @@ as of 2026-09-12 (`ba103ce`); the rest are still open.
   identically against either one, and edits recolor/reposition live in whichever is showing. The
   renderer choice persists across reloads (shared `sl_render_mode` localStorage key with
   `game.html`/`index.html`). ✅ **Done, `ba103ce`** — closes gap 5 below.
+- **Grow or shrink the board's slot grid** (`slots.cols`/`slots.rows` only — `block.w`/`h`, a
+  territory's own tile footprint, still isn't editable). Growing only ever adds empty slots; shrinking
+  is refused with an inline message if it would orphan a territory outside the new bounds.
+  ✅ **Done, `a4c2834`** — partially closes gap 3 below.
+- **Add or remove a whole territory.** Clicking empty ground (2D or 3D) selects the slot underneath
+  and offers "Add territory here" — seeds a new province plus a capital city at its centre tile with
+  neutral defaults. Selecting an existing territory offers "Remove territory" (a two-click confirm,
+  not a dialog — see gap 1's note below). This is also, automatically, sparse/water-board authoring:
+  removing a territory (or growing the grid without filling every new slot) leaves genuine empty
+  ground, which the 3D view already renders as water and the 2D view already renders as a dashed "+"
+  placeholder — no separate "water mode" was needed. ✅ **Done, `a4c2834`** — closes gaps 1 and 2 below.
 
 ## What it can't do — the actual gap list
 
@@ -37,18 +48,16 @@ job):
 
 ### Already supported by the data model and sim — pure editor-UI work
 
-1. **Add or remove a whole province (territory).** The editor can rename a province that already
-   exists in the loaded definition, but there is no "new province at slot (x, y)" or "delete this
-   province" action anywhere. Every province the editor can touch was already in the JSON before it
-   loaded.
-2. **Author a sparse/water board.** Direct consequence of (1) — since you can't add or remove a
-   province, you can't leave a slot empty on purpose either, even though `map.js`, the sim, and the 3D
-   renderer's water mesh all already handle an empty slot correctly (see
-   [MAP_SYSTEM.md](MAP_SYSTEM.md) → "Sparse boards and water"). **This is the single highest-leverage
-   gap** — closing it needs no sim or renderer change at all, only editor UI to add/remove province
-   entries and keep `symmetry()` satisfied (empty slots must be mirrored in pairs for `duel`).
-3. **Edit a board's own dimensions** (`slots.cols/rows`, `block.w/h`). Fixed at whatever the loaded
-   definition already has; there's no UI to grow or shrink a board.
+1. ~~**Add or remove a whole province (territory).**~~ ✅ **Done, `a4c2834`**.
+2. ~~**Author a sparse/water board.**~~ ✅ **Done, `a4c2834`** — turned out to need no dedicated
+   "water mode" at all, just the add/remove-territory UI from (1); a slot with nothing in it already
+   renders as water (3D) or a dashed placeholder (2D) with zero further work.
+3. **Edit a board's own dimensions.** *Partially done* — `slots.cols`/`slots.rows` (how many territory
+   slots the grid has) can be grown or shrunk (`a4c2834`), with a guard against shrinking out from
+   under an existing territory. **`block.w`/`block.h`** (a territory's own tile footprint — 7×7 on
+   `duel`, 5×5 on `grand`) is still fixed at whatever the loaded definition has; changing it would
+   reshape every existing territory at once (city `lc`/`lr` positions could fall outside the new
+   footprint) and has no UI or validation yet.
 4. **Edit win condition** (`win.territories`), board `name`/`note`, or `starts` (which territory each
    seat begins on). None of these have any editor UI; they can only be changed by hand-editing JSON
    before it's ever loaded into the editor.
@@ -88,19 +97,15 @@ satisfied by the phase(s) before it. ~~Struck through~~ items are done.
    province add/remove or water landing first the way the original sequencing assumed. The editor's
    entire editing surface (not just a preview) now works in 3D, which changes the shape of the
    remaining items below: they no longer need their *own* "and now make this visible in 3D" step.
-3. **Province add/remove UI** (closes gap 1) — now the actual next item. The foundational editing
-   primitive everything below builds on. Board-dimension editing (gap 3) is a natural pair with this,
-   since growing a board and then having no way to populate the new slots would be a strange
-   intermediate state.
-4. **Sparse/water authoring** (gap 2) — falls out almost for free once (3) exists: "remove this
-   province" already produces a valid sparse board, and the 3D preview from step 2 already shows the
-   result the moment it's built — the only remaining work is UI affordance for doing it on purpose
-   (vs. by accident) and a symmetry-aware "leave both twin slots empty" helper for `duel`.
-5. **Board switcher + non-`duel` symmetry** (gaps 6, 7) — independent of 3–4, could land in any order
-   relative to them, but low value until there's more reason to edit `solo`/`grand` than exists today
-   (both are shelved/unlinked — see [OVERVIEW.md](OVERVIEW.md)).
-6. **Remaining metadata fields** (gap 4) — small, mechanical, no dependencies; fine to fold into
-   whichever phase touches the relevant panel first.
+3. ~~**Province add/remove UI, paired with grid resizing**~~ ✅ done, `a4c2834` — closed gaps 1, 2, and
+   the `slots.cols`/`rows` half of gap 3 in one pass. Turned out water authoring (originally sequenced
+   as its own step 4) had no separate work left once this landed — see gap 2's note.
+4. **Board switcher + non-`duel` symmetry** (gaps 6, 7) — the next item with anything left to do. Low
+   priority until there's more reason to edit `solo`/`grand` than exists today (both are
+   shelved/unlinked — see [OVERVIEW.md](OVERVIEW.md)).
+5. **Remaining metadata fields** (gap 4, plus `block.w`/`h` editing from gap 3) — small and mechanical
+   for win condition/name/starts; `block.w`/`h` needs actual validation work (existing city positions
+   can fall outside a shrunk footprint) so treat it as its own small task, not a drive-by field.
 
 Gap 8 (richer terrain) is deliberately not sequenced — it needs a product/design decision before it's
 an engineering task at all.

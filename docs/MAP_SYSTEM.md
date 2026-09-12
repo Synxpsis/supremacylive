@@ -32,21 +32,22 @@ garrison, opposite seats, and — critically for sparse boards — that every oc
 *also* occupied) and is meant to run in CI for any board meant to be a fair 1v1 (`worker.js`'s
 `handlePutMap` runs this automatically on every save to the live `duel` board).
 
-## Sparse boards and water — already supported by the data model, not yet by the editor
+## Sparse boards and water
 
 **A slot with no `provinces` entry is not an error.** `provinceAtSlot(sc, sr)` simply returns `null`
 for it, and every downstream consumer — `territoryAt()`, `neighbours()`'s callers, pathfinding,
 combat, and the 3D renderer's water mesh (see [RENDERING.md](RENDERING.md)) — already treats "no
-province here" as a first-class case, not a bug. **Today's three boards just never leave a slot
-empty**, which is the only reason no water tile has ever actually rendered in a real match: it isn't
-a missing feature in `map.js`, it's a board nobody has authored yet.
+province here" as a first-class case, not a bug. An irregular coastline (a lake in the middle of a
+territory grid, an island-shaped `duel` board, whatever) needs no new field, no new concept, and no
+sim change — just a board definition that omits some slots from `provinces`, kept symmetric in pairs
+to pass `symmetry()` if the board is `duel`.
 
-This matters directly for the editor upgrade: an irregular coastline (a lake in the middle of a
-territory grid, an island-shaped `duel` board, whatever) requires *no new field, no new concept, and
-no sim change* — it requires a board definition that simply omits some slots from `provinces`, kept
-symmetric in pairs to pass `symmetry()` if the board is `duel`. What's actually missing is editor
-tooling to add/remove a whole province (today's editor can only rename an existing one — see
-[EDITOR_UPGRADE.md](EDITOR_UPGRADE.md)).
+**The map editor can author this directly** (2026-09-12, `a4c2834`) — adding or removing a territory,
+or growing the grid without filling every new slot, leaves genuine empty ground that the 3D view
+renders as water and the 2D view renders as a dashed placeholder immediately, with no separate "water
+mode" needed. See [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md). None of the three shipped boards
+(`duel`/`solo`/`grand`) actually use this yet — they all still fill their whole grid — so no board a
+real match is played on has ever had a water tile; that's a content choice now, not a tooling gap.
 
 ## Board definition — full field reference
 
@@ -172,15 +173,16 @@ D1 is the source of truth from that point on. See [ARCHITECTURE.md](ARCHITECTURE
 
 A standalone page (`public/editor.html`, plain JS — not the `x-dc`/React-based framework the rest of
 the client uses), served at `editor.supremacy.live` off the same Worker/asset bundle. Lets a signed-in,
-authorized user (`EDITOR_USERS` in `worker.js` — currently one hardcoded account) load a board by key,
-rename provinces, add/edit/delete/mirror cities, see a live symmetry check for `duel`, and save back to
-D1. It's still hardcoded to the `duel` key with no board switcher.
+authorized user (`EDITOR_USERS` in `worker.js` — currently one hardcoded account) load a board, rename
+or add/remove whole territories, grow/shrink the slot grid, add/edit/delete/mirror cities, see a live
+symmetry check for `duel`, and save back to D1. It's still hardcoded to the `duel` key with no board
+switcher.
 
 **Both renderers are fully wired up and interactive**, toggled via a header button (2026-09-12,
-`ba103ce`) — the 2D canvas and the real 3D scene both support click-to-select and Add-City-mode
-directly, not just as a passive preview. See [RENDERING.md](RENDERING.md).
+`ba103ce`) — the 2D canvas and the real 3D scene both support click-to-select, Add-City-mode, and
+add/remove-territory directly, not just as a passive preview. See [RENDERING.md](RENDERING.md).
 
 **This is still the piece growing to match the standard above** — see
-[EDITOR_UPGRADE.md](EDITOR_UPGRADE.md) for what's left (add/remove/resize a province, author a
-sparse/water board, edit a board's dimensions, or touch `solo`/`grand` at all) and the current plan for
-closing those gaps.
+[EDITOR_UPGRADE.md](EDITOR_UPGRADE.md) for what's left (a board switcher to reach `solo`/`grand`,
+editing a territory's own tile footprint (`block.w`/`h`) rather than just the slot grid, win
+condition/name/starts metadata) and the current plan for closing those gaps.
