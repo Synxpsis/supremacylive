@@ -1042,15 +1042,34 @@ class Component extends DCLogic {
    *  ever changes at runtime; nothing does yet, so a one-time read at mount is
    *  enough for now. */
   readTokens() {
-    const g = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    // Fallbacks mirror tokens.css's own :root/cobalt-ember defaults — the
+    // same belt-and-suspenders board-render.js's tokens() already uses.
+    // Without them, a call that lands before <helmet>'s async <link
+    // rel="stylesheet" href="./tokens.css"> has actually applied (nothing
+    // here waits on it — the boot poll in componentDidMount only checks
+    // that FPMap/FPRender/FPSim are defined) reads every var() as '' and
+    // caches it in this._tok forever, since seatColour()'s `?? t.self`
+    // only catches null/undefined, not ''. shade('', f) in board-render.js
+    // then parses '' to NaN, which every bitwise channel op coerces to 0 —
+    // #000000, not a visibly-wrong colour but a silent, permanent, exact
+    // black for every owned tile, for the rest of that session. This is
+    // what live testing saw as "the whole board is black" for one account
+    // and not the other: whichever client's first paint happened to race
+    // the stylesheet.
+    const g = (n, fallback) => {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+      return v || fallback;
+    };
     const rgba = (hex, a) => {
       const n = parseInt(hex.replace('#', ''), 16);
       return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
     };
-    const ink100 = g('--sl-ink-100');
+    const ink100 = g('--sl-ink-100', '#0a0d10');
     this._tok = {
-      self: g('--sl-faction-self'), foe: g('--sl-faction-foe'), neutral: g('--sl-faction-neutral'),
-      signal: g('--sl-signal'), signalWash: g('--sl-signal-wash'), danger: g('--sl-danger'),
+      self: g('--sl-faction-self', '#3d8fd4'), foe: g('--sl-faction-foe', '#e0574a'),
+      neutral: g('--sl-faction-neutral', '#7d8683'),
+      signal: g('--sl-signal', '#d5d9d4'), signalWash: g('--sl-signal-wash', 'rgba(255,255,255,0.10)'),
+      danger: g('--sl-danger', '#e0574a'),
       ink100Wash: rgba(ink100, 0.86),
     };
     return this._tok;
