@@ -435,19 +435,32 @@ export function create(canvas, M) {
   const ndc = new THREE.Vector2();
   const hitPoint = new THREE.Vector3();
 
-  /** Screen px (relative to the canvas) -> the province tile under it, or
-   *  null off the board. Simpler than map.js's cam.unproject(): a straight
-   *  ray/plane intersection, no inverse-rotation math, and correct at any
-   *  camera angle rather than only at the four locked bearings. */
-  function tileAt(mx, my) {
+  /** Screen px (relative to the canvas) -> the tile under it, or null off the
+   *  grid entirely — land or water, occupied slot or empty one, no territory
+   *  filtering. Simpler than map.js's cam.unproject(): a straight ray/plane
+   *  intersection, no inverse-rotation math, and correct at any camera angle
+   *  rather than only at the four locked bearings. Exists as its own function
+   *  (rather than folded into tileAt below) for the map editor, which needs
+   *  to hit-test an empty slot to offer "place a territory here" — the live
+   *  match client has no use for a tile outside any territory and keeps
+   *  calling tileAt(), which still rejects those exactly as before. */
+  function tileAtAny(mx, my) {
     const rect = canvas.getBoundingClientRect();
     ndc.set((mx / rect.width) * 2 - 1, -(my / rect.height) * 2 + 1);
     raycaster.setFromCamera(ndc, camera);
     if (!raycaster.ray.intersectPlane(groundPlane, hitPoint)) return null;
     const c = Math.floor(hitPoint.x), r = Math.floor(hitPoint.z);
     if (c < 0 || r < 0 || c >= gridW || r >= gridH) return null;
-    if (!F.territoryAt(M, c, r)) return null;
     return { c, r };
+  }
+
+  /** Screen px -> the province tile under it, or null off the board (off the
+   *  grid, or on it but in an empty/unclaimable slot). What the live match
+   *  client uses for all its click-to-select/march hit-testing. */
+  function tileAt(mx, my) {
+    const t = tileAtAny(mx, my);
+    if (!t || !F.territoryAt(M, t.c, t.r)) return null;
+    return t;
   }
 
   function dispose() {
@@ -456,5 +469,5 @@ export function create(canvas, M) {
     renderer.dispose();
   }
 
-  return { scene, camera, controls, renderer, cssRenderer, update, tileAt, resize, dispose };
+  return { scene, camera, controls, renderer, cssRenderer, update, tileAt, tileAtAny, resize, dispose };
 }

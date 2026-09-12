@@ -152,7 +152,7 @@
     <div id="canvasWrap">
       <canvas id="cv"></canvas>
       <canvas id="cv3d" style="display: none;"></canvas>
-      <div id="hint">Click a city to edit it · Add City, then click open ground · scroll to zoom · drag to pan / orbit</div>
+      <div id="hint">Click a city or territory to edit it, empty ground to add one · Add City, then click open ground · scroll to zoom · drag to pan / orbit</div>
     </div>
     <div id="panel"></div>
   </div>
@@ -171,6 +171,8 @@
     symmetry: null,
     sel: null,         // { kind: 'city', id } | { kind: 'province', id }
     addMode: false,
+    confirmRemove: null, // province id currently armed for a two-click "remove territory" — see select()
+    boardError: null, // inline board-resize rejection message — see resizeSlots()
     cam: { zoom: 1, panX: 0, panY: 0 },
     saving: false,
     dirty: false,
@@ -233,6 +235,7 @@
   function rebuild() {
     S.built = F().build(S.def);
     S.symmetry = S.key === 'duel' ? F().symmetry(S.built) : { ok: true, issues: [] };
+    S.boardError = null; // any successful edit supersedes a stale board-resize error
     renderPanel();
     paint();
   }
@@ -398,12 +401,15 @@
   new ResizeObserver(() => { paint(); resize3D(); }).observe(document.getElementById('canvasWrap'));
 
   // ── hit testing (2D) ──────────────────────────────────────────────────────
-  function tileAt(mx, my) {
+  // Unfiltered — bounds-checked against the grid only, not against whether
+  // the tile is actually claimed by a territory. The editor needs this to
+  // hit-test an empty slot (to offer "place a territory here"); the game
+  // client has no such need and keeps its own territory-filtered hit test.
+  function tileAtAny(mx, my) {
     if (!cam || !S.built) return null;
     const u = cam.unproject(mx, my);
     const c = Math.floor(u.c), r = Math.floor(u.r);
     if (c < 0 || r < 0 || c >= S.built.gridW || r >= S.built.gridH) return null;
-    if (!F().territoryAt(S.built, c, r)) return null;
     return { c, r };
   }
 
@@ -440,11 +446,22 @@
     paint();
   }, { passive: false });
 
+  /** Which slot (occupied or not) a tile falls in, or null if the tile is
+   *  somehow outside the board's own slot grid (shouldn't happen — the slot
+   *  grid always exactly covers gridW×gridH — but a board with a stale/
+   *  mismatched slots vs. block shouldn't crash the click handler over it). */
+  function slotOf(t) {
+    const block = S.built.block, slots = S.built.slots;
+    const sc = Math.floor(t.c / block.w), sr = Math.floor(t.r / block.h);
+    if (sc < 0 || sr < 0 || sc >= slots.cols || sr >= slots.rows) return null;
+    return { sc, sr };
+  }
+
   // Shared by both renderers' click handling — only how a screen point turns
   // into a tile differs (the 2D camera's unproject() vs. the 3D renderer's
-  // own ray/ground-plane tileAt()). Preserves the existing 2D behaviour of
-  // doing nothing at all on a genuinely off-board click, rather than clearing
-  // the current selection.
+  // own ray/ground-plane tileAtAny()). Preserves the existing behaviour of
+  // doing nothing at all on a click truly off the board (outside the slot
+  // grid entirely), rather than clearing the current selection.
   function onClickTile(t) {
     if (!t) return;
     const city = cityAtTile(t.c, t.r);
@@ -452,9 +469,14 @@
     const prov = F().territoryAt(S.built, t.c, t.r);
     if (S.addMode && prov) { addCity(prov, t.c - prov.c0, t.r - prov.r0); return; }
     if (prov) { select({ kind: 'province', id: prov.id }); return; }
+    // Empty ground — offer to place a territory in whichever slot this is,
+    // rather than falling through to "nothing here" the way the live game
+    // (which has no use for an empty slot) treats the same click.
+    const slot = slotOf(t);
+    if (slot) { select({ kind: 'slot', sc: slot.sc, sr: slot.sr }); return; }
     select(null);
   }
-  function onClick(mx, my) { onClickTile(tileAt(mx, my)); }
+  function onClick(mx, my) { onClickTile(tileAtAny(mx, my)); }
 
   // 3D canvas: OrbitControls owns drag-to-orbit/pan/zoom on cv3d directly, so
   // the only thing needed here is click-to-select — a genuine click (no
@@ -465,10 +487,14 @@
   cv3d.addEventListener('click', e => {
     if (!_r3d) return;
     const b = cv3d.getBoundingClientRect();
-    onClickTile(_r3d.tileAt(e.clientX - b.left, e.clientY - b.top));
+    onClickTile(_r3d.tileAtAny(e.clientX - b.left, e.clientY - b.top));
   });
 
-  function select(sel) { S.sel = sel; renderPanel(); paint(); }
+  // confirmRemove reset on every navigation (including re-selecting the same
+  // province later) — an armed "confirm remove" is only ever live for the
+  // uninterrupted panel render cycle that armed it, never left lying around
+  // for a future, unrelated click to land on by surprise.
+  function select(sel) { S.sel = sel; S.confirmRemove = null; renderPanel(); paint(); }
 
   // ── edits ──────────────────────────────────────────────────────────────
   function markDirty() { S.dirty = true; saveStatus.textContent = 'Unsaved changes'; saveStatus.className = ''; }
@@ -517,9 +543,84 @@
     rebuild();
   }
 
+  /** Place a new territory in an empty slot. Every territory needs a capital
+   *  to actually be fought over and pay income (see docs/MECHANICS.md), so
+   *  this seeds one at the exact centre tile with modest neutral defaults —
+   *  editable afterward exactly like any other city. */
+  function addTerritory(sc, sr) {
+    if (S.built.provinceAtSlot(sc, sr)) return; // already occupied — shouldn't reach here via the UI, but don't clobber it if it does
+    const existingNames = S.def.provinces.map(p => p.name);
+    const existingIds = S.def.provinces.map(p => p.id);
+    const name = F().pickName(F().PROVINCE_NAMES, existingNames, 'Territory');
+    const id = F().pickId(name, existingIds);
+    S.def.provinces.push({ id, name, sc, sr });
+
+    const block = S.def.block || F().DEFAULT_BLOCK;
+    const clc = (block.w - 1) >> 1, clr = (block.h - 1) >> 1;
+    const cNames = S.def.cities.map(c => c.name);
+    const cIds = S.def.cities.map(c => c.id);
+    const cname = F().pickName(F().CITY_NAMES, cNames, 'City');
+    const cid = F().pickId(cname, cIds);
+    S.def.cities.push({ id: cid, name: cname, prov: id, lc: clc, lr: clr, wealth: 2.4, garrison: 30 });
+
+    markDirty();
+    reset3D(); // adding a territory changes which tiles are land vs. water — the 3D scene's instance layout is baked in at create() and can't be patched in place, see reset3D()'s own comment
+    rebuild();
+    select({ kind: 'province', id });
+  }
+
+  function removeTerritory(id) {
+    S.def.cities = S.def.cities.filter(c => c.prov !== id);
+    S.def.provinces = S.def.provinces.filter(p => p.id !== id);
+    markDirty();
+    reset3D(); // same reasoning as addTerritory — the freed slot becomes water
+    select(null);
+    rebuild();
+  }
+
+  /** Grow or shrink the board's slot grid. Growing only ever adds empty
+   *  (water) slots, so it's safe unconditionally. Shrinking is refused
+   *  outright — rather than silently deleting content — if it would orphan a
+   *  territory currently sitting outside the new bounds; remove or relocate
+   *  it first. Clamped to a sane range so a typo can't hand the renderer an
+   *  unreasonably huge grid. */
+  function resizeSlots(cols, rows) {
+    cols = Math.max(1, Math.min(12, Math.round(cols) || 1));
+    rows = Math.max(1, Math.min(12, Math.round(rows) || 1));
+    const orphan = S.def.provinces.find(p => p.sc >= cols || p.sr >= rows);
+    if (orphan) {
+      // Inline, not alert() — a native dialog here is off-style (see the
+      // remove-territory comment above) and was actually hit and fixed
+      // during development: it silently froze the whole page to any further
+      // input, browser-automation or human, with no way out but closing the
+      // tab.
+      S.boardError = 'Can’t shrink to ' + cols + '×' + rows + ' — ' + (orphan.name || orphan.id) +
+        ' sits at slot (' + orphan.sc + ', ' + orphan.sr + '), outside the new grid. Remove it first.';
+      renderPanel(); // discard the typed value, redisplay the actual current size (+ the error)
+      return;
+    }
+    S.boardError = null;
+    S.def.slots = { cols, rows };
+    markDirty();
+    reset3D();
+    rebuild();
+  }
+
   // ── panel rendering ───────────────────────────────────────────────────
   function renderPanel() {
     const parts = [];
+    const slots = S.def.slots || F().DEFAULT_SLOTS;
+
+    parts.push(
+      '<div><div class="section-title">Board</div>' +
+      '<div class="row2">' +
+      '<div class="field"><label>Cols</label><input data-board-field="cols" type="number" min="1" max="12" value="' + escapeAttr(slots.cols) + '"></div>' +
+      '<div class="field"><label>Rows</label><input data-board-field="rows" type="number" min="1" max="12" value="' + escapeAttr(slots.rows) + '"></div>' +
+      '</div>' +
+      '<div style="font-size:12.5px;color:var(--sl-text-dim);">Growing only adds empty (water) slots. Shrinking is refused if a territory would fall outside the new grid.</div>' +
+      (S.boardError ? '<div class="sym-issue" style="margin-top:8px;">' + escapeHtml(S.boardError) + '</div>' : '') +
+      '</div>'
+    );
 
     parts.push('<div class="section-title">Provinces</div>');
     for (const p of S.def.provinces) {
@@ -553,10 +654,30 @@
       }
     } else if (S.sel && S.sel.kind === 'province') {
       const p = findProvDef(S.sel.id);
-      if (p) parts.push('<div><div class="section-title">Province — ' + escapeHtml(p.name) + '</div>' +
-        '<div style="font-size:12.5px;color:var(--sl-text-dim);">Rename it above. Add cities with "Add City", then click open ground inside it.</div></div>');
+      if (p) {
+        // Command-console copy convention (CLAUDE.md): a destructive action
+        // states its consequence in the button itself, armed by a first
+        // click, rather than a native confirm() dialog — which, besides
+        // being off-style here, is a real trap for browser automation: a
+        // blocking native dialog freezes the page to any further scripted
+        // input with no way back except closing the tab.
+        const built = S.built.province(p.id);
+        const n = built ? built.cities.length : 0;
+        const armed = S.confirmRemove === p.id;
+        parts.push('<div><div class="section-title">Territory — ' + escapeHtml(p.name) + '</div>' +
+          '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">Rename it above. Add cities with "Add City", then click open ground inside it.</div>' +
+          '<button class="btn danger' + (armed ? ' on' : '') + '" id="removeTerritoryBtn" style="width:100%;">' +
+          (armed ? 'Confirm — ' + n + (n === 1 ? ' city' : ' cities') + ' removed' : 'Remove territory') +
+          '</button></div>');
+      }
+    } else if (S.sel && S.sel.kind === 'slot') {
+      parts.push(
+        '<div><div class="section-title">Empty slot — (' + S.sel.sc + ', ' + S.sel.sr + ')</div>' +
+        '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">Open ground, not part of any territory. Renders as water.</div>' +
+        '<button class="btn primary" id="addTerritoryBtn" style="width:100%;">Add territory here</button></div>'
+      );
     } else {
-      parts.push('<div id="emptyPanel">Click a city to edit it, or a province to rename it.</div>');
+      parts.push('<div id="emptyPanel">Click a city or territory to edit it, or empty ground to add a new territory.</div>');
     }
 
     parts.push('<div>' +
@@ -594,6 +715,15 @@
       });
     });
 
+    panel.querySelectorAll('[data-board-field]').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const slots = S.def.slots || F().DEFAULT_SLOTS;
+        const cols = inp.getAttribute('data-board-field') === 'cols' ? Number(inp.value) : slots.cols;
+        const rows = inp.getAttribute('data-board-field') === 'rows' ? Number(inp.value) : slots.rows;
+        resizeSlots(cols, rows);
+      });
+    });
+
     const addModeBtn = document.getElementById('addModeBtn');
     if (addModeBtn) addModeBtn.addEventListener('click', () => { S.addMode = !S.addMode; renderPanel(); });
 
@@ -602,6 +732,22 @@
 
     const deleteBtn = document.getElementById('deleteBtn');
     if (deleteBtn) deleteBtn.addEventListener('click', () => S.sel && deleteCity(S.sel.id));
+
+    const removeTerritoryBtn = document.getElementById('removeTerritoryBtn');
+    if (removeTerritoryBtn) removeTerritoryBtn.addEventListener('click', () => {
+      if (!S.sel || S.sel.kind !== 'province') return;
+      if (S.confirmRemove === S.sel.id) {
+        removeTerritory(S.sel.id); // removeTerritory() -> select(null) already clears confirmRemove
+      } else {
+        S.confirmRemove = S.sel.id;
+        renderPanel(); // arm it — a second click on the now-relabelled button actually removes
+      }
+    });
+
+    const addTerritoryBtn = document.getElementById('addTerritoryBtn');
+    if (addTerritoryBtn) addTerritoryBtn.addEventListener('click', () => {
+      if (S.sel && S.sel.kind === 'slot') addTerritory(S.sel.sc, S.sel.sr);
+    });
 
     if (S.sel && S.sel.kind === 'city') {
       panel.querySelectorAll('[data-city-field]').forEach(inp => {
