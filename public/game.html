@@ -36,17 +36,20 @@
   input[type="range"] { accent-color: var(--sl-signal); height: 16px; }
   /* 3D-mode (?render=3d) CSS2DObject labels for garrison/troop counts and the
      march preview — board-render-3d.js only assigns classes, not style, so
-     these numbers were rendering in the browser's unstyled default font. */
+     these numbers were rendering in the browser's unstyled default font.
+     Anchor offset is NOT set here: CSS2DRenderer writes an inline
+     element.style.transform on every frame (from the object's `.center`),
+     which fully overrides any `transform` declared in a stylesheet rule —
+     board-render-3d.js sets `.center` on each CSS2DObject instead. */
   .fp3d-label {
     font-family: var(--sl-font-mono); font-weight: var(--sl-fw-mono); font-size: var(--sl-fs-label);
     color: var(--sl-text); background: color-mix(in srgb, var(--sl-ink-100) 78%, transparent);
-    padding: 2px 6px; transform: translate(-50%, -100%); white-space: nowrap;
+    padding: 2px 6px; white-space: nowrap;
   }
-  .fp3d-troop { transform: translate(-50%, -140%); }
   .fp3d-march {
     font-family: var(--sl-font-mono); font-weight: var(--sl-fw-mono); font-size: var(--sl-fs-ui-xs);
     color: var(--sl-signal); background: color-mix(in srgb, var(--sl-ink-100) 86%, transparent);
-    padding: 4px 10px; transform: translate(-50%, -100%); white-space: nowrap;
+    padding: 4px 10px; white-space: nowrap;
   }
 </style>
 </helmet>

@@ -230,6 +230,8 @@ export function create(canvas, M) {
   armedRing.visible = false;
   scene.add(armedRing);
 
+  const focusTarget = new THREE.Vector3(); // scratch for the selection camera-lock, below
+
   const multiGroup = new THREE.Group();
   scene.add(multiGroup);
   const multiMat = new THREE.MeshBasicMaterial({ color: tokens().signal, transparent: true, opacity: 0.22, side: THREE.DoubleSide });
@@ -297,6 +299,7 @@ export function create(canvas, M) {
       let obj = garrisonLabels.get(key);
       if (!obj) {
         obj = new CSS2DObject(labelDiv('', 'fp3d-garrison'));
+        obj.center.set(0.5, 1); // anchor above the tile point, not centred on it
         obj.position.set(c + 0.5, 0.05, r + 0.5);
         scene.add(obj); garrisonLabels.set(key, obj);
       }
@@ -316,6 +319,7 @@ export function create(canvas, M) {
         sphere.castShadow = true;
         scene.add(sphere);
         const label = new CSS2DObject(labelDiv('', 'fp3d-troop'));
+        label.center.set(0.5, 1.4); // float above the sphere, not centred on it
         sphere.add(label);
         label.position.set(0, 0.35, 0);
         t = { sphere, label };
@@ -327,7 +331,17 @@ export function create(canvas, M) {
     }
     for (const id of [...troopMeshes.keys()]) if (!liveIds.has(id)) {
       const t = troopMeshes.get(id);
-      scene.remove(t.sphere); troopMeshes.delete(id);
+      // t.label is a CSS2DObject nested under t.sphere, not a direct child of
+      // scene — scene.remove(sphere) only dispatches Object3D's 'removed'
+      // event on sphere itself, not recursively on its descendants, so the
+      // label's DOM node never gets cleaned up and CSS2DRenderer (which
+      // walks down from `scene`) can no longer reach it to reposition it.
+      // Left like this, the number freezes on screen at its last projected
+      // spot forever, ignoring all further camera movement. Detaching the
+      // label directly fires its own 'removed' listener first.
+      t.sphere.remove(t.label);
+      scene.remove(t.sphere);
+      troopMeshes.delete(id);
     }
 
     // Selection / armed rings.
@@ -338,6 +352,23 @@ export function create(canvas, M) {
     };
     placeRing(selRing, o.sel || null);
     placeRing(armedRing, o.armed || null);
+
+    // Camera lock + centre-on-selection: whichever tile is selected or armed
+    // becomes the orbit target, and rotate/pan are frozen so the player can't
+    // pan or spin away from a tile they just committed to mid-order — only
+    // zoom stays live. The lock lifts the instant nothing is selected, which
+    // game.html already arranges by clearing sel/armed on a click outside
+    // the board.
+    const focus = o.sel || o.armed || null;
+    if (focus) {
+      controls.enableRotate = false;
+      controls.enablePan = false;
+      focusTarget.set(focus.c + 0.5, 0, focus.r + 0.5);
+      controls.target.lerp(focusTarget, 0.15);
+    } else {
+      controls.enableRotate = true;
+      controls.enablePan = true;
+    }
 
     // Multi-select tile outlines.
     while (multiGroup.children.length) { const m = multiGroup.children.pop(); m.geometry.dispose(); }
@@ -357,6 +388,7 @@ export function create(canvas, M) {
       marchGroup.add(line);
       if (o.marchLabelText) {
         marchLabel = new CSS2DObject(labelDiv(o.marchLabelText, 'fp3d-march'));
+        marchLabel.center.set(0.5, 1);
         const end = pts[pts.length - 1];
         marchLabel.position.set(end.x, 0.6, end.z);
         scene.add(marchLabel);
