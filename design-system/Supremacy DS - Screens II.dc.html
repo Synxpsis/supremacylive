@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&amp;family=Barlow+Semi+Condensed:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #0a0d10; }
+  a { color: #e6e8e4; text-decoration: none; }
+  a:hover { color: #ffffff; }
+  ::selection { background: rgba(255,255,255,0.22); }
+  * { scrollbar-color: #252f36 #0a0d10; scrollbar-width: thin; }
+  @keyframes slSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  @keyframes slBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+</style>
+</helmet>
+
+<div style="min-height: 100vh; background: #0a0d10; color: #e6e8e4; font-family: 'Barlow Semi Condensed', system-ui, sans-serif; font-variant-numeric: tabular-nums; display: grid; grid-template-columns: 218px minmax(0, 1fr);">
+
+  <nav style="position: sticky; top: 0; align-self: start; height: 100vh; box-sizing: border-box; padding: 28px 0 28px 28px; border-right: 1px solid rgba(230,232,228,0.09); display: flex; flex-direction: column; gap: 26px; overflow-y: auto;">
+    <div style="display: flex; flex-direction: column; gap: 7px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="width: 9px; height: 9px; background: #ffffff; display: block;"></span>
+        <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 19px; letter-spacing: 0.06em; text-transform: uppercase; line-height: 1;">Supremacy</span>
+      </div>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #7d8683;">DS v1.0 · Screens II</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 2px; padding-right: 20px;">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="8">
+        <a href="{{ n.href }}" style="display: flex; align-items: baseline; gap: 10px; padding: 6px 0; border-top: 1px solid rgba(230,232,228,0.09); color: #9ba39f; font-size: 14px; line-height: 1.2;" style-hover="color: #e6e8e4;">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; color: #7d8683;">{{ n.num }}</span>
+          <span>{{ n.label }}</span>
+        </a>
+      </sc-for>
+    </div>
+
+    <div style="margin-top: auto; padding-right: 20px; display: flex; flex-direction: column; gap: 8px;">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #7d8683;">Faction palette</span>
+      <sc-for list="{{ factionPicks }}" as="p" hint-placeholder-count="4">
+        <button onClick="{{ p.pick }}" style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: {{ p.bg }}; border: 1px solid {{ p.border }}; color: {{ p.colour }}; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; text-align: left;" style-hover="border-color: rgba(230,232,228,0.35);">
+          <span style="width: 7px; height: 7px; flex: none; background: {{ p.self }};"></span>
+          <span style="width: 7px; height: 7px; flex: none; background: {{ p.foe }};"></span>
+          <span>{{ p.short }}</span>
+        </button>
+      </sc-for>
+      <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(230,232,228,0.09); display: flex; flex-direction: column; gap: 6px;">
+        <a href="./Supremacy DS — Foundations.dc.html" style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: #7d8683;" style-hover="color: #ffffff;">← Foundations</a>
+        <a href="./Supremacy DS — Components.dc.html" style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: #7d8683;" style-hover="color: #ffffff;">← Components</a>
+        <a href="./Supremacy DS — Icons.dc.html" style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: #7d8683;" style-hover="color: #ffffff;">← Icons</a>
+        <a href="./Supremacy DS — Screens.dc.html" style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: #7d8683;" style-hover="color: #ffffff;">← Screens I</a>
+      </div>
+    </div>
+  </nav>
+
+  <main style="min-width: 0; padding: 0 40px 120px; display: flex; flex-direction: column;">
+
+    <header style="padding: 76px 0 48px; border-bottom: 2px solid rgba(230,232,228,0.18); margin-bottom: 48px;">
+      <div style="display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px 32px; margin-bottom: 18px;">
+        <div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #ffffff;">Design System · Reference screens II</div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 4px; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #7d8683;">
+          <span>Rev 1.0 · 2026.09</span>
+          <span>1440 × 900 · desktop</span>
+          <span style="color: #ffffff;">Handoff → Claude Code</span>
+        </div>
+      </div>
+      <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 76px; line-height: 0.9; letter-spacing: 0.01em; text-transform: uppercase;">Screens II</h1>
+      <p style="margin: 22px 0 0; max-width: 66ch; font-size: 17px; line-height: 1.55; color: #9ba39f; text-wrap: pretty;">The eight out-of-match surfaces. Same rules as Screens I: components only, 56px header, 20px gutters, 24px panel padding, one white fill per view. Landing is the only screen permitted a different rhythm — it is the one surface a stranger sees.</p>
+    </header>
+
+    <!-- ============================ 01 LANDING ========================== -->
+    <section id="landing" style="margin-bottom: 64px;">
+      <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.18em; color: #ffffff;">01</span>
+        <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 34px; line-height: 1; letter-spacing: 0.02em; text-transform: uppercase;">Landing</h2>
+      </div>
+      <p style="margin: 0 0 20px; max-width: 74ch; font-size: 15px; line-height: 1.6; color: #9ba39f;">Logged out. Sells the premise in one screen: no turns, no download, eight minutes. Live counters do the persuading rather than adjectives — this is a real service with people in it right now.</p>
+
+      <div style="border: 1px solid rgba(230,232,228,0.18); overflow-x: auto;">
+        <div style="position: relative; width: 1440px; height: 900px; background: #06080a; box-sizing: border-box; display: flex; flex-direction: column;">
+          <span style="position: absolute; left: 24px; top: 44px; width: 22px; height: 1px; background: rgba(230,232,228,0.35);"></span>
+          <span style="position: absolute; left: 44px; top: 24px; width: 1px; height: 22px; background: rgba(230,232,228,0.35);"></span>
+          <span style="position: absolute; right: 24px; bottom: 44px; width: 22px; height: 1px; background: rgba(230,232,228,0.35);"></span>
+          <span style="position: absolute; right: 44px; bottom: 24px; width: 1px; height: 22px; background: rgba(230,232,228,0.35);"></span>
+
+          <div style="height: 56px; flex: none; display: flex; align-items: center; gap: 28px; padding: 0 64px; border-bottom: 1px solid rgba(230,232,228,0.09); box-sizing: border-box;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 9px; height: 9px; background: #ffffff;"></span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: 0.06em; text-transform: uppercase;">Supremacy</span>
+            </div>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 20px;">
+              <a href="#landing" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #9ba39f;" style-hover="color: #ffffff;">Ladder</a>
+              <a href="#landing" style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #9ba39f;" style-hover="color: #ffffff;">Sign in</a>
+              <button style="height: 36px; padding: 0 16px; background: transparent; border: 1px solid rgba(230,232,228,0.18); color: #e6e8e4; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;" style-hover="border-color: rgba(255,255,255,0.55);">Create account</button>
+            </div>
+          </div>
+
+          <div style="flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 520px; gap: 64px; padding: 72px 64px 0; box-sizing: border-box;">
+            <div style="min-width: 0; display: flex; flex-direction: column;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #7d8683; margin-bottom: 22px;">Real-time territory control · browser</span>
+              <h3 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 112px; line-height: 0.86; letter-spacing: 0.01em; text-transform: uppercase;">No turns.<br />No mercy.</h3>
+              <p style="margin: 28px 0 0; max-width: 44ch; font-size: 19px; line-height: 1.5; color: #9ba39f; text-wrap: pretty;">Grand strategy that resolves in eight minutes. Every march is live, every province pays, and the map never waits for you.</p>
+              <div style="display: flex; align-items: center; gap: 12px; margin-top: 36px;">
+                <button style="height: 52px; padding: 0 28px; background: #d5d9d4; border: 1px solid #d5d9d4; color: #06080a; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 19px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background 80ms cubic-bezier(0.4,0,0.6,1);" style-hover="background: #ffffff;">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" stroke="none" aria-hidden="true"><path d="M4.5 3L13 8l-8.5 5Z"></path></svg>
+                  <span>Play free</span>
+                </button>
+                <button style="height: 52px; padding: 0 20px; background: transparent; border: 1px solid rgba(230,232,228,0.18); color: #e6e8e4; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 19px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 10px;" style-hover="border-color: rgba(255,255,255,0.55);">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" vector-effect="non-scaling-stroke" aria-hidden="true"><path d="M1.4 8S4 3.8 8 3.8 14.6 8 14.6 8 12 12.2 8 12.2 1.4 8 1.4 8Z"></path><circle cx="8" cy="8" r="1.9"></circle></svg>
+                  <span>Watch a match</span>
+                </button>
+              </div>
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: #7d8683; margin-top: 16px;">No download · no card · plays in this tab</span>
+
+              <div style="margin-top: auto; margin-bottom: 56px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: rgba(230,232,228,0.09); border-top: 1px solid rgba(230,232,228,0.09);">
+                <sc-for list="{{ liveStats }}" as="s" hint-placeholder-count="4">
+                  <div style="background: #06080a; padding: 20px 0 0; display: flex; flex-direction: column; gap: 6px;">
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 500; line-height: 1; color: {{ s.colour }};">{{ s.value }}</span>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #7d8683;">{{ s.label }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="width: 520px; display: flex; flex-direction: column; gap: 20px; padding-bottom: 56px;">
+              <div style="flex: 1; min-height: 0; background: #0a0d10; border: 1px dashed rgba(230,232,228,0.14); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 40px; text-align: center;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #7d8683;">Canvas · board-render.js</span>
+                <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 26px; line-height: 1; letter-spacing: 0.02em; text-transform: uppercase; color: #9ba39f;">Live match, muted</span>
+                <p style="margin: 0; max-width: 40ch; font-size: 13.5px; line-height: 1.5; color: #7d8683;">A real match in progress, camera on slow orbit, HUD stripped. Autoplays; pauses off-screen.</p>
+              </div>
+              <div style="flex: none; display: flex; flex-direction: column; gap: 1px; background: rgba(230,232,228,0.09); border: 1px solid rgba(230,232,228,0.18);">
+                <sc-for list="{{ premise }}" as="p" hint-placeholder-count="3">
+                  <div style="background: #0e1216; padding: 16px 18px; display: flex; gap: 14px; align-items: flex-start;">
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.18em; color: #7d8683; flex: none; padding-top: 3px;">{{ p.n }}</span>
+                    <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+                      <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 19px; line-height: 1.1; letter-spacing: 0.03em; text-transform: uppercase;">{{ p.title }}</span>
+                      <span style="font-size: 13.5px; line-height: 1.45; color: #9ba39f;">{{ p.body }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; line-height: 1.7; color: #7d8683;">Landing · full bleed on ink-000 · d1 pushed to 112 (the one screen that outranks the scale) · live counters carry the proof, not adjectives</div>
+    </section>
+
+    <!-- ============================ 02 AUTH ============================= -->
+    <section id="auth" style="margin-bottom: 64px;">
+      <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.18em; color: #ffffff;">02</span>
+        <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 34px; line-height: 1; letter-spacing: 0.02em; text-transform: uppercase;">Auth</h2>
+      </div>
+      <p style="margin: 0 0 20px; max-width: 74ch; font-size: 15px; line-height: 1.6; color: #9ba39f;">One card, centred, nothing else competing. Guest play is offered at equal weight — a free-to-play service should never make the account the toll gate on the first screen.</p>
+
+      <div style="border: 1px solid rgba(230,232,228,0.18); overflow-x: auto;">
+        <div style="position: relative; width: 1440px; height: 900px; background: #06080a; box-sizing: border-box; display: flex; align-items: center; justify-content: center;">
+          <span style="position: absolute; left: 24px; top: 44px; width: 22px; height: 1px; background: rgba(230,232,228,0.35);"></span>
+          <span style="position: absolute; left: 44px; top: 24px; width: 1px; height: 22px; background: rgba(230,232,228,0.35);"></span>
+          <span style="position: absolute; right: 24px; bottom: 44px; width: 22px; height: 1px; background: rgba(230,232,228,0.35);"></span>
+          <span style="position: absolute; right: 44px; bottom: 24px; width: 1px; height: 22px; background: rgba(230,232,228,0.35);"></span>
+
+          <div style="position: absolute; left: 64px; top: 44px; display: flex; align-items: center; gap: 8px;">
+            <span style="width: 9px; height: 9px; background: #ffffff;"></span>
+            <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: 0.06em; text-transform: uppercase;">Supremacy</span>
+          </div>
+
+          <div style="position: relative; width: 420px; background: #0e1216; border: 1px solid rgba(230,232,228,0.18);">
+            <span style="position: absolute; left: -1px; top: -1px; width: 9px; height: 9px; border-left: 1px solid #ffffff; border-top: 1px solid #ffffff;"></span>
+            <span style="position: absolute; right: -1px; top: -1px; width: 9px; height: 9px; border-right: 1px solid #ffffff; border-top: 1px solid #ffffff;"></span>
+            <span style="position: absolute; left: -1px; bottom: -1px; width: 9px; height: 9px; border-left: 1px solid #ffffff; border-bottom: 1px solid #ffffff;"></span>
+            <span style="position: absolute; right: -1px; bottom: -1px; width: 9px; height: 9px; border-right: 1px solid #ffffff; border-bottom: 1px solid #ffffff;"></span>
+
+            <div style="display: flex; border-bottom: 1px solid rgba(230,232,228,0.09);">
+              <button style="flex: 1; height: 46px; background: transparent; border: none; border-bottom: 2px solid #ffffff; color: #e6e8e4; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer;">Sign in</button>
+              <button style="flex: 1; height: 46px; background: transparent; border: none; border-bottom: 2px solid transparent; color: #7d8683; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; cursor: pointer;" style-hover="color: #ffffff;">Create</button>
+            </div>
+
+            <div style="padding: 28px; display: flex; flex-direction: column; gap: 18px;">
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #9ba39f;">Commander</span>
+                <div style="height: 36px; display: flex; align-items: center; padding: 0 12px; background: #141a1f; border: 1px solid rgba(230,232,228,0.18);">
+                  <span style="font-size: 15px; color: #e6e8e4;">Vekhov</span>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 8px;">
+                <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #9ba39f;">Passphrase</span>
+                  <a href="#auth" style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #7d8683;" style-hover="color: #ffffff;">Forgot</a>
+                </div>
+                <div style="height: 36px; display: flex; align-items: center; padding: 0 12px; background: #141a1f; border: 1px solid #ffffff; box-shadow: 0 0 0 3px rgba(255,255,255,0.20);">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 0.2em; color: #e6e8e4;">••••••••</span>
+                  <span style="width: 1px; height: 17px; margin-left: 2px; background: #ffffff; animation: slBlink 1100ms steps(2, end) infinite;"></span>
+                </div>
+              </div>
+              <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                <span style="width: 16px; height: 16px; flex: none; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: #ffffff; border: 1px solid #ffffff; color: #06080a;">
+                  <svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true"><path d="M2.8 8.4l3.4 3.4L13.2 4.8"></path></svg>
+                </span>
+                <span style="font-size: 14px; color: #9ba39f;">Stay signed in on this device</span>
+              </label>
+              <button style="height: 44px; background: #d5d9d4; border: 1px solid #d5d9d4; color: #06080a; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; transition: background 80ms cubic-bezier(0.4,0,0.6,1);" style-hover="background: #ffffff;">Sign in</button>
+            </div>
+
+            <div style="padding: 18px 28px 24px; border-top: 1px solid rgba(230,232,228,0.09); display: flex; flex-direction: column; gap: 12px;">
+              <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #7d8683;">Or</span>
+              <button style="height: 40px; background: transparent; border: 1px solid rgba(230,232,228,0.18); color: #e6e8e4; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;" style-hover="border-color: rgba(255,255,255,0.55);">Play as guest</button>
+              <span style="font-size: 13px; line-height: 1.45; color: #7d8683;">Guest progress is kept for 7 days and transfers if you make an account.</span>
+            </div>
+          </div>
+
+          <div style="position: absolute; left: 0; right: 0; bottom: 44px; display: flex; justify-content: center; gap: 20px; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #7d8683;">
+            <span>1,284 online</span><span>·</span><span>48 matches live</span><span>·</span><span>Season 4 · day 17</span>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; line-height: 1.7; color: #7d8683;">Auth · 420px card, armed frame · tabs not two screens · guest offered at equal weight, secondary styling</div>
+    </section>
+
+    <!-- ============================ 03 QUEUE ============================ -->
+    <section id="queue" style="margin-bottom: 64px;">
+      <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.18em; color: #ffffff;">03</span>
+        <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 34px; line-height: 1; letter-spacing: 0.02em; text-transform: uppercase;">Matchmaking</h2>
+      </div>
+      <p style="margin: 0 0 20px; max-width: 74ch; font-size: 15px; line-height: 1.6; color: #9ba39f;">Waiting is the worst moment in a live service, so the screen stays honest: elapsed time in mono, the search band widening in real numbers, and Cancel always reachable. No fake progress bar.</p>
+
+      <div style="border: 1px solid rgba(230,232,228,0.18); overflow-x: auto;">
+        <div style="width: 1440px; height: 900px; background: #0a0d10; display: flex; flex-direction: column; box-sizing: border-box;">
+
+          <div style="height: 56px; flex: none; display: flex; align-items: center; gap: 28px; padding: 0 24px; background: #0e1216; border-bottom: 1px solid rgba(230,232,228,0.09); box-sizing: border-box;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 9px; height: 9px; background: #ffffff;"></span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: 0.06em; text-transform: uppercase;">Supremacy</span>
+            </div>
+            <div style="display: flex; align-items: stretch; height: 56px;">
+              <sc-for list="{{ navPlay }}" as="t" hint-placeholder-count="4">
+                <a href="#queue" style="display: flex; align-items: center; padding: 0 16px; border-bottom: 2px solid {{ t.rule }}; color: {{ t.fg }}; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase;" style-hover="color: #ffffff;">{{ t.label }}</a>
+              </sc-for>
+            </div>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 16px;">
+              <div style="display: flex; align-items: baseline; gap: 6px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 500; color: #e0a72e;">1,284</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #7d8683;">Coin</span>
+              </div>
+              <span style="width: 1px; height: 20px; background: rgba(230,232,228,0.18);"></span>
+              <div style="display: flex; align-items: center; gap: 9px;">
+                <span style="width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; background: #1b2328; border: 1px solid rgba(230,232,228,0.18); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #e6e8e4;">VK</span>
+                <span style="font-size: 14px; color: #9ba39f;">Vekhov</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 20px; padding: 24px; box-sizing: border-box;">
+
+            <div style="min-width: 0; display: flex; flex-direction: column; gap: 20px;">
+              <div style="position: relative; flex: none; background: #0e1216; border: 1px solid rgba(230,232,228,0.18); padding: 40px; display: flex; flex-direction: column; align-items: center; gap: 24px;">
+                <span style="position: absolute; left: -1px; top: -1px; width: 9px; height: 9px; border-left: 1px solid #ffffff; border-top: 1px solid #ffffff;"></span>
+                <span style="position: absolute; right: -1px; top: -1px; width: 9px; height: 9px; border-right: 1px solid #ffffff; border-top: 1px solid #ffffff;"></span>
+                <span style="position: absolute; left: -1px; bottom: -1px; width: 9px; height: 9px; border-left: 1px solid #ffffff; border-bottom: 1px solid #ffffff;"></span>
+                <span style="position: absolute; right: -1px; bottom: -1px; width: 9px; height: 9px; border-right: 1px solid #ffffff; border-bottom: 1px solid #ffffff;"></span>
+
+                <span style="width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(230,232,228,0.10); border-top-color: rgba(255,255,255,0.55); animation: slSpin 900ms linear infinite;"></span>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #9ba39f;">Searching · Ranked duel</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 56px; font-weight: 500; line-height: 1; color: #e6e8e4;">00:34</span>
+                  <span style="font-size: 14.5px; color: #7d8683;">Typical wait at this rating is 40 seconds.</span>
+                </div>
+                <div style="width: 100%; max-width: 520px; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(230,232,228,0.09); padding-top: 24px;">
+                  <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #7d8683;">Rating band</span>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; color: #e6e8e4;">1,766 – 1,966</span>
+                  </div>
+                  <div style="position: relative; height: 6px; background: #141a1f;">
+                    <span style="position: absolute; left: 22%; width: 56%; top: 0; bottom: 0; background: rgba(255,255,255,0.30);"></span>
+                    <span style="position: absolute; left: 50%; width: 2px; top: -4px; bottom: -4px; margin-left: -1px; background: #ffffff;"></span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #7d8683;">
+                    <span>Widens every 15s</span>
+                    <span>You · 1,866</span>
+                  </div>
+                </div>
+                <button style="height: 44px; padding: 0 20px; background: transparent; border: 1px solid rgba(230,232,228,0.18); color: #e6e8e4; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 16px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;" style-hover="border-color: #e0574a; color: #e0574a;">Cancel search</button>
+              </div>
+
+              <div style="flex: 1; min-height: 0; background: #0e1216; border: 1px solid rgba(230,232,228,0.18); display: flex; flex-direction: column;">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 9px 18px; background: #141a1f; border-bottom: 1px solid rgba(230,232,228,0.09);">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #9ba39f;">Open lobbies</span>
+                  <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #7d8683;">Join while you wait</span>
+                </div>
+                <sc-for list="{{ lobbies }}" as="l" hint-placeholder-count="4">
+                  <div style="display: grid; grid-template-columns: minmax(0, 1fr) 130px 120px 100px; align-items: center; gap: 16px; padding: 12px 18px; border-bottom: 1px solid rgba(230,232,228,0.09); cursor: pointer; transition: background 80ms cubic-bezier(0.4,0,0.6,1);" style-hover="background: #1b2328;">
+                    <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+                      <span style="font-size: 14.5px; color: #e6e8e4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ l.name }}</span>
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #7d8683;">{{ l.host }}</span>
+                    </div>
+                    <div style="display: flex; gap: 3px;">
+                      <sc-for list="{{ l.slots }}" as="s" hint-placeholder-count="4">
+                        <span style="width: 18px; height: 18px; background: {{ s.bg }}; border: 1px solid {{ s.bd }};"></span>
+                      </sc-for>
+                    </div>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #9ba39f;">{{ l.rating }}</span>
+                    <button style="height: 28px; background: transparent; border: 1px solid rgba(230,232,228,0.18); color: #e6e8e4; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;" style-hover="border-color: rgba(255,255,255,0.55);">Join</button>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="width: 360px; display: flex; flex-direction: column; gap: 20px; min-height: 0;">
+              <div style="flex: none; background: #0e1216; border: 1px solid rgba(230,232,228,0.18); padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #7d8683;">Queue settings</span>
+                <div style="display: flex; flex-direction: column; gap: 14px;">
+                  <sc-for list="{{ queueToggles }}" as="t" hint-placeholder-count="3">
+                    <label style="display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer;">
+                      <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
+                        <span style="font-size: 14.5px; color: #e6e8e4;">{{ t.label }}</span>
+                        <span style="font-size: 12.5px; line-height: 1.35; color: #7d8683;">{{ t.note }}</span>
+                      </div>
+                      <span style="width: 36px; height: 18px; flex: none; box-sizing: border-box; display: flex; align-items: center; justify-content: {{ t.justify }}; padding: 2px; background: {{ t.track }}; border: 1px solid {{ t.bd }};">
+                        <span style="width: 12px; height: 12px; background: {{ t.knob }};"></span>
+                      </span>
+                    </label>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="flex: none; background: #0e1216; border: 1px solid rgba(230,232,228,0.18); padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #7d8683;">Population · now</span>
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                  <sc-for list="{{ population }}" as="p" hint-placeholder-count="3">
+                    <div style="display: flex; flex-direction: column; gap: 6px;">
+                      <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                        <span style="font-size: 13.5px; color: #9ba39f;">{{ p.label }}</span>
+                        <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; color: #e6e8e4;">{{ p.value }}</span>
+                      </div>
+                      <div style="height: 4px; background: #141a1f; display: flex;">
+                        <span style="width: {{ p.pct }}; background: {{ p.colour }};"></span>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="flex: 1; min-height: 0; background: #0a0d10; border: 1px dashed rgba(230,232,228,0.14); padding: 20px; display: flex; flex-direction: column; justify-content: center; gap: 8px;">
+                <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: 0.02em; text-transform: uppercase; color: #9ba39f;">No party</span>
+                <span style="font-size: 13.5px; line-height: 1.5; color: #7d8683;">Invite a clanmate to queue together. Party queues take the highest rating in the group.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; line-height: 1.7; color: #7d8683;">Matchmaking · elapsed time mono at 56 · rating band is real data, never a fake progress bar · Cancel always reachable</div>
+    </section>
+
+    <!-- ============================ 04 PROFILE ========================== -->
+    <section id="profile" style="margin-bottom: 64px;">
+      <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.18em; color: #ffffff;">04</span>
+        <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 34px; line-height: 1; letter-spacing: 0.02em; text-transform: uppercase;">Profile</h2>
+      </div>
+      <p style="margin: 0 0 20px; max-width: 74ch; font-size: 15px; line-height: 1.6; color: #9ba39f;">A service record, not a trophy case. Rating history is the hero; everything else is supporting telemetry the player can actually act on.</p>
+
+      <div style="border: 1px solid rgba(230,232,228,0.18); overflow-x: auto;">
+        <div style="width: 1440px; height: 900px; background: #0a0d10; display: flex; flex-direction: column; box-sizing: border-box;">
+
+          <div style="height: 56px; flex: none; display: flex; align-items: center; gap: 28px; padding: 0 24px; background: #0e1216; border-bottom: 1px solid rgba(230,232,228,0.09); box-sizing: border-box;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 9px; height: 9px; background: #ffffff;"></span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: 0.06em; text-transform: uppercase;">Supremacy</span>
+            </div>
+            <div style="display: flex; align-items: stretch; height: 56px;">
+              <sc-for list="{{ navProfile }}" as="t" hint-placeholder-count="4">
+                <a href="#profile" style="display: flex; align-items: center; padding: 0 16px; border-bottom: 2px solid {{ t.rule }}; color: {{ t.fg }}; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase;" style-hover="color: #ffffff;">{{ t.label }}</a>
+              </sc-for>
+            </div>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 16px;">
+              <div style="display: flex; align-items: baseline; gap: 6px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 500; color: #e0a72e;">1,284</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #7d8683;">Coin</span>
+              </div>
+              <span style="width: 1px; height: 20px; background: rgba(230,232,228,0.18);"></span>
+              <div style="display: flex; align-items: center; gap: 9px;">
+                <span style="width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; background: #1b2328; border: 1px solid rgba(230,232,228,0.18); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #e6e8e4;">VK</span>
+                <span style="font-size: 14px; color: #9ba39f;">Vekhov</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 20px; padding: 24px; box-sizing: border-box;">
+
+            <div style="flex: none; display: flex; align-items: flex-end; justify-content: space-between; gap: 32px;">
+              <div style="display: flex; align-items: center; gap: 20px;">
+                <span style="width: 72px; height: 72px; flex: none; display: flex; align-items: center; justify-content: center; background: #141a1f; border: 1px solid rgba(230,232,228,0.18); font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700; color: #e6e8e4;">VK</span>
+                <div style="display: flex; flex-direction: column; gap: 6px;">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #7d8683;">Iron Meridian · joined day 4</span>
+                  <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 52px; line-height: 0.95; letter-spacing: 0.02em; text-transform: uppercase;">Vekhov</span>
+                </div>
+              </div>
+              <div style="display: flex; align-items: flex-end; gap: 32px;">
+                <sc-for list="{{ profileHero }}" as="s" hint-placeholder-count="4">
+                  <div style="display: flex; flex-direction: column; gap: 4px; align-items: flex-end;">
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #7d8683;">{{ s.label }}</span>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 30px; font-weight: 500; line-height: 1; color: {{ s.colour }};">{{ s.value }}</span>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; color: {{ s.deltaColour }};">{{ s.delta }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px;">
+
+              <div style="min-width: 0; display: flex; flex-direction: column; gap: 20px;">
+                <div style="flex: 1; min-height: 0; background: #0e1216; border: 1px solid rgba(230,232,228,0.18); padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+                  <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #7d8683;">Rating · season 4</span>
+                    <div style="display: flex; border: 1px solid rgba(230,232,228,0.18);">
+                      <sc-for list="{{ rangeSegments }}" as="s" hint-placeholder-count="3">
+                        <button style="height: 26px; padding: 0 12px; background: {{ s.bg }}; border: none; border-right: 1px solid rgba(230,232,228,0.09); color: {{ s.fg }}; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;">{{ s.label }}</button>
+                      </sc-for>
+                    </div>
+                  </div>
+                  <div style="flex: 1; min-height: 0; position: relative; display: flex; align-items: flex-end; gap: 2px; border-bottom: 1px solid rgba(230,232,228,0.09);">
+                    <span style="position: absolute; left: 0; right: 0; top: 30%; height: 1px; background: rgba(230,232,228,0.06);"></span>
+                    <span style="position: absolute; left: 0; right: 0; top: 60%; height: 1px; background: rgba(230,232,228,0.06);"></span>
+                    <sc-for list="{{ ratingSeries }}" as="r" hint-placeholder-count="44">
+                      <div style="flex: 1; height: 100%; display: flex; align-items: flex-end;">
+                        <span style="width: 100%; height: {{ r.h }}; background: {{ r.bg }};"></span>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #7d8683;">
+                    <span>Day 1 · 1,500</span><span>Peak 1,901 · day 12</span><span>Now 1,866</span>
+                  </div>
+                </div>
+
+                <div style="flex: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px;">
+                  <sc-for list="{{ profileMeters }}" as="m" hint-placeholder-count="4">
+                    <div style="background: #0e1216; border: 1px solid rgba(230,232,228,0.18); padding: 16px; display: flex; flex-direction: column; gap: 10px;">
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #7d8683;">{{ m.label }}</span>
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 500; line-height: 1; color: #e6e8e4;">{{ m.value }}</span>
+                      <div style="height: 4px; background: #141a1f; display: flex;">
+                        <span style="width: {{ m.pct }}; background: {{ m.colour }};"></span>
+                      </div>
+                      <span style="font-size: 12.5px; line-height: 1.35; color: #7d8683;">{{ m.note }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+
+              <div style="width: 380px; display: flex; flex-direction: column; gap: 20px; min-height: 0;">
+                <div style="flex: none; background: #0e1216; border: 1px solid rgba(230,232,228,0.18); padding: 20px; display: flex; flex-direction: column; gap: 14px;">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #7d8683;">Form · last 10</span>
+                  <div style="display: flex; gap: 4px;">
+                    <sc-for list="{{ form }}" as="f" hint-placeholder-count="10">
+                      <span style="flex: 1; height: 32px; display: flex; align-items: center; justify-content: center; background: {{ f.wash }}; border: 1px solid {{ f.edge }}; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: {{ f.hex }};">{{ f.label }}</span>
+                    </sc-for>
+                  </div>
+                </div>
+
+                <div style="flex: 1; min-height: 0; background: #0e1216; border: 1px solid rgba(230,232,228,0.18); display: flex; flex-direction: column;">
+                  <div style="display: flex; align-items: center; gap: 12px; padding: 9px 18px; background: #141a1f; border-bottom: 1px solid rgba(230,232,228,0.09);">
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #9ba39f;">Rivals</span>
+                    <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #7d8683;">Head to head</span>
+                  </div>
+                  <sc-for list="{{ rivals }}" as="r" hint-placeholder-count="5">
+                    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 18px; border-bottom: 1px solid rgba(230,232,228,0.09); cursor: pointer; transition: background 80ms cubic-bezier(0.4,0,0.6,1);" style-hover="background: #1b2328;">
+                      <span style="width: 26px; height: 26px; flex: none; display: flex; align-items: center; justify-content: center; background: #1b2328; border: 1px solid rgba(230,232,228,0.18); font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; color: #9ba39f;">{{ r.initials }}</span>
+                      <span style="flex: 1; min-width: 0; font-size: 14.5px; color: #e6e8e4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ r.name }}</span>
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; color: {{ r.recordColour }};">{{ r.record }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; line-height: 1.7; color: #7d8683;">Profile · rating history is the hero · no trophy case · every figure mono, deltas in status hue</div>
+    </section>
+
+    <!-- ============================ 05 CLAN ============================= -->
+    <section id="clan" style="margin-bottom: 64px;">
+      <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.18em; color: #ffffff;">05</span>
+        <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 34px; line-height: 1; letter-spacing: 0.02em; text-transform: uppercase;">Clan</h2>
+      </div>
+      <p style="margin: 0 0 20px; max-width: 74ch; font-size: 15px; line-height: 1.6; color: #9ba39f;">Roster first, because the reason to open this page is to find someone to play with. Presence is a status hue and a word — never a coloured dot alone.</p>
+
+      <div style="border: 1px solid rgba(230,232,228,0.18); overflow-x: auto;">
+        <div style="width: 1440px; height: 900px; background: #0a0d10; display: flex; flex-direction: column; box-sizing: border-box;">
+
+          <div style="height: 56px; flex: none; display: flex; align-items: center; gap: 28px; padding: 0 24px; background: #0e1216; border-bottom: 1px solid rgba(230,232,228,0.09); box-sizing: border-box;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 9px; height: 9px; background: #ffffff;"></span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: 0.06em; text-transform: uppercase;">Supremacy</span>
+            </div>
+            <div style="display: flex; align-items: stretch; height: 56px;">
+              <sc-for list="{{ navClan }}" as="t" hint-placeholder-count="4">
+                <a href="#clan" style="display: flex; align-items: center; padding: 0 16px; border-bottom: 2px solid {{ t.rule }}; color: {{ t.fg }}; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase;" style-hover="color: #ffffff;">{{ t.label }}</a>
+              </sc-for>
+            </div>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 16px;">
+              <div style="display: flex; align-items: baseline; gap: 6px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 500; color: #e0a72e;">1,284</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #7d8683;">Coin</span>
+              </div>
+              <span style="width: 1px; height: 20px; background: rgba(230,232,228,0.18);"></span>
+              <div style="display: flex; align-items: center; gap: 9px;">
+                <span style="width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; background: #1b2328; border: 1px solid rgba(230,232,228,0.18); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #e6e8e4;">VK</span>
+                <span style="font-size: 14px; color: #9ba39f;">Vekhov</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 20px; padding: 24px; box-sizing: border-box;">
+
+            <div style="min-width: 0; display: flex; flex-direction: column; gap: 20px;">
+              <div style="flex: none; display: flex; align-items: flex-end; justify-content: space-between; gap: 24px;">
+                <div style="display: flex; align-items: center; gap: 18px;">
+                  <span style="width: 56px; height: 56px; flex: none; display: flex; align-items: center; justify-content: center; background: #141a1f; border: 1px solid rgba(230,232,228,0.18); font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #e6e8e4;">IRM</span>
+                  <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #7d8683;">Clan · rank 6 · 24 members</span>
+                    <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 44px; line-height: 0.95; letter-spacing: 0.02em; text-transform: uppercase;">Iron Meridian</span>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <button style="height: 40px; padding: 0 16px; background: #d5d9d4; border: 1px solid #d5d9d4; color: #06080a; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: background 80ms cubic-bezier(0.4,0,0.6,1);" style-hover="background: #ffffff;">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" vector-effect="non-scaling-stroke" aria-hidden="true"><circle cx="6.2" cy="5.2" r="2.6"></circle><path d="M1.8 13.5v-1.2l2.4-1.9h4l1 .8"></path><path d="M11.5 9.5v5M9 12h5"></path></svg>
+                    <span>Invite</span>
+                  </button>
+                  <button aria-label="Clan settings" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid rgba(230,232,228,0.18); color: #9ba39f; cursor: pointer;" style-hover="color: #ffffff; border-color: rgba(255,255,255,0.55);">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" vector-effect="non-scaling-stroke" aria-hidden="true"><circle cx="8" cy="8" r="2.5"></circle><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4"></path></svg>
+                  </button>
+                </div>
+              </div>
+
+              <div style="flex: none; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: rgba(230,232,228,0.09); border: 1px solid rgba(230,232,228,0.18);">
+                <sc-for list="{{ clanStats }}" as="s" hint-placeholder-count="4">
+                  <div style="background: #0e1216; padding: 16px 18px; display: flex; flex-direction: column; gap: 5px;">
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #7d8683;">{{ s.label }}</span>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 500; line-height: 1; color: {{ s.colour }};">{{ s.value }}</span>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; color: {{ s.deltaColour }};">{{ s.delta }}</span>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="flex: 1; min-height: 0; background: #0e1216; border: 1px solid rgba(230,232,228,0.18); display: flex; flex-direction: column;">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 9px 18px; background: #141a1f; border-bottom: 1px solid rgba(230,232,228,0.09);">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #9ba39f;">Roster</span>
+                  <div style="margin-left: auto; display: flex; gap: 8px;">
+                    <sc-for list="{{ rosterChips }}" as="c" hint-placeholder-count="3">
+                      <button style="height: 24px; display: flex; align-items: center; gap: 6px; padding: 0 10px; background: {{ c.bg }}; border: 1px solid {{ c.bd }}; color: {{ c.fg }}; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;">
+                        <span>{{ c.label }}</span>
+                        <span style="color: {{ c.countColour }};">{{ c.count }}</span>
+                      </button>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="display: grid; grid-template-columns: minmax(0, 1fr) 120px 100px 104px 92px; gap: 16px; padding: 9px 18px; border-bottom: 1px solid rgba(230,232,228,0.09);">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #7d8683;">Member</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #7d8683;">Role</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #7d8683; text-align: right;">Rating</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #7d8683; text-align: right;">Matches</span>
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; color: #7d8683; text-align: right;">Δ 7d</span>
+                </div>
+                <sc-for list="{{ clanRoster }}" as="r" hint-placeholder-count="7">
+                  <div style="display: grid; grid-template-columns: minmax(0, 1fr) 120px 100px 104px 92px; align-items: center; gap: 16px; padding: 11px 18px; padding-left: 16px; background: {{ r.bg }}; border-bottom: 1px solid rgba(230,232,228,0.09); border-left: 2px solid {{ r.mark }}; cursor: pointer; transition: background 80ms cubic-bezier(0.4,0,0.6,1);" style-hover="background: #1b2328;">
+                    <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+                      <span style="width: 24px; height: 24px; flex: none; display: flex; align-items: center; justify-content: center; background: #1b2328; border: 1px solid rgba(230,232,228,0.18); font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; color: #9ba39f;">{{ r.initials }}</span>
+                      <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0;">
+                        <span style="font-size: 14.5px; color: {{ r.nameColour }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ r.name }}</span>
+                        <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: {{ r.stateColour }};">{{ r.state }}</span>
+                      </div>
+                    </div>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #9ba39f;">{{ r.role }}</span>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 500; text-align: right; color: #e6e8e4;">{{ r.rating }}</span>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; text-align: right; color: #9ba39f;">{{ r.matches }}</span>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 500; text-align: right; color: {{ r.deltaColour }};">{{ r.delta }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="width: 380px; display: flex; flex-direction: column; gap: 20px; min-height: 0;">
+              <div style="flex: none; background: #0e1216; border: 1px solid rgba(230,232,228,0.18); padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #7d8683;">Charter</span>
+                <p style="margin: 0; font-size: 14.5px; line-height: 1.5; color: #9ba39f; text-wrap: pretty;">Ranked duels nightly from 20:00 UTC. Scrims Sundays. We review losses together — bring the replay.</p>
+              </div>
+
+              <div style="flex: 1; min-height: 0; background: #0e1216; border: 1px solid rgba(230,232,228,0.18); display: flex; flex-direction: column;">
+                <div style="display: flex; align-items: center; gap: 12px; padding: 9px 18px; background: #141a1f; border-bottom: 1px solid rgba(230,232,228,0.09);">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #9ba39f;">Activity</span>
+                </div>
+                <sc-for list="{{ clanActivity }}" as="a" hint-placeholder-count="6">
+                  <div style="display: flex; gap: 12px; padding: 12px 18px; border-bottom: 1px solid rgba(230,232,228,0.09);">
+                    <span style="width: 2px; flex: none; background: {{ a.mark }};"></span>
+                    <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+                      <span style="font-size: 13.5px; line-height: 1.4; color: #e6e8e4;">{{ a.body }}</span>
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #7d8683;">{{ a.time }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; line-height: 1.7; color: #7d8683;">Clan · roster is the page · presence is hue plus a word · the viewing player's row takes the white mark</div>
+    </section>
+
+    <!-- ============================ 06 CHAT ============================= -->
+    <section id="chat" style="margin-bottom: 64px;">
+      <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.18em; color: #ffffff;">06</span>
+        <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 34px; line-height: 1; letter-spacing: 0.02em; text-transform: uppercase;">Social</h2>
+      </div>
+      <p style="margin: 0 0 20px; max-width: 74ch; font-size: 15px; line-height: 1.6; color: #9ba39f;">Full-page chat. Seat hue lands on the name only; message bodies stay full ink so a long read never fights the palette. System lines are mono and dimmed so player speech dominates.</p>
+
+      <div style="border: 1px solid rgba(230,232,228,0.18); overflow-x: auto;">
+        <div style="width: 1440px; height: 900px; background: #0a0d10; display: flex; flex-direction: column; box-sizing: border-box;">
+
+          <div style="height: 56px; flex: none; display: flex; align-items: center; gap: 28px; padding: 0 24px; background: #0e1216; border-bottom: 1px solid rgba(230,232,228,0.09); box-sizing: border-box;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 9px; height: 9px; background: #ffffff;"></span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: 0.06em; text-transform: uppercase;">Supremacy</span>
+            </div>
+            <div style="display: flex; align-items: stretch; height: 56px;">
+              <sc-for list="{{ navClan }}" as="t" hint-placeholder-count="4">
+                <a href="#chat" style="display: flex; align-items: center; padding: 0 16px; border-bottom: 2px solid {{ t.rule }}; color: {{ t.fg }}; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase;" style-hover="color: #ffffff;">{{ t.label }}</a>
+              </sc-for>
+            </div>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 16px;">
+              <div style="display: flex; align-items: center; gap: 9px;">
+                <span style="width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; background: #1b2328; border: 1px solid rgba(230,232,228,0.18); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #e6e8e4;">VK</span>
+                <span style="font-size: 14px; color: #9ba39f;">Vekhov</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex: 1; min-height: 0; display: grid; grid-template-columns: 280px minmax(0, 1fr) 280px; gap: 20px; padding: 24px; box-sizing: border-box;">
+
+            <div style="display: flex; flex-direction: column; gap: 20px; min-height: 0;">
+              <div style="flex: none; height: 36px; display: flex; align-items: center; gap: 10px; padding: 0 12px; background: #141a1f; border: 1px solid rgba(230,232,228,0.18);">
+                <span style="display: flex; color: #7d8683;"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" vector-effect="non-scaling-stroke" aria-hidden="true"><circle cx="7" cy="7" r="4"></circle><path d="M10 10l3.5 3.5"></path></svg></span>
+                <span style="font-size: 14.5px; color: #4f5754;">Find a channel…</span>
+              </div>
+              <div style="flex: 1; min-height: 0; background: #0e1216; border: 1px solid rgba(230,232,228,0.18); display: flex; flex-direction: column;">
+                <div style="padding: 9px 16px; background: #141a1f; border-bottom: 1px solid rgba(230,232,228,0.09);">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #9ba39f;">Channels</span>
+                </div>
+                <sc-for list="{{ channels }}" as="c" hint-placeholder-count="6">
+                  <div style="display: flex; align-items: center; gap: 12px; padding: 11px 16px; padding-left: 14px; background: {{ c.bg }}; border-bottom: 1px solid rgba(230,232,228,0.09); border-left: 2px solid {{ c.mark }}; cursor: pointer; transition: background 80ms cubic-bezier(0.4,0,0.6,1);" style-hover="background: #1b2328;">
+                    <span style="display: flex; color: {{ c.iconColour }};"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" vector-effect="non-scaling-stroke" aria-hidden="true"><path d="M2 2.8h12v8H6.4L2.8 14v-3.2H2Z"></path></svg></span>
+                    <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1;">
+                      <span style="font-size: 14.5px; color: {{ c.fg }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ c.name }}</span>
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: #7d8683;">{{ c.meta }}</span>
+                    </div>
+                    <span style="height: 18px; min-width: 18px; padding: 0 5px; box-sizing: border-box; display: {{ c.badgeDisplay }}; align-items: center; justify-content: center; background: #ffffff; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; color: #06080a;">{{ c.unread }}</span>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="min-width: 0; background: #0e1216; border: 1px solid rgba(230,232,228,0.18); display: flex; flex-direction: column;">
+              <div style="flex: none; display: flex; align-items: center; gap: 12px; padding: 12px 18px; background: #141a1f; border-bottom: 1px solid rgba(230,232,228,0.09);">
+                <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 20px; letter-spacing: 0.03em; text-transform: uppercase;">Iron Meridian</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #7d8683;">24 members · 6 online</span>
+                <button aria-label="Mute channel" style="margin-left: auto; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; background: transparent; border: 1px solid rgba(230,232,228,0.18); color: #9ba39f; cursor: pointer;" style-hover="color: #ffffff; border-color: rgba(255,255,255,0.55);">
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" vector-effect="non-scaling-stroke" aria-hidden="true"><path d="M2 6.2h2.6L8.4 3v10L4.6 9.8H2Z"></path><path d="M11 6l3.2 4M14.2 6L11 10"></path></svg>
+                </button>
+              </div>
+              <div style="flex: 1; min-height: 0; padding: 18px; display: flex; flex-direction: column; gap: 14px; overflow: hidden;">
+                <sc-for list="{{ fullChat }}" as="m" hint-placeholder-count="9">
+                  <div style="display: flex; gap: 12px; align-items: baseline;">
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; flex: none; width: 40px; color: #7d8683;">{{ m.time }}</span>
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; flex: none; width: 92px; letter-spacing: 0.06em; color: {{ m.nameColour }}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ m.name }}</span>
+                    <span style="font-size: 14.5px; line-height: 1.45; color: {{ m.bodyColour }};">{{ m.body }}</span>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="flex: none; height: 44px; display: flex; align-items: center; gap: 12px; padding: 0 18px; border-top: 1px solid rgba(230,232,228,0.09);">
+                <span style="font-size: 14.5px; color: #4f5754;">Message Iron Meridian…</span>
+                <span style="width: 1px; height: 17px; background: #ffffff; animation: slBlink 1100ms steps(2, end) infinite;"></span>
+                <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; color: #7d8683;">ENTER</span>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 20px; min-height: 0;">
+              <div style="flex: 1; min-height: 0; background: #0e1216; border: 1px solid rgba(230,232,228,0.18); display: flex; flex-direction: column;">
+                <div style="padding: 9px 16px; background: #141a1f; border-bottom: 1px solid rgba(230,232,228,0.09); display: flex; align-items: center; gap: 12px;">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #9ba39f;">Online</span>
+                  <span style="margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase; color: #4fb286;">6</span>
+                </div>
+                <sc-for list="{{ presence }}" as="p" hint-placeholder-count="6">
+                  <div style="display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid rgba(230,232,228,0.09); cursor: pointer; transition: background 80ms cubic-bezier(0.4,0,0.6,1);" style-hover="background: #1b2328;">
+                    <span style="width: 24px; height: 24px; flex: none; display: flex; align-items: center; justify-content: center; background: #1b2328; border: 1px solid rgba(230,232,228,0.18); font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; color: #9ba39f;">{{ p.initials }}</span>
+                    <div style="display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1;">
+                      <span style="font-size: 14px; color: #e6e8e4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">{{ p.name }}</span>
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: {{ p.stateColour }};">{{ p.state }}</span>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; line-height: 1.7; color: #7d8683;">Social · three columns · name column fixed at 92px so bodies align down the page · seat hue on names only</div>
+    </section>
+
+    <!-- ============================ 07 SETTINGS ========================= -->
+    <section id="settings" style="margin-bottom: 64px;">
+      <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.18em; color: #ffffff;">07</span>
+        <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 34px; line-height: 1; letter-spacing: 0.02em; text-transform: uppercase;">Settings</h2>
+      </div>
+      <p style="margin: 0 0 20px; max-width: 74ch; font-size: 15px; line-height: 1.6; color: #9ba39f;">Rows, not cards. Every setting applies immediately — there is no Save button, so the destructive zone is fenced at the bottom behind its own rule.</p>
+
+      <div style="border: 1px solid rgba(230,232,228,0.18); overflow-x: auto;">
+        <div style="width: 1440px; height: 900px; background: #0a0d10; display: flex; flex-direction: column; box-sizing: border-box;">
+
+          <div style="height: 56px; flex: none; display: flex; align-items: center; gap: 28px; padding: 0 24px; background: #0e1216; border-bottom: 1px solid rgba(230,232,228,0.09); box-sizing: border-box;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 9px; height: 9px; background: #ffffff;"></span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: 0.06em; text-transform: uppercase;">Supremacy</span>
+            </div>
+            <div style="display: flex; align-items: stretch; height: 56px;">
+              <sc-for list="{{ navProfile }}" as="t" hint-placeholder-count="4">
+                <a href="#settings" style="display: flex; align-items: center; padding: 0 16px; border-bottom: 2px solid {{ t.rule }}; color: {{ t.fg }}; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase;" style-hover="color: #ffffff;">{{ t.label }}</a>
+              </sc-for>
+            </div>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 9px;">
+              <span style="width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; background: #1b2328; border: 1px solid rgba(230,232,228,0.18); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #e6e8e4;">VK</span>
+              <span style="font-size: 14px; color: #9ba39f;">Vekhov</span>
+            </div>
+          </div>
+
+          <div style="flex: 1; min-height: 0; display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 20px; padding: 24px; box-sizing: border-box;">
+
+            <div style="display: flex; flex-direction: column; gap: 2px;">
+              <sc-for list="{{ settingsNav }}" as="s" hint-placeholder-count="5">
+                <a href="#settings" style="display: flex; align-items: center; gap: 10px; padding: 11px 14px; background: {{ s.bg }}; border-left: 2px solid {{ s.mark }}; color: {{ s.fg }}; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase;" style-hover="color: #ffffff;">{{ s.label }}</a>
+              </sc-for>
+            </div>
+
+            <div style="min-width: 0; display: flex; flex-direction: column; gap: 20px; overflow: hidden;">
+              <sc-for list="{{ settingsGroups }}" as="g" hint-placeholder-count="3">
+                <div style="background: #0e1216; border: 1px solid rgba(230,232,228,0.18); display: flex; flex-direction: column;">
+                  <div style="padding: 10px 20px; background: #141a1f; border-bottom: 1px solid rgba(230,232,228,0.09);">
+                    <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #9ba39f;">{{ g.title }}</span>
+                  </div>
+                  <sc-for list="{{ g.rows }}" as="r" hint-placeholder-count="3">
+                    <div style="display: flex; align-items: center; gap: 24px; padding: 14px 20px; border-bottom: 1px solid rgba(230,232,228,0.09);">
+                      <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1;">
+                        <span style="font-size: 15px; color: #e6e8e4;">{{ r.label }}</span>
+                        <span style="font-size: 13px; line-height: 1.45; color: #7d8683;">{{ r.note }}</span>
+                      </div>
+                      <div style="flex: none;">
+                        <sc-if value="{{ r.isToggle }}" hint-placeholder-val="{{ true }}">
+                          <span style="width: 36px; height: 18px; box-sizing: border-box; display: flex; align-items: center; justify-content: {{ r.justify }}; padding: 2px; background: {{ r.track }}; border: 1px solid {{ r.bd }}; cursor: pointer;">
+                            <span style="width: 12px; height: 12px; background: {{ r.knob }};"></span>
+                          </span>
+                        </sc-if>
+                        <sc-if value="{{ r.isSelect }}" hint-placeholder-val="{{ false }}">
+                          <span style="height: 30px; min-width: 180px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 12px; background: #141a1f; border: 1px solid rgba(230,232,228,0.18); cursor: pointer;">
+                            <span style="font-size: 14px; color: #e6e8e4;">{{ r.value }}</span>
+                            <span style="display: flex; color: #7d8683;"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" vector-effect="non-scaling-stroke" aria-hidden="true"><path d="M3.5 6L8 10.5 12.5 6"></path></svg></span>
+                          </span>
+                        </sc-if>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+
+              <div style="background: #0e1216; border: 1px solid rgba(224,87,74,0.55); display: flex; flex-direction: column;">
+                <div style="padding: 10px 20px; background: rgba(224,87,74,0.12); border-bottom: 1px solid rgba(224,87,74,0.55);">
+                  <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; color: #e0574a;">Irreversible</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 24px; padding: 16px 20px;">
+                  <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1;">
+                    <span style="font-size: 15px; color: #e6e8e4;">Delete account</span>
+                    <span style="font-size: 13px; line-height: 1.45; color: #7d8683;">231 matches, rating history and clan membership are erased. Callsign is released after 30 days.</span>
+                  </div>
+                  <button style="flex: none; height: 36px; padding: 0 16px; background: transparent; border: 1px solid rgba(224,87,74,0.55); color: #e0574a; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;" style-hover="background: #8f2b22; border-color: #e0574a; color: #ffffff;">Delete</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; line-height: 1.7; color: #7d8683;">Settings · rows not cards · applies immediately, no Save · destructive zone fenced behind a danger seam</div>
+    </section>
+
+    <!-- ============================ 08 NOTIFICATIONS ==================== -->
+    <section id="notifications">
+      <div style="display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px;">
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.18em; color: #ffffff;">08</span>
+        <h2 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 34px; line-height: 1; letter-spacing: 0.02em; text-transform: uppercase;">Notifications</h2>
+      </div>
+      <p style="margin: 0 0 20px; max-width: 74ch; font-size: 15px; line-height: 1.6; color: #9ba39f;">A panel anchored under the bell, not a page. Unread is ink-300 plus a white mark; read rows drop to panel ground. Actionable notices carry their action inline so the panel is a place to act, not just to read.</p>
+
+      <div style="border: 1px solid rgba(230,232,228,0.18); overflow-x: auto;">
+        <div style="position: relative; width: 1440px; height: 900px; background: #0a0d10; display: flex; flex-direction: column; box-sizing: border-box;">
+
+          <div style="height: 56px; flex: none; display: flex; align-items: center; gap: 28px; padding: 0 24px; background: #0e1216; border-bottom: 1px solid rgba(230,232,228,0.09); box-sizing: border-box;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span style="width: 9px; height: 9px; background: #ffffff;"></span>
+              <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 18px; letter-spacing: 0.06em; text-transform: uppercase;">Supremacy</span>
+            </div>
+            <div style="display: flex; align-items: stretch; height: 56px;">
+              <sc-for list="{{ navPlay }}" as="t" hint-placeholder-count="4">
+                <a href="#notifications" style="display: flex; align-items: center; padding: 0 16px; border-bottom: 2px solid {{ t.rule }}; color: {{ t.fg }}; font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase;" style-hover="color: #ffffff;">{{ t.label }}</a>
+              </sc-for>
+            </div>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 16px;">
+              <div style="display: flex; align-items: baseline; gap: 6px;">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 500; color: #e0a72e;">1,284</span>
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: #7d8683;">Coin</span>
+              </div>
+              <span style="width: 1px; height: 20px; background: rgba(230,232,228,0.18);"></span>
+              <div style="position: relative; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.55); color: #ffffff;">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" vector-effect="non-scaling-stroke" aria-hidden="true"><path d="M4 11V7c0-2.2 1.8-4 4-4s4 1.8 4 4v4l1.2 2H2.8L4 11Z"></path><path d="M6.5 13.5h3"></path></svg>
+                <span style="position: absolute; right: -7px; top: -7px; height: 16px; min-width: 16px; padding: 0 4px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; background: #ffffff; font-family: 'JetBrains Mono', monospace; font-size: 9px; font-weight: 700; color: #06080a;">3</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 9px;">
+                <span style="width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; background: #1b2328; border: 1px solid rgba(230,232,228,0.18); font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 700; color: #e6e8e4;">VK</span>
+                <span style="font-size: 14px; color: #9ba39f;">Vekhov</span>
+              </div>
+            </div>
+          </div>
+
+          <div style="flex: 1; min-height: 0; position: relative; padding: 24px; box-sizing: border-box;">
+            <div style="position: absolute; inset: 24px; background: #0a0d10; opacity: 0.55; display: flex; flex-direction: column; gap: 20px;">
+              <div style="height: 180px; background: #0e1216; border: 1px solid rgba(230,232,228,0.09);"></div>
+              <div style="flex: 1; background: #0e1216; border: 1px solid rgba(230,232,228,0.09);"></div>
+            </div>
+
+            <div style="position: absolute; right: 24px; top: 8px; width: 420px; background: #0e1216; border: 1px solid rgba(230,232,228,0.18); box-shadow: 0 24px 64px rgba(0,0,0,0.6); display: flex; flex-direction: column;">
+              <div style="display: flex; align-items: center; gap: 12px; padding: 12px 18px; background: #141a1f; border-bottom: 1px solid rgba(230,232,228,0.09);">
+                <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.22em; text-transform: uppercase; color: #9ba39f;">Notifications</span>
+                <button style="margin-left: auto; height: 24px; padding: 0 10px; background: transparent; border: 1px solid rgba(230,232,228,0.18); color: #9ba39f; font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer;" style-hover="border-color: rgba(255,255,255,0.55); color: #ffffff;">Mark all read</button>
+              </div>
+
+              <sc-for list="{{ noticeList }}" as="n" hint-placeholder-count="6">
+                <div style="display: flex; gap: 14px; padding: 14px 18px; padding-left: 16px; background: {{ n.bg }}; border-bottom: 1px solid rgba(230,232,228,0.09); border-left: 2px solid {{ n.mark }};">
+                  <span style="display: flex; flex: none; padding-top: 2px; color: {{ n.iconColour }};">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" vector-effect="non-scaling-stroke" aria-hidden="true"><circle cx="8" cy="8" r="5.5"></circle><path d="M8 7.2v4M8 4.6v.9"></path></svg>
+                  </span>
+                  <div style="display: flex; flex-direction: column; gap: 7px; min-width: 0; flex: 1;">
+                    <span style="font-size: 14.5px; line-height: 1.45; color: {{ n.bodyColour }};">{{ n.body }}</span>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                      <span style="font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: #7d8683;">{{ n.time }}</span>
+                      <sc-if value="{{ n.hasAction }}" hint-placeholder-val="{{ true }}">
+                        <span style="display: flex; gap: 8px; margin-left: 4px;">
+                          <button style="height: 26px; padding: 0 12px; background: transparent; border: 1px solid rgba(255,255,255,0.55); color: #e6e8e4; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;" style-hover="background: #ffffff; color: #06080a;">{{ n.accept }}</button>
+                          <button style="height: 26px; padding: 0 12px; background: transparent; border: 1px solid rgba(230,232,228,0.18); color: #9ba39f; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;" style-hover="border-color: rgba(230,232,228,0.35); color: #e6e8e4;">Dismiss</button>
+                        </span>
+                      </sc-if>
+                    </div>
+                  </div>
+                </div>
+              </sc-for>
+
+              <div style="padding: 12px 18px; display: flex; justify-content: center;">
+                <a href="#notifications" style="font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: #7d8683;" style-hover="color: #ffffff;">See all activity</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 12px; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; line-height: 1.7; color: #7d8683;">Notifications · 420px panel anchored under the bell · unread = ink-300 + white mark · actions live inline</div>
+    </section>
+
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{
+  &quot;factionPalette&quot;: { &quot;editor&quot;: &quot;enum&quot;, &quot;options&quot;: [&quot;Cobalt / Ember (default)&quot;, &quot;Verdant / Ember (legacy)&quot;, &quot;Cobalt / Amber (deutan)&quot;, &quot;Rose / Verdant (tritan)&quot;], &quot;default&quot;: &quot;Cobalt / Ember (default)&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;section&quot;: &quot;System&quot; }
+}">
+class Component extends DCLogic {
+  state = { faction: null };
+
+  renderVals() {
+    const active = this.state.faction || (this.props.factionPalette ?? 'Cobalt / Ember (default)');
+    const palettes = {
+      'Cobalt / Ember (default)': { self: '#3d8fd4', foe: '#e0574a', short: 'Cobalt / Ember' },
+      'Verdant / Ember (legacy)': { self: '#4fb286', foe: '#e0574a', short: 'Verdant / Ember' },
+      'Cobalt / Amber (deutan)': { self: '#4a9fe0', foe: '#f0c04a', short: 'Cobalt / Amber' },
+      'Rose / Verdant (tritan)': { self: '#4fb286', foe: '#e061a8', short: 'Rose / Verdant' },
+    };
+    const pal = palettes[active] || palettes['Cobalt / Ember (default)'];
+
+    const navFor = act => ['Play', 'Ladder', 'Clan', 'Profile'].map(l => ({
+      key: l, label: l,
+      fg: l === act ? '#e6e8e4' : '#7d8683',
+      rule: l === act ? '#ffffff' : 'transparent',
+    }));
+
+    const seatSlots = (filled, total) => Array.from({ length: total }, (_, i) => ({
+      key: i,
+      bg: i < filled ? 'rgba(255,255,255,0.30)' : 'transparent',
+      bd: i < filled ? 'rgba(255,255,255,0.55)' : 'rgba(230,232,228,0.18)',
+    }));
+
+    // Rating history — climb with drawdowns, peak at day 12
+    const ratingSeries = Array.from({ length: 44 }, (_, i) => {
+      const p = i / 43;
+      const base = 30 + p * 48 + Math.sin(i * 0.55) * 9 + Math.sin(i * 0.21) * 6;
+      const v = Math.max(12, Math.min(96, base));
+      return { key: i, h: `${v}%`, bg: i === 30 ? '#ffffff' : 'rgba(230,232,228,0.30)' };
+    });
+
+    const dColour = d => d.startsWith('+') ? '#4fb286' : d.startsWith('−') ? '#e0574a' : '#7d8683';
+
+    const toggle = on => ({
+      justify: on ? 'flex-end' : 'flex-start',
+      track: on ? 'rgba(255,255,255,0.10)' : '#141a1f',
+      bd: on ? '#ffffff' : 'rgba(230,232,228,0.18)',
+      knob: on ? '#ffffff' : '#7d8683',
+    });
+
+    return {
+      factionPicks: Object.keys(palettes).map(k => {
+        const p = palettes[k], on = k === active;
+        return {
+          key: k, short: p.short, self: p.self, foe: p.foe,
+          bg: on ? 'rgba(255,255,255,0.10)' : 'transparent',
+          border: on ? 'rgba(255,255,255,0.55)' : 'rgba(230,232,228,0.09)',
+          colour: on ? '#e6e8e4' : '#7d8683',
+          pick: () => this.setState({ faction: k }),
+        };
+      }),
+
+      nav: [
+        { key: 'la', num: '01', label: 'Landing', href: '#landing' },
+        { key: 'au', num: '02', label: 'Auth', href: '#auth' },
+        { key: 'qu', num: '03', label: 'Matchmaking', href: '#queue' },
+        { key: 'pr', num: '04', label: 'Profile', href: '#profile' },
+        { key: 'cl', num: '05', label: 'Clan', href: '#clan' },
+        { key: 'ch', num: '06', label: 'Social', href: '#chat' },
+        { key: 'se', num: '07', label: 'Settings', href: '#settings' },
+        { key: 'no', num: '08', label: 'Notifications', href: '#notifications' },
+      ],
+
+      navPlay: navFor('Play'),
+      navProfile: navFor('Profile'),
+      navClan: navFor('Clan'),
+
+      // ---- landing
+      liveStats: [
+        { key: 'l1', value: '1,284', label: 'Online now', colour: '#e6e8e4' },
+        { key: 'l2', value: '48', label: 'Matches live', colour: '#e6e8e4' },
+        { key: 'l3', value: '8:12', label: 'Median length', colour: '#e6e8e4' },
+        { key: 'l4', value: '0', label: 'Downloads needed', colour: '#4fb286' },
+      ],
+      premise: [
+        { key: 'p1', n: '01', title: 'Everything is live', body: 'No turn timer, no waiting on an opponent. Marches resolve while you are still deciding the next one.' },
+        { key: 'p2', n: '02', title: 'Every province pays', body: 'Territory is income. Hold more, recruit faster — and defend a longer frontier for it.' },
+        { key: 'p3', n: '03', title: 'Eight minutes', body: 'A full conquest in a lunch break. Rated, ranked, and over before it outstays its welcome.' },
+      ],
+
+      // ---- queue
+      lobbies: [
+        { key: 'q1', name: 'Kholmsk Basin · 4 seats', host: 'Hosted by Aderyn', slots: seatSlots(3, 4), rating: '1,900 avg' },
+        { key: 'q2', name: 'Sorve Reach · duel', host: 'Hosted by Mirek', slots: seatSlots(1, 2), rating: '1,760 avg' },
+        { key: 'q3', name: 'Ostrog Flats · 4 seats', host: 'Hosted by Delph', slots: seatSlots(2, 4), rating: '1,680 avg' },
+        { key: 'q4', name: 'Vaska Corridor · duel', host: 'Hosted by Ilva Sund', slots: seatSlots(1, 2), rating: '1,610 avg' },
+      ],
+      queueToggles: [
+        { key: 't1', label: 'Widen band over time', note: 'Faster match, wider rating spread.', ...toggle(true) },
+        { key: 't2', label: 'Avoid recent opponents', note: 'Skips the last 3 commanders you played.', ...toggle(true) },
+        { key: 't3', label: 'Cross-region', note: 'Adds ~40ms latency. Halves the wait off-peak.', ...toggle(false) },
+      ],
+      population: [
+        { key: 'p1', label: 'Ranked duel', value: '612', pct: '78%', colour: '#4fb286' },
+        { key: 'p2', label: 'Ranked 4-seat', value: '428', pct: '54%', colour: '#4fb286' },
+        { key: 'p3', label: 'Casual', value: '244', pct: '31%', colour: '#e0a72e' },
+      ],
+
+      // ---- profile
+      profileHero: [
+        { key: 'h1', label: 'Rating', value: '1,866', colour: '#e6e8e4', delta: '+24', deltaColour: '#4fb286' },
+        { key: 'h2', label: 'Rank', value: '03', colour: '#e6e8e4', delta: '+1', deltaColour: '#4fb286' },
+        { key: 'h3', label: 'Matches', value: '231', colour: '#e6e8e4', delta: '6 today', deltaColour: '#7d8683' },
+        { key: 'h4', label: 'Win rate', value: '62%', colour: '#e6e8e4', delta: '+3%', deltaColour: '#4fb286' },
+      ],
+      rangeSegments: [
+        { key: 'r1', label: 'Season', bg: '#252f36', fg: '#e6e8e4' },
+        { key: 'r2', label: '30d', bg: 'transparent', fg: '#7d8683' },
+        { key: 'r3', label: 'All', bg: 'transparent', fg: '#7d8683' },
+      ],
+      ratingSeries,
+      profileMeters: [
+        { key: 'm1', label: 'Capital hold', value: '64%', pct: '64%', colour: '#4fb286', note: '12 pts above ladder median' },
+        { key: 'm2', label: 'Opening tempo', value: '71%', pct: '71%', colour: '#4fb286', note: 'First capture before 02:00' },
+        { key: 'm3', label: 'Comeback rate', value: '28%', pct: '28%', colour: '#e0a72e', note: 'Wins from behind at 05:00' },
+        { key: 'm4', label: 'Forfeit rate', value: '4%', pct: '4%', colour: '#e0574a', note: '9 of 231 matches' },
+      ],
+      rivals: [
+        { key: 'v1', initials: 'AD', name: 'Aderyn', record: '4 – 9', recordColour: '#e0574a' },
+        { key: 'v2', initials: 'RO', name: 'Rovina', record: '11 – 6', recordColour: '#4fb286' },
+        { key: 'v3', initials: 'KO', name: 'Kosta Vrell', record: '7 – 7', recordColour: '#7d8683' },
+        { key: 'v4', initials: 'MI', name: 'Mirek', record: '9 – 3', recordColour: '#4fb286' },
+        { key: 'v5', initials: 'DE', name: 'Delph', record: '5 – 8', recordColour: '#e0574a' },
+      ],
+      form: ['W','W','L','W','W','W','L','W','D','W'].map((r, i) => ({
+        key: i, label: r,
+        hex: r === 'W' ? '#4fb286' : r === 'L' ? '#e0574a' : '#7d8683',
+        wash: r === 'W' ? 'rgba(79,178,134,0.12)' : r === 'L' ? 'rgba(224,87,74,0.12)' : 'rgba(125,134,131,0.12)',
+        edge: r === 'W' ? 'rgba(79,178,134,0.55)' : r === 'L' ? 'rgba(224,87,74,0.55)' : 'rgba(125,134,131,0.55)',
+      })),
+
+      // ---- clan
+      clanStats: [
+        { key: 'c1', label: 'Clan rank', value: '06', colour: '#e6e8e4', delta: '+2 this week', deltaColour: '#4fb286' },
+        { key: 'c2', label: 'Members', value: '24', colour: '#e6e8e4', delta: '6 online', deltaColour: '#4fb286' },
+        { key: 'c3', label: 'Avg rating', value: '1,742', colour: '#e6e8e4', delta: '+38', deltaColour: '#4fb286' },
+        { key: 'c4', label: 'Matches · 7d', value: '412', colour: '#e6e8e4', delta: '−18', deltaColour: '#e0574a' },
+      ],
+      rosterChips: [
+        { key: 'r1', label: 'All', count: '24', bg: 'rgba(255,255,255,0.10)', bd: 'rgba(255,255,255,0.55)', fg: '#e6e8e4', countColour: '#9ba39f' },
+        { key: 'r2', label: 'Online', count: '6', bg: 'transparent', bd: 'rgba(230,232,228,0.18)', fg: '#9ba39f', countColour: '#7d8683' },
+        { key: 'r3', label: 'Officers', count: '4', bg: 'transparent', bd: 'rgba(230,232,228,0.18)', fg: '#9ba39f', countColour: '#7d8683' },
+      ],
+      clanRoster: [
+        { key: 'm1', initials: 'AD', name: 'Aderyn', state: 'In match', stateColour: '#4fb286', role: 'Marshal', rating: '2,104', matches: '246', delta: '+31' },
+        { key: 'm2', initials: 'VK', name: 'Vekhov', state: 'Online', stateColour: '#4fb286', role: 'Officer', rating: '1,866', matches: '231', delta: '+24', self: true },
+        { key: 'm3', initials: 'SA', name: 'Saraiva', state: 'In queue', stateColour: '#e0a72e', role: 'Officer', rating: '1,742', matches: '207', delta: '+16' },
+        { key: 'm4', initials: 'IL', name: 'Ilva Sund', state: 'Online', stateColour: '#4fb286', role: 'Member', rating: '1,604', matches: '182', delta: '+11' },
+        { key: 'm5', initials: 'HA', name: 'Halvard', state: 'Idle', stateColour: '#7d8683', role: 'Member', rating: '1,671', matches: '164', delta: '+9' },
+        { key: 'm6', initials: 'NE', name: 'Nesta Ol', state: 'Offline · 4h', stateColour: '#7d8683', role: 'Member', rating: '1,650', matches: '151', delta: '−7' },
+        { key: 'm7', initials: 'BR', name: 'Bregan', state: 'Offline · 2d', stateColour: '#7d8683', role: 'Recruit', rating: '1,628', matches: '94', delta: '±0' },
+      ].map(r => ({
+        ...r,
+        deltaColour: dColour(r.delta),
+        bg: r.self ? '#141a1f' : '#0e1216',
+        mark: r.self ? '#ffffff' : 'transparent',
+        nameColour: r.self ? '#ffffff' : '#e6e8e4',
+      })),
+      clanActivity: [
+        { key: 'a1', body: 'Aderyn reached rank 01 on the season ladder.', time: '12 min', mark: '#4fb286' },
+        { key: 'a2', body: 'Saraiva joined Iron Meridian.', time: '2 h', mark: '#ffffff' },
+        { key: 'a3', body: 'Clan climbed to rank 6.', time: '5 h', mark: '#4fb286' },
+        { key: 'a4', body: 'Vekhov beat Rovina · +24.', time: '6 h', mark: 'transparent' },
+        { key: 'a5', body: 'Bregan was promoted to Recruit.', time: 'Yesterday', mark: 'transparent' },
+        { key: 'a6', body: 'Scrim night scheduled for Sunday 20:00.', time: '2 days', mark: 'transparent' },
+      ],
+
+      // ---- chat
+      channels: [
+        { key: 'c1', name: 'Iron Meridian', meta: 'Clan · 6 online', unread: '', badgeDisplay: 'none', bg: '#141a1f', mark: '#ffffff', fg: '#ffffff', iconColour: '#e6e8e4' },
+        { key: 'c2', name: 'Officers', meta: 'Clan · 4 members', unread: '2', badgeDisplay: 'flex', bg: '#0e1216', mark: 'transparent', fg: '#e6e8e4', iconColour: '#9ba39f' },
+        { key: 'c3', name: 'Aderyn', meta: 'Direct · in match', unread: '1', badgeDisplay: 'flex', bg: '#0e1216', mark: 'transparent', fg: '#e6e8e4', iconColour: '#9ba39f' },
+        { key: 'c4', name: 'Mirek', meta: 'Direct · idle', unread: '', badgeDisplay: 'none', bg: '#0e1216', mark: 'transparent', fg: '#9ba39f', iconColour: '#7d8683' },
+        { key: 'c5', name: 'Season 4 general', meta: 'Public · 1,284', unread: '', badgeDisplay: 'none', bg: '#0e1216', mark: 'transparent', fg: '#9ba39f', iconColour: '#7d8683' },
+        { key: 'c6', name: 'Scrim planning', meta: 'Clan · muted', unread: '', badgeDisplay: 'none', bg: '#0e1216', mark: 'transparent', fg: '#7d8683', iconColour: '#7d8683' },
+      ],
+      fullChat: [
+        { key: 'f1', time: '19:02', name: 'ADERYN', body: 'Scrims at 20:00. Who is in?', nameColour: pal.self, bodyColour: '#e6e8e4' },
+        { key: 'f2', time: '19:03', name: 'SARAIVA', body: 'In. I want to work on the double-capital opening.', nameColour: pal.self, bodyColour: '#e6e8e4' },
+        { key: 'f3', time: '19:04', name: 'VEKHOV', body: 'Same. It falls apart if they rush the middle before 02:00.', nameColour: pal.self, bodyColour: '#e6e8e4' },
+        { key: 'f4', time: '19:06', name: 'SYSTEM', body: 'Aderyn started a match · Ranked duel.', nameColour: '#7d8683', bodyColour: '#9ba39f' },
+        { key: 'f5', time: '19:11', name: 'ILVA SUND', body: 'Watching. Their tempo is way ahead on the east front.', nameColour: pal.self, bodyColour: '#e6e8e4' },
+        { key: 'f6', time: '19:14', name: 'HALVARD', body: 'That is the third time this week someone opens wide and holds it.', nameColour: pal.self, bodyColour: '#e6e8e4' },
+        { key: 'f7', time: '19:15', name: 'SYSTEM', body: 'Aderyn won · +31.', nameColour: '#7d8683', bodyColour: '#9ba39f' },
+        { key: 'f8', time: '19:16', name: 'SARAIVA', body: 'Post the replay, I want the first two minutes.', nameColour: pal.self, bodyColour: '#e6e8e4' },
+        { key: 'f9', time: '19:18', name: 'ADERYN', body: 'Uploading. Watch what I do with the depot at 01:40.', nameColour: pal.self, bodyColour: '#e6e8e4' },
+      ],
+      presence: [
+        { key: 'p1', initials: 'AD', name: 'Aderyn', state: 'In match', stateColour: '#4fb286' },
+        { key: 'p2', initials: 'SA', name: 'Saraiva', state: 'In queue', stateColour: '#e0a72e' },
+        { key: 'p3', initials: 'IL', name: 'Ilva Sund', state: 'Spectating', stateColour: '#4aa8c8' },
+        { key: 'p4', initials: 'HA', name: 'Halvard', state: 'Online', stateColour: '#4fb286' },
+        { key: 'p5', initials: 'KO', name: 'Kosta Vrell', state: 'Online', stateColour: '#4fb286' },
+        { key: 'p6', initials: 'MI', name: 'Mirek', state: 'Idle', stateColour: '#7d8683' },
+      ],
+
+      // ---- settings
+      settingsNav: [
+        { key: 's1', label: 'Gameplay', bg: '#141a1f', mark: '#ffffff', fg: '#e6e8e4' },
+        { key: 's2', label: 'Display', bg: 'transparent', mark: 'transparent', fg: '#7d8683' },
+        { key: 's3', label: 'Audio', bg: 'transparent', mark: 'transparent', fg: '#7d8683' },
+        { key: 's4', label: 'Social', bg: 'transparent', mark: 'transparent', fg: '#7d8683' },
+        { key: 's5', label: 'Account', bg: 'transparent', mark: 'transparent', fg: '#7d8683' },
+      ],
+      settingsGroups: [
+        { key: 'g1', title: 'Board', rows: [
+          { key: 'r1', label: 'Faction palette', note: 'Two colourblind-safe options available.', isToggle: false, isSelect: true, value: pal.short },
+          { key: 'r2', label: 'Hatch held territory', note: 'Separates holdings by texture as well as hue.', isToggle: true, isSelect: false, ...toggle(true) },
+        ] },
+        { key: 'g2', title: 'Motion', rows: [
+          { key: 'r4', label: 'Ambient board motion', note: 'Slow camera drift between orders.', isToggle: true, isSelect: false, ...toggle(false) },
+          { key: 'r5', label: 'Reduce motion', note: 'Follows your system setting by default.', isToggle: false, isSelect: true, value: 'Match system' },
+        ] },
+        { key: 'g3', title: 'Alerts', rows: [
+          { key: 'r6', label: 'Threat toasts', note: 'Incoming march on a province you hold.', isToggle: true, isSelect: false, ...toggle(true) },
+          { key: 'r7', label: 'Clan invites', note: 'Notify when a clan invites you.', isToggle: true, isSelect: false, ...toggle(true) },
+        ] },
+      ],
+
+      // ---- notifications
+      noticeList: [
+        { key: 'n1', body: 'Aderyn invited you to a 4-seat skirmish on Kholmsk Basin.', time: '2 min', bg: '#141a1f', mark: '#ffffff', iconColour: '#e6e8e4', bodyColour: '#e6e8e4', hasAction: true, accept: 'Join' },
+        { key: 'n2', body: 'Iron Meridian promoted you to Officer.', time: '1 h', bg: '#141a1f', mark: '#ffffff', iconColour: '#e6e8e4', bodyColour: '#e6e8e4', hasAction: false, accept: '' },
+        { key: 'n3', body: 'Season 4 places in 3 matches. Your provisional rating is 1,866.', time: '3 h', bg: '#141a1f', mark: '#ffffff', iconColour: '#e6e8e4', bodyColour: '#e6e8e4', hasAction: false, accept: '' },
+        { key: 'n4', body: 'Rovina requested a rematch.', time: 'Yesterday', bg: '#0e1216', mark: 'transparent', iconColour: '#7d8683', bodyColour: '#9ba39f', hasAction: true, accept: 'Accept' },
+        { key: 'n5', body: 'You climbed to ladder rank 03.', time: 'Yesterday', bg: '#0e1216', mark: 'transparent', iconColour: '#7d8683', bodyColour: '#9ba39f', hasAction: false, accept: '' },
+        { key: 'n6', body: 'Saraiva joined Iron Meridian.', time: '2 days', bg: '#0e1216', mark: 'transparent', iconColour: '#7d8683', bodyColour: '#9ba39f', hasAction: false, accept: '' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

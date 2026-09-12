@@ -1,0 +1,246 @@
+/* ==========================================================================
+   SUPREMACY LIVE — DESIGN TOKENS  v1.0  "Command Console"
+   --------------------------------------------------------------------------
+   Single source of truth for every colour, size, type and timing value in
+   the client. Drop this file in `public/tokens.css` and link it once from
+   each page's <helmet>. Nothing else in the codebase should contain a raw
+   hex value, px font-size, or transition duration.
+
+   Naming:  --sl-<group>-<role>[-<modifier>]
+   Groups:  ink | seam | text | signal | status | faction | font | fs | lh
+            tr | space | ctl | dur | ease | z
+   ========================================================================== */
+
+:root {
+
+  /* ---- GROUND ------------------------------------------------------------
+     Six steps of near-black graphite. Depth comes from these steps plus
+     hairline seams — never from drop shadows. */
+  --sl-ink-000: #06080a;   /* void: page ground, board bleed, modal scrim base */
+  --sl-ink-100: #0a0d10;   /* app ground: the surface behind all panels */
+  --sl-ink-200: #0e1216;   /* panel: every framed region */
+  --sl-ink-300: #141a1f;   /* inset: table rows, input wells, nested blocks */
+  --sl-ink-400: #1b2328;   /* hover: row and control hover */
+  --sl-ink-500: #252f36;   /* pressed: control active, heavy block divider */
+
+  /* ---- SEAMS ------------------------------------------------------------
+     1px hairlines do all the structural work. Three weights, one dashed. */
+  --sl-seam:         rgba(230, 232, 228, 0.09);  /* default divider */
+  --sl-seam-strong:  rgba(230, 232, 228, 0.18);  /* panel edge, control edge */
+  --sl-seam-signal:  rgba(224, 167, 46, 0.45);   /* selected / armed edge */
+  --sl-seam-dash:    rgba(230, 232, 228, 0.14);  /* placeholder, empty, drop-zone */
+
+  /* ---- TEXT -------------------------------------------------------------
+     Contrast measured against --sl-ink-200. */
+  --sl-text:        #e6e8e4;   /* 15.1:1 — primary */
+  --sl-text-dim:    #9ba39f;   /*  7.3:1 — secondary, labels, units */
+  --sl-text-mute:   #7d8683;   /*  5.0:1 — tertiary; smallest passing step */
+  --sl-text-ghost:  #4f5754;   /*  2.2:1 — DISABLED AND DECORATIVE ONLY */
+  --sl-text-invert: #06080a;   /* on signal / status fills */
+
+  /* ---- SIGNAL -----------------------------------------------------------
+     The interface accent is WHITE. Used as light rather than paint: edges,
+     ticks, the one primary action per view. Never a large flat field.
+     Hue is reserved for gameplay — status and faction only. If a colour
+     appears in the UI chrome and does not describe game state, it is a bug. */
+  --sl-signal:       #d5d9d4;              /* resting: primary fill, armed edge */
+  --sl-signal-hot:   #ffffff;              /* hover / focus / active */
+  --sl-signal-dim:   #6b7472;              /* disabled signal, minor tick marks */
+  --sl-signal-wash:  rgba(255, 255, 255, 0.10);
+  --sl-signal-glow:  rgba(255, 255, 255, 0.22);
+
+  /* ---- GAMEPLAY ACCENTS -------------------------------------------------
+     Hue carries meaning the player acts on. Never used for chrome. */
+  --sl-coin:         #e0a72e;              /* currency: values, icon, cost */
+  --sl-coin-wash:    rgba(224, 167, 46, 0.12);
+
+  /* ---- STATUS -----------------------------------------------------------*/
+  --sl-ok:           #4fb286;
+  --sl-ok-wash:      rgba(79, 178, 134, 0.12);
+  --sl-ok-fill:      #24604a;
+  --sl-warn:         #e0a72e;
+  --sl-warn-wash:    rgba(224, 167, 46, 0.12);
+  --sl-warn-fill:    #6d5116;
+  --sl-danger:       #e0574a;
+  --sl-danger-wash:  rgba(224, 87, 74, 0.12);
+  --sl-danger-fill:  #8f2b22;
+  --sl-info:         #4aa8c8;
+  --sl-info-wash:    rgba(74, 168, 200, 0.12);
+  --sl-info-fill:    #1f5568;
+
+  /* ---- FACTION SLOTS ----------------------------------------------------
+     Never hardcode a seat colour. Read these slots; the active palette is
+     set by [data-faction] on <html>. `self` is always the viewing player. */
+  --sl-faction-self:        #3d8fd4;
+  --sl-faction-self-wash:   rgba(61, 143, 212, 0.14);
+  --sl-faction-self-edge:   rgba(61, 143, 212, 0.55);
+  --sl-faction-foe:         #e0574a;
+  --sl-faction-foe-wash:    rgba(224, 87, 74, 0.14);
+  --sl-faction-foe-edge:    rgba(224, 87, 74, 0.55);
+  --sl-faction-third:       #b57ad0;
+  --sl-faction-fourth:      #d9a441;
+  --sl-faction-neutral:     #7d8683;
+  --sl-faction-neutral-wash:rgba(125, 134, 131, 0.12);
+
+  /* ---- TYPE -------------------------------------------------------------
+     Three faces, one job each. Display is always uppercase.
+     Mono carries every number the player reads — no exceptions. */
+  --sl-font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+  --sl-font-ui:      'Barlow Semi Condensed', system-ui, sans-serif;
+  --sl-font-mono:    'JetBrains Mono', ui-monospace, Menlo, monospace;
+
+  --sl-fs-d1: 64px;   --sl-lh-d1: 0.92;
+  --sl-fs-d2: 44px;   --sl-lh-d2: 0.95;
+  --sl-fs-d3: 32px;   --sl-lh-d3: 1.00;
+  --sl-fs-d4: 24px;   --sl-lh-d4: 1.05;
+
+  --sl-fs-ui-lg: 19px;  --sl-lh-ui-lg: 1.40;
+  --sl-fs-ui-md: 16px;  --sl-lh-ui-md: 1.45;
+  --sl-fs-ui-sm: 14px;  --sl-lh-ui-sm: 1.45;
+  --sl-fs-ui-xs: 13px;  --sl-lh-ui-xs: 1.40;
+
+  --sl-fs-data-xl: 30px;  --sl-lh-data-xl: 1.00;
+  --sl-fs-data-lg: 20px;  --sl-lh-data-lg: 1.10;
+  --sl-fs-data-md: 15px;  --sl-lh-data-md: 1.20;
+  --sl-fs-data-sm: 13px;  --sl-lh-data-sm: 1.20;
+
+  --sl-fs-label:    11px;  --sl-lh-label: 1.00;
+  --sl-fs-label-sm: 10px;
+
+  --sl-tr-display: 0.02em;   /* tracking */
+  --sl-tr-ui:      0em;
+  --sl-tr-data:    0em;
+  --sl-tr-label:   0.18em;
+  --sl-tr-label-sm:0.22em;
+
+  --sl-fw-display: 700;
+  --sl-fw-ui:      400;
+  --sl-fw-ui-med:  500;
+  --sl-fw-mono:    500;
+
+  /* ---- SPACE ------------------------------------------------------------
+     4px base. Layout snaps to an 8px grid; only s1/s2 break it, and only
+     inside a control. */
+  --sl-space-0: 0px;
+  --sl-space-1: 4px;
+  --sl-space-2: 8px;
+  --sl-space-3: 12px;
+  --sl-space-4: 16px;
+  --sl-space-5: 24px;
+  --sl-space-6: 32px;
+  --sl-space-7: 48px;
+  --sl-space-8: 64px;
+  --sl-space-9: 96px;
+
+  --sl-grid: 8px;
+  --sl-gutter: 10px;        /* gap between top-level HUD regions */
+  --sl-pad-panel: 16px;     /* standard panel padding */
+  --sl-pad-panel-lg: 24px;  /* out-of-match panel padding */
+
+  /* ---- STRUCTURE --------------------------------------------------------
+     Radius is zero. The system's corner language is the bracket tick. */
+  --sl-radius: 0px;
+  --sl-border: 1px;
+  --sl-tick-len: 9px;       /* bracket tick arm length */
+  --sl-tick-weight: 1px;
+  --sl-rule-heavy: 2px;     /* section-opening rule */
+  --sl-hatch: repeating-linear-gradient(45deg, currentColor 0 1px, transparent 1px 5px);
+
+  /* ---- CONTROLS ---------------------------------------------------------*/
+  --sl-ctl-h-xs: 24px;
+  --sl-ctl-h-sm: 30px;
+  --sl-ctl-h-md: 36px;
+  --sl-ctl-h-lg: 44px;      /* primary action */
+  --sl-ctl-pad-x: 16px;
+  --sl-ctl-pad-x-sm: 10px;
+  --sl-focus-ring: 0 0 0 1px #ffffff, 0 0 0 4px rgba(255, 255, 255, 0.20);
+
+  /* ---- MOTION -----------------------------------------------------------
+     Instrument motion: short, linear-ish, never bouncy. Nothing in a match
+     may animate longer than --sl-dur-3. */
+  --sl-dur-0: 0ms;
+  --sl-dur-1: 80ms;    /* colour / opacity on hover, press */
+  --sl-dur-2: 140ms;   /* control state, tab slide, chip select */
+  --sl-dur-3: 220ms;   /* panel open, tooltip, toast in */
+  --sl-dur-4: 400ms;   /* modal, screen fade, results reveal */
+  --sl-dur-5: 700ms;   /* ambient: news crossfade, board settle */
+
+  --sl-ease-out:  cubic-bezier(0.2, 0.8, 0.3, 1);      /* entering */
+  --sl-ease-in:   cubic-bezier(0.5, 0, 0.9, 0.4);      /* leaving */
+  --sl-ease-mono: cubic-bezier(0.4, 0, 0.6, 1);        /* moving between states */
+  --sl-ease-step: steps(6, end);                        /* counters, scan lines */
+
+  /* ---- LAYERS -----------------------------------------------------------*/
+  --sl-z-board: 0;
+  --sl-z-hud: 10;
+  --sl-z-popover: 20;
+  --sl-z-toast: 30;
+  --sl-z-modal: 40;
+  --sl-z-cursor: 50;
+}
+
+/* ==========================================================================
+   FACTION PALETTES
+   Set on <html data-faction="…">. Only the faction slots change; the ground,
+   signal and status scales are constant across every palette.
+   ========================================================================== */
+
+/* Default. Cold self, hot foe — reads instantly on the board. */
+[data-faction="cobalt-ember"] {
+  --sl-faction-self:      #3d8fd4;
+  --sl-faction-self-wash: rgba(61, 143, 212, 0.14);
+  --sl-faction-self-edge: rgba(61, 143, 212, 0.55);
+  --sl-faction-foe:       #e0574a;
+  --sl-faction-foe-wash:  rgba(224, 87, 74, 0.14);
+  --sl-faction-foe-edge:  rgba(224, 87, 74, 0.55);
+  --sl-faction-third:     #b57ad0;
+  --sl-faction-fourth:    #d9a441;
+}
+
+/* Legacy: matches the pre-v1 client (green vs red). */
+[data-faction="verdant-ember"] {
+  --sl-faction-self:      #4fb286;
+  --sl-faction-self-wash: rgba(79, 178, 134, 0.14);
+  --sl-faction-self-edge: rgba(79, 178, 134, 0.55);
+  --sl-faction-foe:       #e0574a;
+  --sl-faction-foe-wash:  rgba(224, 87, 74, 0.14);
+  --sl-faction-foe-edge:  rgba(224, 87, 74, 0.55);
+  --sl-faction-third:     #b57ad0;
+  --sl-faction-fourth:    #d9a441;
+}
+
+/* Deuteranopia / protanopia safe: blue vs amber, separated by lightness too. */
+[data-faction="cobalt-amber"] {
+  --sl-faction-self:      #4a9fe0;
+  --sl-faction-self-wash: rgba(74, 159, 224, 0.14);
+  --sl-faction-self-edge: rgba(74, 159, 224, 0.55);
+  --sl-faction-foe:       #f0c04a;
+  --sl-faction-foe-wash:  rgba(240, 192, 74, 0.14);
+  --sl-faction-foe-edge:  rgba(240, 192, 74, 0.55);
+  --sl-faction-third:     #d0d6d2;
+  --sl-faction-fourth:    #8f6fd0;
+}
+
+/* Tritanopia safe: magenta vs green. */
+[data-faction="rose-verdant"] {
+  --sl-faction-self:      #4fb286;
+  --sl-faction-self-wash: rgba(79, 178, 134, 0.14);
+  --sl-faction-self-edge: rgba(79, 178, 134, 0.55);
+  --sl-faction-foe:       #e061a8;
+  --sl-faction-foe-wash:  rgba(224, 97, 168, 0.14);
+  --sl-faction-foe-edge:  rgba(224, 97, 168, 0.55);
+  --sl-faction-third:     #e0a72e;
+  --sl-faction-fourth:    #7d8683;
+}
+
+/* ==========================================================================
+   REDUCED MOTION — collapse everything but the shortest state change.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --sl-dur-2: 80ms;
+    --sl-dur-3: 80ms;
+    --sl-dur-4: 80ms;
+    --sl-dur-5: 0ms;
+  }
+}
