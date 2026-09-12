@@ -15,16 +15,6 @@ it can never just clear a selection. Found during the Command Console migration
 (`design-system/HANDOFF-GAPS.md`, "Not design-system related" section), left untouched at the time as
 out of scope for that pass. **Still open.**
 
-### Production `duel` map has blank province/city names
-Confirmed live via `/api/maps/duel` directly (not a rendering bug) — the D1-stored `duel` board's four
-provinces (`verrand`/`kolstig`/`aumere`/`dunmar`) currently have empty `name` fields, so the editor and
-the board both show blank name inputs/labels for them in production. A fresh local `wrangler dev` D1
-seed has the real names from `map.js`, which is why this wasn't caught until a production smoke test.
-Source: `design-system/HANDOFF-GAPS.md`. **Still open** — needs a corrective write to the D1 `maps`
-row (via the editor, or a direct `PUT /api/maps/duel` with the real names) rather than a code fix,
-since `map.js`'s static definition already has the right names and D1 is intentionally the source of
-truth once seeded (see [MAP_SYSTEM.md](MAP_SYSTEM.md)).
-
 ## Design-system gaps
 
 The Command Console v1.0 migration surfaced a longer list of token gaps, judgment calls, and
@@ -56,6 +46,8 @@ Kept here for traceability — these were real bugs, now resolved on `main`:
 | A seat reduced to zero territories saw no game-over and had no legal moves left, since the win check only fired once the *other* seat reached the map's needed count | Added an elimination check in `step()`: zero territories = immediate loss, gated to real 2-seat matches so `solo` (no real seat 1) isn't affected. | `dec3489` |
 | AI test match defaulted to the `grand` board (25 territories) instead of the board ranked 1v1 actually uses | Hub's test-match link and `game.html`'s board-resolution fallback both now default to `duel`; `grand` remains fully defined and reachable via explicit `?board=grand`. | `a74602b` |
 | 3D board tiles were a flat, paper-thin plane — hard to visually distinguish from the void background, no sense of raised ground | Land tiles are now an extruded slab (top face still at `y=0`, so no overlay needed changes); gap tiles get a recessed water mesh instead of being hidden. See [RENDERING.md](RENDERING.md). | `628eda2` |
+| In the 3D renderer, every structure (capitals, cities, barracks, industry) was coloured via a hardcoded seat 0 = self / seat 1 = foe mapping instead of the viewer-relative one ground tiles already used correctly — a seat-1 player saw their own capital in the opponent's colour while the ground under it was correctly self-coloured. Found via live 1v1 testing between two real accounts. | `upsertPiece()` now takes the same viewer-relative `seatColour` closure `update()` already threads through to every ground tile, instead of reaching for the standalone hardcoded function. Verified by rebuilding a live match's 3D scene under a forced seat-1 perspective. | `931a8c2` |
+| The production `duel` board's live D1 content had lost its **entire `cities` array** (not just blank names, as first suspected — the array was completely empty: `"cities": []`). No capitals existed anywhere, so capital income (`sim.js`'s `cap.wealth` payout, which requires an actual city object at the centre tile) never fired for anyone — capturing territory produced no economic benefit at all, which is what "taking territory doesn't do anything" was actually describing. Ownership/combat itself was unaffected (that logic is purely tile-coordinate-based, no city object needed). | Restored via `PUT /api/maps/duel` with `map.js`'s known-good static `MAPS.duel` definition (real names, all 8 cities, correct wealth/garrison/seat values) — confirmed both by the automatic symmetry check passing and by re-reading `/api/maps/duel` afterward. A pre-existing corruption, not something this session's own editor changes caused (last write predates this session by ~2 days per its `updatedAt`). | data-only, no commit — see `worker.js`'s `handlePutMap` |
 
 ## Known limitations (by design or by scope, not bugs)
 
