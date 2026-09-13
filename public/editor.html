@@ -21,6 +21,7 @@
 <script type="module">
   import { create } from './board-render-3d.js';
   self.FPRender3D = { create };
+  self.dispatchEvent(new Event('fp-render-3d-ready'));
 </script>
 <style>
   :root { color-scheme: dark; }
@@ -365,13 +366,24 @@
     // before the user is even confirmed signed in). paint3D() re-calls this
     // once S.built exists, so there's nothing to do here but wait.
     if (!S.built) return null;
+    // board-render-3d.js loads as an ES module (see the <script type="module">
+    // above) so it can pull in three/OrbitControls from the CDN — that fetch
+    // is async and races boot()'s same-origin auth/map fetches. On a returning
+    // user with '3d' saved as their render-mode preference, boot() can win
+    // that race, so self.FPRender3D isn't set yet here. Wait for the
+    // 'fp-render-3d-ready' event fired once the module finishes loading
+    // instead of crashing on self.FPRender3D.create.
+    if (!self.FPRender3D) return null;
     _r3d = self.FPRender3D.create(cv3d, S.built);
     return _r3d;
   }
 
+  self.addEventListener('fp-render-3d-ready', () => { if (S.renderMode === '3d') paint3D(); });
+
   function paint3D() {
     if (!S.built) return;
     const r3d = ensure3D();
+    if (!r3d) return; // still waiting on S.built or the board-render-3d.js module — see ensure3D()
     r3d.update(overlay());
     r3d.renderer.render(r3d.scene, r3d.camera);
     r3d.cssRenderer.render(r3d.scene, r3d.camera);
