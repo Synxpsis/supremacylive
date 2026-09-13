@@ -275,9 +275,21 @@
   let _tok = null;
   function tokens() {
     if (_tok) return _tok;
-    const g = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-    _tok = { self: g('--sl-faction-self'), foe: g('--sl-faction-foe'), neutral: g('--sl-faction-neutral') };
-    return _tok;
+    const read = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    const faction = read('--sl-faction-self');
+    // Fallbacks mirror tokens.css's own cobalt-ember defaults — same
+    // reasoning as board-render.js's tokens(). Only cache once the canary
+    // read is non-empty, so a call that lands before tokens.css has applied
+    // still returns a valid colour (both board-render.js's shade() and
+    // board-render-3d.js's toHex() require a real string, not null) without
+    // permanently caching a stale fallback once the real one is available.
+    const t = {
+      self: faction || '#3d8fd4',
+      foe: read('--sl-faction-foe') || '#e0574a',
+      neutral: read('--sl-faction-neutral') || '#7d8683',
+    };
+    if (faction) _tok = t;
+    return t;
   }
   function seatColour(seat) {
     const t = tokens();

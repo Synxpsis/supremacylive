@@ -288,7 +288,6 @@ class Component extends DCLogic {
   };
 
   componentDidMount() {
-    this.readTokens();
     fetch('/api/auth/me', { credentials: 'same-origin' })
       .then(r => r.ok ? r.json() : { user: null })
       .then(j => this.setState({ commander: (j.user && j.user.username) || null }))
@@ -530,15 +529,20 @@ class Component extends DCLogic {
     // the first render; poll briefly rather than assume. board-render-3d.js
     // loads as an ES module (deferred relative to the classic scripts above),
     // so ?render=3d needs its own readiness check on top of the usual ones.
+    // tokens.css is the same story — its <link> can resolve after mount too —
+    // so readTokens() is retried here rather than trusted to have already
+    // applied; paint() can't run before state.screen flips to 'match' below,
+    // which only happens once this clears, so it never sees an empty read.
     let tries = 0;
     this._boot = setInterval(() => {
       if (++tries > 100) {
         clearInterval(this._boot);
-        console.error('Game: map.js, board-render.js or sim.js never became available', { map: !!self.FPMap, render: !!self.FPRender, sim: !!self.FPSim });
+        console.error('Game: map.js, board-render.js, sim.js or tokens.css never became available', { map: !!self.FPMap, render: !!self.FPRender, sim: !!self.FPSim, tokens: !!this._tok });
         return;
       }
       if (!self.FPMap || !self.FPRender || !self.FPSim) return;
       if (this.is3D() && !self.FPRender3D) return;
+      if (!this.readTokens()) return;
       clearInterval(this._boot);
       // There is no menu screen — the match starts as soon as the libs are
       // ready, configured from the Hub's URL params (matchId, or board/ai).
@@ -1038,39 +1042,26 @@ class Component extends DCLogic {
   /** The canvas can't resolve var(--sl-*) — its 2D context only takes literal
    *  colour strings — so the faction/signal/status tokens it needs are read
    *  once here and cached, then reused by seatColour() and every ctx.fillStyle
-   *  / strokeStyle literal in paint(). Re-run this if the palette (data-faction)
-   *  ever changes at runtime; nothing does yet, so a one-time read at mount is
-   *  enough for now. */
+   *  / strokeStyle literal in paint(). tokens.css's <link> can still be
+   *  unapplied the first time this runs, so it checks a canary var and
+   *  refuses to cache an empty read — the boot poll in componentDidMount
+   *  calls this on every tick alongside the FPMap/FPRender/FPSim checks and
+   *  only proceeds once it succeeds. Re-run this if the palette
+   *  (data-faction) ever changes at runtime; nothing does yet, so a read at
+   *  boot is enough for now. */
   readTokens() {
-    // Fallbacks mirror tokens.css's own :root/cobalt-ember defaults — the
-    // same belt-and-suspenders board-render.js's tokens() already uses.
-    // Without them, a call that lands before <helmet>'s async <link
-    // rel="stylesheet" href="./tokens.css"> has actually applied (nothing
-    // here waits on it — the boot poll in componentDidMount only checks
-    // that FPMap/FPRender/FPSim are defined) reads every var() as '' and
-    // caches it in this._tok forever, since seatColour()'s `?? t.self`
-    // only catches null/undefined, not ''. shade('', f) in board-render.js
-    // then parses '' to NaN, which every bitwise channel op coerces to 0 —
-    // #000000, not a visibly-wrong colour but a silent, permanent, exact
-    // black for every owned tile, for the rest of that session. This is
-    // what live testing saw as "the whole board is black" for one account
-    // and not the other: whichever client's first paint happened to race
-    // the stylesheet.
-    const g = (n, fallback) => {
-      const v = getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-      return v || fallback;
-    };
+    const g = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    const faction = g('--sl-faction-self');
+    if (!faction) return null;
     const rgba = (hex, a) => {
       const n = parseInt(hex.replace('#', ''), 16);
       return `rgba(${n >> 16 & 255},${n >> 8 & 255},${n & 255},${a})`;
     };
-    const ink100 = g('--sl-ink-100', '#0a0d10');
     this._tok = {
-      self: g('--sl-faction-self', '#3d8fd4'), foe: g('--sl-faction-foe', '#e0574a'),
-      neutral: g('--sl-faction-neutral', '#7d8683'),
-      signal: g('--sl-signal', '#d5d9d4'), signalWash: g('--sl-signal-wash', 'rgba(255,255,255,0.10)'),
-      danger: g('--sl-danger', '#e0574a'),
-      ink100Wash: rgba(ink100, 0.86),
+      self: faction, foe: g('--sl-faction-foe'), neutral: g('--sl-faction-neutral'),
+      signal: g('--sl-signal'), signalWash: g('--sl-signal-wash'),
+      danger: g('--sl-danger'),
+      ink100Wash: rgba(g('--sl-ink-100'), 0.86),
     };
     return this._tok;
   }
