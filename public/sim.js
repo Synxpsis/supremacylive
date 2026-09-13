@@ -66,7 +66,7 @@
   function create(M) {
     const m = F();
     const owners = m.seedOwners(M);
-    const garrisons = {}, barracks = {};
+    const garrisons = {}, barracks = {}, industry = {};
     for (const p of M.provinces) {
       const [c, r] = m.centreTile(M, p);
       const k = m.tileKey(c, r);
@@ -76,8 +76,21 @@
       // on tick one.
       if (own !== null) barracks[k] = own;
     }
+    // Pre-placed starting structures authored on the board (see
+    // docs/MAP_SYSTEM.md) — skipped rather than seeded if they'd collide with
+    // the capital's auto-barracks/another structure, or if the authored seat
+    // doesn't match actual kickoff ownership (step() would delete a mismatch
+    // like this the instant it ran anyway; checking here just means it never
+    // renders for even one frame).
+    for (const st of (M.structures || [])) {
+      const k = m.tileKey(st.c, st.r);
+      if (k in barracks || k in industry) continue;
+      if ((owners[k] ?? null) !== st.seat) continue;
+      if (st.kind === 'barracks') barracks[k] = st.seat;
+      else if (st.kind === 'industry') industry[k] = st.seat;
+    }
     return {
-      tick: 0, owners, garrisons, barracks, industry: {},
+      tick: 0, owners, garrisons, barracks, industry,
       stacks: [], nextId: 1,
       money: [M.tuning.startMoney * 1000, M.tuning.startMoney * 1000],
       over: null,

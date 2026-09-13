@@ -111,6 +111,7 @@
   }
 
   #emptyPanel { font-size: var(--sl-fs-ui-xs); color: var(--sl-text-mute); line-height: 1.5; }
+  .mono { font-family: var(--sl-font-mono); }
 
   #login {
     height: 100vh; display: grid; place-items: center;
@@ -152,7 +153,7 @@
     <div id="canvasWrap">
       <canvas id="cv"></canvas>
       <canvas id="cv3d" style="display: none;"></canvas>
-      <div id="hint">Click a city or territory to edit it, empty ground to add one · Add City, then click open ground · scroll to zoom · drag to pan / orbit</div>
+      <div id="hint">Click any tile to inspect it · Add City / Industry / Barracks, then click a valid tile to place · scroll to zoom · drag to pan / orbit</div>
     </div>
     <div id="panel"></div>
   </div>
@@ -169,8 +170,8 @@
     def: null,        // raw definition, mutated in place then rebuilt
     built: null,
     symmetry: null,
-    sel: null,         // { kind: 'city', id } | { kind: 'province', id }
-    addMode: false,
+    sel: null,         // { kind: 'tile', c, r } — every click inspects the exact tile, whatever's on it
+    placeMode: null,   // null | 'city' | 'industry' | 'barracks' — active placement tool
     confirmRemove: null, // province id currently armed for a two-click "remove territory" — see select()
     boardError: null, // inline board-resize rejection message — see resizeSlots()
     cam: { zoom: 1, panX: 0, panY: 0 },
@@ -190,6 +191,13 @@
   const saveStatus = document.getElementById('saveStatus');
   const mode2dBtn = document.getElementById('mode2dBtn');
   const mode3dBtn = document.getElementById('mode3dBtn');
+
+  // Placement tools offered in the panel — 'city' is its own thing (name,
+  // wealth, seat/garrison), the rest come straight off FPMap.AUTHORABLE_KINDS
+  // so a future structure kind (naval base, silo, airbase, ...) only needs a
+  // STRUCTURE_KIT entry in map.js, not a new button wired up here.
+  const PLACE_KINDS = [['city', 'Add City'],
+    ...F().AUTHORABLE_KINDS.map(k => [k, 'Add ' + F().STRUCTURE_KIT[k].label])];
 
   // ── auth ───────────────────────────────────────────────────────────────
   async function me() {
@@ -304,21 +312,25 @@
    *  the 2D renderer simply ignores the fields it doesn't use, defaulting
    *  seatColour to its own house palette if this weren't supplied at all. */
   function overlay() {
-    const owners = {}, garrisons = {};
+    const owners = {}, garrisons = {}, barracks = {}, industry = {};
     for (const c of S.built.cities) {
       const tc = Math.floor(c.tc), tr = Math.floor(c.tr);
       const k = F().tileKey(tc, tr);
       if (c.seat !== null) owners[k] = c.seat;
       if (c.garrison) garrisons[k] = c.garrison;
     }
-    let sel = null;
-    if (S.sel && S.sel.kind === 'city') {
-      const c = S.built.city(S.sel.id);
-      if (c) sel = { c: Math.floor(c.tc), r: Math.floor(c.tr) };
+    for (const st of S.built.structures) {
+      const k = F().tileKey(st.c, st.r);
+      if (st.kind === 'barracks') barracks[k] = st.seat;
+      else if (st.kind === 'industry') industry[k] = st.seat;
     }
+    // Every tile selection carries {c, r} — this is what makes the 3D
+    // renderer's camera lock/recentre (board-render-3d.js) engage
+    // consistently no matter what's on the clicked tile, not just cities.
+    const sel = S.sel ? { c: S.sel.c, r: S.sel.r } : null;
     return {
       owners, garrisons, sel, labels: true, slots: true, seatColour,
-      barracks: {}, industry: {}, stacks: [], stackAt: () => null,
+      barracks, industry, stacks: [], stackAt: () => null,
       armed: null, multi: null, marchPath: null, marchLabelText: null,
     };
   }
@@ -428,6 +440,7 @@
   function cityAtTile(c, r) {
     return S.built.cities.find(city => Math.floor(city.tc) === c && Math.floor(city.tr) === r) || null;
   }
+  function structureAtTile(c, r) { return S.built.structureAt(c, r); }
 
   // ── pointer: click-select vs drag-pan ────────────────────────────────────
   let downAt = null, panning = false, startPan = null;
@@ -458,15 +471,20 @@
     paint();
   }, { passive: false });
 
-  /** Which slot (occupied or not) a tile falls in, or null if the tile is
-   *  somehow outside the board's own slot grid (shouldn't happen — the slot
-   *  grid always exactly covers gridW×gridH — but a board with a stale/
-   *  mismatched slots vs. block shouldn't crash the click handler over it). */
-  function slotOf(t) {
-    const block = S.built.block, slots = S.built.slots;
-    const sc = Math.floor(t.c / block.w), sr = Math.floor(t.r / block.h);
-    if (sc < 0 || sr < 0 || sc >= slots.cols || sr >= slots.rows) return null;
-    return { sc, sr };
+  /** Whether — and as which seat — a structure (industry/barracks) may be
+   *  placed on tile t. Returns the seat to author it with, or null if not:
+   *  no territory here, the territory's own capital tile (already occupied),
+   *  a city or another structure already stands here, or this tile isn't
+   *  actually owned by a seat at kickoff (FPMap.seedOwners, from map.starts)
+   *  — placing one there would just be silently skipped by sim.create(). */
+  function canPlaceStructure(prov, t) {
+    if (!prov) return null;
+    const [cc, cr] = F().centreTile(S.built, prov);
+    if (t.c === cc && t.r === cr) return null;
+    if (cityAtTile(t.c, t.r) || structureAtTile(t.c, t.r)) return null;
+    const owners = F().seedOwners(S.built);
+    const seat = owners[F().tileKey(t.c, t.r)];
+    return (seat === 0 || seat === 1) ? seat : null;
   }
 
   // Shared by both renderers' click handling — only how a screen point turns
@@ -476,17 +494,19 @@
   // grid entirely), rather than clearing the current selection.
   function onClickTile(t) {
     if (!t) return;
-    const city = cityAtTile(t.c, t.r);
-    if (city) { select({ kind: 'city', id: city.id }); return; }
-    const prov = F().territoryAt(S.built, t.c, t.r);
-    if (S.addMode && prov) { addCity(prov, t.c - prov.c0, t.r - prov.r0); return; }
-    if (prov) { select({ kind: 'province', id: prov.id }); return; }
-    // Empty ground — offer to place a territory in whichever slot this is,
-    // rather than falling through to "nothing here" the way the live game
-    // (which has no use for an empty slot) treats the same click.
-    const slot = slotOf(t);
-    if (slot) { select({ kind: 'slot', sc: slot.sc, sr: slot.sr }); return; }
-    select(null);
+    if (S.placeMode) {
+      const prov = F().territoryAt(S.built, t.c, t.r);
+      if (S.placeMode === 'city' && prov && !cityAtTile(t.c, t.r) && !structureAtTile(t.c, t.r)) {
+        addCity(prov, t.c - prov.c0, t.r - prov.r0); return;
+      }
+      if (S.placeMode === 'industry' || S.placeMode === 'barracks') {
+        const seat = canPlaceStructure(prov, t);
+        if (seat !== null) { addStructure(S.placeMode, prov, t, seat); return; }
+      }
+      // Not a valid target for the active tool — fall through to a normal
+      // tile inspect below, same as clicking with no tool active at all.
+    }
+    select({ kind: 'tile', c: t.c, r: t.r });
   }
   function onClick(mx, my) { onClickTile(tileAtAny(mx, my)); }
 
@@ -513,22 +533,20 @@
 
   function findCityDef(id) { return S.def.cities.find(c => c.id === id); }
   function findProvDef(id) { return S.def.provinces.find(p => p.id === id); }
+  function findStructureDef(id) { return (S.def.structures || []).find(s => s.id === id); }
 
   function addCity(prov, lc, lr) {
     const existingNames = S.def.cities.map(c => c.name);
     const existingIds = S.def.cities.map(c => c.id);
     const name = F().pickName(F().CITY_NAMES, existingNames, 'City');
     const id = F().pickId(name, existingIds);
-    S.def.cities.push({
-      id, name, prov: prov.id,
-      lc: Math.max(0, Math.min(prov.w - 1, Math.round(lc))),
-      lr: Math.max(0, Math.min(prov.h - 1, Math.round(lr))),
-      wealth: 2.4, garrison: 34,
-    });
-    S.addMode = false;
+    lc = Math.max(0, Math.min(prov.w - 1, Math.round(lc)));
+    lr = Math.max(0, Math.min(prov.h - 1, Math.round(lr)));
+    S.def.cities.push({ id, name, prov: prov.id, lc, lr, wealth: 2.4, garrison: 34 });
+    S.placeMode = null;
     markDirty();
     rebuild();
-    select({ kind: 'city', id });
+    select({ kind: 'tile', c: prov.c0 + lc, r: prov.r0 + lr });
   }
 
   function deleteCity(id) {
@@ -551,6 +569,44 @@
       dst.seat = 1 - src.seat;
       delete dst.garrison;
     }
+    markDirty();
+    rebuild();
+  }
+
+  /** Place a starting structure (industry/barracks — see FPMap.AUTHORABLE_KINDS)
+   *  at tile t, owned by seat (already validated by canPlaceStructure()). */
+  function addStructure(kind, prov, t, seat) {
+    if (!S.def.structures) S.def.structures = [];
+    const existingIds = S.def.structures.map(s => s.id);
+    const id = F().pickId(kind + '-' + prov.id, existingIds);
+    S.def.structures.push({ id, prov: prov.id, lc: t.c - prov.c0, lr: t.r - prov.r0, kind, seat });
+    S.placeMode = null;
+    markDirty();
+    rebuild();
+    select({ kind: 'tile', c: t.c, r: t.r });
+  }
+
+  function deleteStructure(id) {
+    S.def.structures = (S.def.structures || []).filter(s => s.id !== id);
+    markDirty();
+    select(null);
+    rebuild();
+  }
+
+  /** Create the matching structure in the twin province, if the board has
+   *  one and it isn't already mirrored — there's no stat to copy (a
+   *  structure is just kind + seat, and seat is fixed by tile position), so
+   *  "mirror" here means "make sure one exists," not "copy values over." */
+  function mirrorStructure(id) {
+    const built = S.built.structure(id);
+    const src = findStructureDef(id);
+    if (!built || !src || built.twin) return;
+    const p = S.built.province(src.prov);
+    if (!p || !p.twin) return;
+    const m = F().mirrorLocal(S.built.block, src.lc, src.lr);
+    const existingIds = (S.def.structures || []).map(s => s.id);
+    const id2 = F().pickId(src.kind + '-' + p.twin, existingIds);
+    S.def.structures.push({ id: id2, prov: p.twin, lc: m.lc, lr: m.lr, kind: src.kind, seat: 1 - src.seat });
     markDirty();
     rebuild();
   }
@@ -578,11 +634,12 @@
     markDirty();
     reset3D(); // adding a territory changes which tiles are land vs. water — the 3D scene's instance layout is baked in at create() and can't be patched in place, see reset3D()'s own comment
     rebuild();
-    select({ kind: 'province', id });
+    select({ kind: 'tile', c: sc * block.w + clc, r: sr * block.h + clr });
   }
 
   function removeTerritory(id) {
     S.def.cities = S.def.cities.filter(c => c.prov !== id);
+    S.def.structures = (S.def.structures || []).filter(s => s.prov !== id);
     S.def.provinces = S.def.provinces.filter(p => p.id !== id);
     markDirty();
     reset3D(); // same reasoning as addTerritory — the freed slot becomes water
@@ -618,6 +675,60 @@
     rebuild();
   }
 
+  // ── tile inspector ────────────────────────────────────────────────────
+  // Every click resolves here — a city, a structure, open ground inside a
+  // territory, or open water all render through this one function, so a tile
+  // is inspected the same way no matter what (if anything) is on it.
+  function tileInspector(c, r) {
+    const coord = '<span class="mono">(' + c + ', ' + r + ')</span>';
+    const prov = F().territoryAt(S.built, c, r);
+    const city = cityAtTile(c, r);
+    const structure = structureAtTile(c, r);
+
+    if (city) {
+      const isNeutral = city.seat === undefined || city.seat === null;
+      return '<div><div class="section-title">City — ' + escapeHtml(city.name) + ' ' + coord + '</div>' +
+        field('Name', 'text', 'name', city.name) +
+        '<div class="row2">' + field('Col (lc)', 'number', 'lc', city.lc) + field('Row (lr)', 'number', 'lr', city.lr) + '</div>' +
+        fieldSelect('seat', isNeutral ? 'neutral' : String(city.seat), [
+          ['neutral', 'Neutral'], ['0', 'Seat 0'], ['1', 'Seat 1'],
+        ]) +
+        field('Wealth', 'number', 'wealth', city.wealth, '0.1') +
+        (isNeutral ? field('Garrison', 'number', 'garrison', city.garrison || 0) : '') +
+        '<div style="display:flex; gap:8px; margin-top:6px;">' +
+        '<button class="btn" id="mirrorBtn"' + (city.twin ? '' : ' disabled') + '>Mirror to twin</button>' +
+        '<button class="btn danger" id="deleteBtn">Clear tile</button>' +
+        '</div></div>';
+    }
+
+    if (structure) {
+      const kit = F().STRUCTURE_KIT[structure.kind];
+      const canMirror = !structure.twin && !!F().territoryAt(S.built, c, r).twin;
+      return '<div><div class="section-title">Structure — ' + escapeHtml(kit.label) + ' ' + coord + '</div>' +
+        '<div class="field"><label>Seat</label><div class="mono" style="padding:7px 0 3px;">SEAT ' + structure.seat + '</div></div>' +
+        '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">Seat is fixed by tile position — clear and re-place to move it.</div>' +
+        '<div style="display:flex; gap:8px;">' +
+        '<button class="btn" id="mirrorStructureBtn"' + (canMirror ? '' : ' disabled') + '>Mirror to twin</button>' +
+        '<button class="btn danger" id="deleteStructureBtn">Clear tile</button>' +
+        '</div></div>';
+    }
+
+    if (prov) {
+      const armed = S.confirmRemove === prov.id;
+      const n = prov.cities.length;
+      return '<div><div class="section-title">Open ground ' + coord + '</div>' +
+        '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">Territory: ' + escapeHtml(prov.name) +
+        '. No structure here — use Place below, then click this tile.</div>' +
+        '<button class="btn danger' + (armed ? ' on' : '') + '" id="removeTerritoryBtn" style="width:100%;">' +
+        (armed ? 'Confirm — ' + n + (n === 1 ? ' city' : ' cities') + ' removed' : 'Remove territory') +
+        '</button></div>';
+    }
+
+    return '<div><div class="section-title">Open water ' + coord + '</div>' +
+      '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">Open ground, not part of any territory. Renders as water.</div>' +
+      '<button class="btn primary" id="addTerritoryBtn" style="width:100%;">Add territory here</button></div>';
+  }
+
   // ── panel rendering ───────────────────────────────────────────────────
   function renderPanel() {
     const parts = [];
@@ -644,57 +755,18 @@
       );
     }
 
-    if (S.sel && S.sel.kind === 'city') {
-      const c = findCityDef(S.sel.id);
-      const built = S.built.city(S.sel.id);
-      if (c && built) {
-        const isNeutral = c.seat === undefined || c.seat === null;
-        parts.push('<div><div class="section-title">City — ' + escapeHtml(c.name) + '</div>');
-        parts.push(field('Name', 'text', 'name', c.name));
-        parts.push('<div class="row2">' + field('Col (lc)', 'number', 'lc', c.lc) + field('Row (lr)', 'number', 'lr', c.lr) + '</div>');
-        parts.push(fieldSelect('seat', isNeutral ? 'neutral' : String(c.seat), [
-          ['neutral', 'Neutral'], ['0', 'Seat 0'], ['1', 'Seat 1'],
-        ]));
-        parts.push(field('Wealth', 'number', 'wealth', c.wealth, '0.1'));
-        if (isNeutral) parts.push(field('Garrison', 'number', 'garrison', c.garrison || 0));
-        parts.push(
-          '<div style="display:flex; gap:8px; margin-top:6px;">' +
-          '<button class="btn" id="mirrorBtn"' + (built.twin ? '' : ' disabled') + '>Mirror to twin</button>' +
-          '<button class="btn danger" id="deleteBtn">Delete</button>' +
-          '</div></div>'
-        );
-      }
-    } else if (S.sel && S.sel.kind === 'province') {
-      const p = findProvDef(S.sel.id);
-      if (p) {
-        // Command-console copy convention (CLAUDE.md): a destructive action
-        // states its consequence in the button itself, armed by a first
-        // click, rather than a native confirm() dialog — which, besides
-        // being off-style here, is a real trap for browser automation: a
-        // blocking native dialog freezes the page to any further scripted
-        // input with no way back except closing the tab.
-        const built = S.built.province(p.id);
-        const n = built ? built.cities.length : 0;
-        const armed = S.confirmRemove === p.id;
-        parts.push('<div><div class="section-title">Territory — ' + escapeHtml(p.name) + '</div>' +
-          '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">Rename it above. Add cities with "Add City", then click open ground inside it.</div>' +
-          '<button class="btn danger' + (armed ? ' on' : '') + '" id="removeTerritoryBtn" style="width:100%;">' +
-          (armed ? 'Confirm — ' + n + (n === 1 ? ' city' : ' cities') + ' removed' : 'Remove territory') +
-          '</button></div>');
-      }
-    } else if (S.sel && S.sel.kind === 'slot') {
-      parts.push(
-        '<div><div class="section-title">Empty slot — (' + S.sel.sc + ', ' + S.sel.sr + ')</div>' +
-        '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">Open ground, not part of any territory. Renders as water.</div>' +
-        '<button class="btn primary" id="addTerritoryBtn" style="width:100%;">Add territory here</button></div>'
-      );
+    if (S.sel && S.sel.kind === 'tile') {
+      parts.push(tileInspector(S.sel.c, S.sel.r));
     } else {
-      parts.push('<div id="emptyPanel">Click a city or territory to edit it, or empty ground to add a new territory.</div>');
+      parts.push('<div id="emptyPanel">Click any tile to inspect it — a city, a structure, open ground inside a territory, or open water.</div>');
     }
 
-    parts.push('<div>' +
-      '<button class="btn' + (S.addMode ? ' on' : '') + '" id="addModeBtn" style="width:100%;">' +
-      (S.addMode ? 'Click open ground to place…' : 'Add City') + '</button></div>');
+    parts.push('<div><div class="section-title">Place</div><div style="display:flex; flex-direction:column; gap:6px;">' +
+      PLACE_KINDS.map(([kind, label]) =>
+        '<button class="btn' + (S.placeMode === kind ? ' on' : '') + '" data-place-kind="' + kind + '" style="width:100%;">' +
+        (S.placeMode === kind ? 'Click a valid tile…' : label) + '</button>'
+      ).join('') +
+      '</div></div>');
 
     parts.push('<div><div class="section-title">Symmetry</div><div id="symList">' +
       (S.symmetry.ok
@@ -736,35 +808,56 @@
       });
     });
 
-    const addModeBtn = document.getElementById('addModeBtn');
-    if (addModeBtn) addModeBtn.addEventListener('click', () => { S.addMode = !S.addMode; renderPanel(); });
+    panel.querySelectorAll('[data-place-kind]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const kind = btn.getAttribute('data-place-kind');
+        S.placeMode = S.placeMode === kind ? null : kind;
+        renderPanel();
+      });
+    });
+
+    // The tile currently selected — most handlers below act on whatever's on
+    // it right now, re-derived fresh rather than cached, since an edit can
+    // change what's on a tile without changing the selection itself.
+    const tile = S.sel && S.sel.kind === 'tile' ? S.sel : null;
+    const cityHere = tile && cityAtTile(tile.c, tile.r);
+    const structureHere = tile && structureAtTile(tile.c, tile.r);
 
     const mirrorBtn = document.getElementById('mirrorBtn');
-    if (mirrorBtn) mirrorBtn.addEventListener('click', () => S.sel && mirrorCity(S.sel.id));
+    if (mirrorBtn) mirrorBtn.addEventListener('click', () => cityHere && mirrorCity(cityHere.id));
 
     const deleteBtn = document.getElementById('deleteBtn');
-    if (deleteBtn) deleteBtn.addEventListener('click', () => S.sel && deleteCity(S.sel.id));
+    if (deleteBtn) deleteBtn.addEventListener('click', () => cityHere && deleteCity(cityHere.id));
+
+    const mirrorStructureBtn = document.getElementById('mirrorStructureBtn');
+    if (mirrorStructureBtn) mirrorStructureBtn.addEventListener('click', () => structureHere && mirrorStructure(structureHere.id));
+
+    const deleteStructureBtn = document.getElementById('deleteStructureBtn');
+    if (deleteStructureBtn) deleteStructureBtn.addEventListener('click', () => structureHere && deleteStructure(structureHere.id));
 
     const removeTerritoryBtn = document.getElementById('removeTerritoryBtn');
     if (removeTerritoryBtn) removeTerritoryBtn.addEventListener('click', () => {
-      if (!S.sel || S.sel.kind !== 'province') return;
-      if (S.confirmRemove === S.sel.id) {
-        removeTerritory(S.sel.id); // removeTerritory() -> select(null) already clears confirmRemove
+      const prov = tile && F().territoryAt(S.built, tile.c, tile.r);
+      if (!prov) return;
+      if (S.confirmRemove === prov.id) {
+        removeTerritory(prov.id); // removeTerritory() -> select(null) already clears confirmRemove
       } else {
-        S.confirmRemove = S.sel.id;
+        S.confirmRemove = prov.id;
         renderPanel(); // arm it — a second click on the now-relabelled button actually removes
       }
     });
 
     const addTerritoryBtn = document.getElementById('addTerritoryBtn');
     if (addTerritoryBtn) addTerritoryBtn.addEventListener('click', () => {
-      if (S.sel && S.sel.kind === 'slot') addTerritory(S.sel.sc, S.sel.sr);
+      if (!tile) return;
+      const block = S.built.block;
+      addTerritory(Math.floor(tile.c / block.w), Math.floor(tile.r / block.h));
     });
 
-    if (S.sel && S.sel.kind === 'city') {
+    if (cityHere) {
       panel.querySelectorAll('[data-city-field]').forEach(inp => {
         inp.addEventListener('change', () => {
-          const c = findCityDef(S.sel.id);
+          const c = findCityDef(cityHere.id);
           if (!c) return;
           const key = inp.getAttribute('data-city-field');
           if (key === 'seat') {
@@ -774,6 +867,11 @@
             c.name = inp.value;
           } else if (key === 'lc' || key === 'lr') {
             c[key] = Math.max(0, Math.round(Number(inp.value) || 0));
+            // Selection is by tile, not city id — follow the city to its new
+            // tile (using the still-current built province geometry) so the
+            // panel doesn't go on inspecting the now-vacated old tile.
+            const p = S.built.province(c.prov);
+            if (p) S.sel = { kind: 'tile', c: p.c0 + c.lc, r: p.r0 + c.lr };
           } else if (key === 'wealth') {
             c.wealth = Math.max(0, Number(inp.value) || 0);
           } else if (key === 'garrison') {

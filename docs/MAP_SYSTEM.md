@@ -66,6 +66,7 @@ D1 — same shape either way, see [ARCHITECTURE.md](ARCHITECTURE.md)).
 | `starts` | `[{ seat, territory }]` | no | Which territory each seat's tiles are seeded from at match start (`seedOwners()`) |
 | `provinces` | `[Province]` | yes | One entry per **occupied** slot — see below. Omitted slots are gaps (future water) |
 | `cities` | `[City]` | yes | One entry per city, referencing a province by id |
+| `structures` | `[Structure]` | no | Pre-placed starting industry/barracks — see below |
 
 ### `Province` (an entry in `provinces`)
 
@@ -89,6 +90,37 @@ Everything else on a province (`w`, `h`, `c0`, `r0`, `index`, `cities`, `twin`, 
 | `wealth` | number | yes | Coin/second this city's capital pays while held — see [MECHANICS.md](MECHANICS.md) |
 | `seat` | `0 \| 1 \| null` | one of `seat`/`garrison` | Starting owner. Present = seat-owned from kickoff |
 | `garrison` | int | one of `seat`/`garrison` | Starting neutral troop count. Present = neutral at kickoff. **A city has one or the other, never both** — `build()` derives `garrison: 0` for a seated city and `owner: seat` either way |
+
+### `Structure` (an entry in `structures`)
+
+Pre-placed starting industry/barracks — added 2026-09-12 alongside the map editor's tile-inspector
+rework (see [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md)). Unlike a city, a structure has no stats of its
+own — just where it is, what kind, and who starts holding it.
+
+| Field | Type | Required | Meaning |
+|---|---|---|---|
+| `id` | string | yes | Unique slug |
+| `prov` | string | yes | The owning province's `id` |
+| `lc`, `lr` | int | yes | Local tile position within the province, same convention as `City` |
+| `kind` | string | yes | One of `FPMap.AUTHORABLE_KINDS` — today `industry` or `barracks`. `build()` throws on any other kind, or on a kind that exists in `STRUCTURE_KIT` but isn't marked `authorable` (`capital`/`city` — those come from `cities` instead) |
+| `seat` | `0 \| 1` | yes | Starting owner. Unlike a city, there is no neutral structure — the sim has no representation for one (see below) |
+
+**One structure per tile, and a structure's `seat` must match that tile's actual kickoff owner.**
+`build()` doesn't enforce the seat-matches-ownership rule itself (it has no opinion on `starts`), but
+`sim.create()` does: it skips seeding any structure whose `seat` doesn't equal
+`seedOwners(map)[tileKey]` at that tile, and `sim.step()` would delete it on the very next capture
+tick anyway if it somehow got in. The map editor only ever lets you place one on a tile it can prove
+is inside a `starts` territory owned by the seat you're placing as — see `canPlaceStructure()` in
+`editor.html`. This is also why there's no such thing as a neutral pre-placed structure: `S.barracks`/
+`S.industry` (see [MECHANICS.md](MECHANICS.md)) are always keyed to a seat, never `null`.
+
+A capital tile can't also carry an authored structure — the capital city already occupies it (one
+structure per tile), and functionally it already gets its own auto-seeded barracks at match start
+regardless (`sim.create()`'s home-capital loop, unrelated to this field).
+
+Twin-matching for `duel` symmetry works exactly like a city's: a structure's twin is whichever
+structure of the *same kind* sits at the mirrored `(lc, lr)` in the twin province; `symmetry()` flags
+a missing twin or a twin whose seat isn't the opposite one.
 
 A city at the province's exact centre tile (`lc, lr === centreTile`'s local equivalent) is that
 territory's **capital** — this isn't a separate field, it's positional (`capitalOf()` finds the city
@@ -174,13 +206,21 @@ D1 is the source of truth from that point on. See [ARCHITECTURE.md](ARCHITECTURE
 A standalone page (`public/editor.html`, plain JS — not the `x-dc`/React-based framework the rest of
 the client uses), served at `editor.supremacy.live` off the same Worker/asset bundle. Lets a signed-in,
 authorized user (`EDITOR_USERS` in `worker.js` — currently one hardcoded account) load a board, rename
-or add/remove whole territories, grow/shrink the slot grid, add/edit/delete/mirror cities, see a live
-symmetry check for `duel`, and save back to D1. It's still hardcoded to the `duel` key with no board
-switcher.
+or add/remove whole territories, grow/shrink the slot grid, add/edit/delete/mirror cities and starting
+structures, see a live symmetry check for `duel`, and save back to D1. It's still hardcoded to the
+`duel` key with no board switcher.
+
+**Every click inspects the exact tile clicked** (2026-09-12) — a city, a structure, open ground inside
+a territory, or open water all render through one `tileInspector()` path in `editor.html`, rather than
+a click resolving to three different selection shapes depending on content the way it used to. This is
+also what made the 3D camera's selection-lock (see [RENDERING.md](RENDERING.md)) start engaging
+consistently for *any* tile, not just a city — the overlay's `sel` field is populated the same way
+regardless of what's on the tile.
 
 **Both renderers are fully wired up and interactive**, toggled via a header button (2026-09-12,
-`ba103ce`) — the 2D canvas and the real 3D scene both support click-to-select, Add-City-mode, and
-add/remove-territory directly, not just as a passive preview. See [RENDERING.md](RENDERING.md).
+`ba103ce`) — the 2D canvas and the real 3D scene both support click-to-select, a data-driven placement
+toolbar (Add City / Add Industry / Add Barracks — grows automatically with `FPMap.AUTHORABLE_KINDS`),
+and add/remove-territory directly, not just as a passive preview. See [RENDERING.md](RENDERING.md).
 
 **This is still the piece growing to match the standard above** — see
 [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md) for what's left (a board switcher to reach `solo`/`grand`,

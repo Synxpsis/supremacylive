@@ -40,6 +40,18 @@ as of 2026-09-12 (`ba103ce`, `a4c2834`); the rest are still open.
   removing a territory (or growing the grid without filling every new slot) leaves genuine empty
   ground, which the 3D view already renders as water and the 2D view already renders as a dashed "+"
   placeholder — no separate "water mode" was needed. ✅ **Done, `a4c2834`** — closes gaps 1 and 2 below.
+- **Pre-place starting industry/barracks, and inspect any single tile.** Every click — a city, a
+  structure, open ground inside a territory, or open water — now resolves to one tile inspector for
+  that exact tile, instead of a click meaning three different things depending on content (city select
+  vs. whole-territory select vs. slot select). A data-driven placement toolbar (Add City / Add Industry
+  / Add Barracks) lets you author non-capital structures directly into the board definition's new
+  `structures` array (see [MAP_SYSTEM.md](MAP_SYSTEM.md)), seeded into the match by `sim.create()`
+  alongside the existing auto-seeded home-capital barracks. The structure kit
+  (`FPMap.STRUCTURE_KIT`/`AUTHORABLE_KINDS`) is the single table driving both the piece-rendering
+  numbers and which kinds the editor's placement toolbar offers, so a future kind (naval base, missile
+  silo, airbase, ...) is one table entry, not new editor branching — groundwork for the naval/air
+  content direction, not that content itself; no water-terrain or naval/air data model exists yet (gap
+  8 below is unchanged). ✅ **Done, 2026-09-12.**
 
 ## What it can't do — the actual gap list
 

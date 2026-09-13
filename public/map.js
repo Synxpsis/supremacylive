@@ -215,14 +215,20 @@
    * can't drift between the 2D and 3D views the way two independent copies
    * eventually would. See docs/RENDERING.md. */
   const STRUCTURE_KIT = {
-    barracks: { fp: 0.54, h: 0.40 },
-    industry: { fp: 0.74, h: 0.42 },
-    capital:  { fp: 0.66, h: 0.72 },
-    city:     { fp: 0.44, h: 0.26 },
+    barracks: { fp: 0.54, h: 0.40, label: 'Barracks', authorable: true },
+    industry: { fp: 0.74, h: 0.42, label: 'Industry', authorable: true },
+    capital:  { fp: 0.66, h: 0.72, label: 'Capital', authorable: false },
+    city:     { fp: 0.44, h: 0.26, label: 'City', authorable: false },
   };
   /* One structure wins per tile when more than one kind could occupy it in
    * the same paint/update pass — higher rank takes precedence. */
   const STRUCTURE_RANK = { capital: 3, industry: 2, barracks: 1, city: 0 };
+  /* Kinds a board definition may place via `structures` (see build() below) —
+   * `capital`/`city` come from the `cities` array instead. One source of
+   * truth for the editor's placement tools, so a future kind (naval base,
+   * missile silo, airbase, ...) needs only a STRUCTURE_KIT entry here, not a
+   * new editor code path. */
+  const AUTHORABLE_KINDS = Object.keys(STRUCTURE_KIT).filter(k => STRUCTURE_KIT[k].authorable);
 
   /** Names offered to newly created provinces and cities, in order. */
   const PROVINCE_NAMES = ['Verrand', 'Kolstig', 'Aumère', 'Dunmar', 'Ilmarsk', 'Craithe',
@@ -580,7 +586,7 @@
     const provinces = (def.provinces || []).map((p, i) => ({
       ...p, index: i, w: block.w, h: block.h,
       c0: p.sc * block.w, r0: p.sr * block.h,
-      cities: [],
+      cities: [], structures: [],
     }));
     const byId = Object.fromEntries(provinces.map(p => [p.id, p]));
     const bySlot = new Map(provinces.map(p => [p.sc + ',' + p.sr, p]));
@@ -616,6 +622,31 @@
       c.twin = t ? t.id : null;
     }
 
+    // Pre-placed starting structures (industry/barracks) — see
+    // docs/MAP_SYSTEM.md. Unlike a city, a structure's seat is authored
+    // explicitly and must be one of the two seats; sim.create() additionally
+    // requires it to match the tile's actual kickoff owner (map.starts), so
+    // an authoring mistake never silently appears for even one frame.
+    const structures = (def.structures || []).map((s, i) => {
+      const p = byId[s.prov];
+      if (!p) throw new Error('structure ' + s.id + ' references unknown province ' + s.prov);
+      const kit = STRUCTURE_KIT[s.kind];
+      if (!kit || !kit.authorable) throw new Error('invalid structure kind ' + s.kind);
+      if (s.seat !== 0 && s.seat !== 1) throw new Error('structure ' + s.id + ' needs seat 0 or 1');
+      const c = p.c0 + s.lc, r = p.r0 + s.lr;
+      const structure = { ...s, index: i, provIndex: p.index, c, r };
+      p.structures.push(structure);
+      return structure;
+    });
+
+    // Twin structure: mirrored local tile inside the twin province, same kind.
+    for (const s of structures) {
+      const p = byId[s.prov];
+      const m = mirrorLocal(block, s.lc, s.lr);
+      const t = structures.find(o => o.prov === p.twin && o.kind === s.kind && o.lc === m.lc && o.lr === m.lr);
+      s.twin = t ? t.id : null;
+    }
+
     // March matrix, in tile space. Symmetric, so both halves are stored.
     const routes = cities.map(a => cities.map(b => {
       const d = Math.hypot(a.tc - b.tc, a.tr - b.tr);
@@ -624,10 +655,12 @@
 
     return {
       ...def, iso: ISO, tuning: TUNING, block, slots, gridW, gridH,
-      provinces, cities, routes,
+      provinces, cities, structures, routes,
       province: id => byId[id],
       provinceAtSlot: (sc, sr) => bySlot.get(sc + ',' + sr) || null,
       city: id => cities.find(c => c.id === id),
+      structure: id => structures.find(s => s.id === id),
+      structureAt: (c, r) => structures.find(s => s.c === c && s.r === r) || null,
       route: (a, b) => routes[cities.findIndex(c => c.id === a)][cities.findIndex(c => c.id === b)],
     };
   }
@@ -653,6 +686,12 @@
       const want = a.seat === null ? null : 1 - a.seat;
       if (b.seat !== want) issues.push(`${a.name} is ${a.seat === null ? 'neutral' : 'seat ' + a.seat} but ${b.name} is ${b.seat === null ? 'neutral' : 'seat ' + b.seat}`);
     }
+    for (const a of (m.structures || [])) {
+      const b = a.twin && m.structure(a.twin);
+      const label = (STRUCTURE_KIT[a.kind] && STRUCTURE_KIT[a.kind].label) || a.kind;
+      if (!b) { issues.push(`${label} at ${a.prov} (${a.lc},${a.lr}) has no counterpart across the board`); continue; }
+      if (b.seat !== 1 - a.seat) issues.push(`${label} at ${a.prov} is seat ${a.seat} but its twin is seat ${b.seat}`);
+    }
     return { ok: issues.length === 0, pairs: Math.floor(m.cities.length / 2), issues };
   }
 
@@ -671,7 +710,7 @@
     centreTile, capitalOf, mirrorTile, seedOwners,
     isRoad, roadTiles, roadNeighbours, roadPath, travelPath,
     DEFAULT_BLOCK, DEFAULT_SLOTS, PROVINCE_NAMES, CITY_NAMES,
-    STRUCTURE_KIT, STRUCTURE_RANK,
+    STRUCTURE_KIT, STRUCTURE_RANK, AUTHORABLE_KINDS,
     twinSlot, mirrorLocal, pickName, pickId,
   };
 });

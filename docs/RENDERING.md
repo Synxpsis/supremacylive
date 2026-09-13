@@ -71,7 +71,10 @@ structures than tiles). One structure per tile, matching the sim's own one-struc
 **Shared with the 2D renderer** via `FPMap.STRUCTURE_KIT`/`STRUCTURE_RANK` — both `board-render.js`
 and `board-render-3d.js` read the same table (`map.js`) rather than keeping their own copies, so a kit
 change can't drift between the two views. (This used to be two independently hardcoded copies; hoisted
-2026-09-12, see [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md).)
+2026-09-12, see [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md).) Each entry also carries a `label` and an
+`authorable` flag (2026-09-12) — only renderer-relevant to the extent that `authorable` marks
+`capital`/`city` as *not* placeable via the board's `structures` array (they come from `cities`
+instead); the renderers themselves only ever read `fp`/`h`.
 
 Piece colour is the owning seat's faction colour, or `tokens().neutral` for an unowned city.
 

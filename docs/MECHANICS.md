@@ -68,6 +68,12 @@ captured inside a territory whose capital hasn't fallen yet is still contested, 
 both check `territoryOwner(M, S.owners, p) === seat`, returning `'territory not secured'` otherwise.
 (This was a bug until the fix landed — see [KNOWN_ISSUES.md](KNOWN_ISSUES.md) history.)
 
+A board can also **pre-seed** non-capital barracks/industry at kickoff via its `structures` field (see
+[MAP_SYSTEM.md](MAP_SYSTEM.md)) — `sim.create()` folds these into `barracks`/`industry` the same way it
+already auto-seeds a barracks under every home capital, and from then on they're indistinguishable from
+a player-built one (same razing-on-capture rule above). Authored via the map editor, not a player
+command.
+
 ## Commands
 
 The complete set of player-issued actions — a human and the AI call exactly the same four functions,
