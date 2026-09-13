@@ -33,12 +33,13 @@ version of what's still open there:
 - `--sl-focus-ring` isn't retrofitted onto every interactive element (nothing violates the
   accessibility floor — no bare `outline: none` — but the polished custom ring isn't wired up broadly).
 
-## Fixed this session (2026-09-11 – 2026-09-12)
+## Fixed this session (2026-09-11 – 2026-09-13)
 
 Kept here for traceability — these were real bugs, now resolved on `main`:
 
 | Issue | Fix | Commit |
 |---|---|---|
+| `editor.html` occasionally threw "Cannot read properties of undefined (reading 'create')" in the header on first login, self-resolving on a later repaint | Race between `board-render-3d.js`'s ES-module load (fetches `three`/`OrbitControls` from a CDN) and `boot()`'s same-origin auth/map fetches — worst for a returning user with `'3d'` saved as their render-mode preference. `ensure3D()` guarded the `S.built`-not-ready race but not `self.FPRender3D` not being set yet. Now waits for a `fp-render-3d-ready` event instead of assuming, mirroring the guard `game.html`'s boot polling already had for the same race. Found during design-system commit review, not something the pre-placed-structures work touched. | `2269007` |
 | 3D troop-count labels froze on screen at their last position after a march completed, ignoring all further camera movement | A `CSS2DObject` nested under a removed parent (`sphere.remove(label)` was missing before `scene.remove(sphere)`) never got its DOM node cleaned up — Three only fires the removal event on the object removed directly, not recursively. See [RENDERING.md](RENDERING.md). | `e6101e5` |
 | 3D garrison/troop/march labels rendered dead-centered on their tile/piece/sphere instead of offset above it | `CSS2DRenderer` overwrites `element.style.transform` inline every frame from the object's `.center`, silently overriding the CSS `transform` rule each label declared for its offset. Switched to `CSS2DObject.center`. | `e6101e5` |
 | 3D camera had no selection-centering or lock — free to pan/rotate away from a tile mid-order | Selecting/arming a tile now recentres the orbit target and freezes rotate/pan (zoom stays live) until the selection clears. | `e6101e5` |
