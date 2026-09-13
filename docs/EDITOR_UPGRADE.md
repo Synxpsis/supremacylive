@@ -52,6 +52,19 @@ as of 2026-09-12 (`ba103ce`, `a4c2834`); the rest are still open.
   silo, airbase, ...) is one table entry, not new editor branching — groundwork for the naval/air
   content direction, not that content itself; no water-terrain or naval/air data model exists yet (gap
   8 below is unchanged). ✅ **Done, 2026-09-12.**
+- **Clear the whole board, and a free-orbiting 3D camera while authoring.** Two related fixes from live
+  usage: (1) the 3D view's camera lock — recentre-and-freeze on whatever's selected, borrowed as-is from
+  `game.html` — engaged on nearly every click here (since every click selects *something*, even open
+  water), making free navigation fight the lock constantly; `board-render-3d.js`'s `create()` now takes
+  a `selectionLock: false` option the editor passes and the game doesn't, so this view always orbits
+  freely (see [RENDERING.md](RENDERING.md)). (2) A city's *piece* in the 3D view was keyed off the board
+  object handed to `create()` once at scene setup, not read fresh each frame the way ownership/garrisons
+  already were — deleting or adding a city left a stale (or missing) piece on screen until an unrelated
+  action happened to force a full scene rebuild, while the side panel and hit-testing were already
+  correct underneath. `update()` now takes the live city list as `o.cities` instead. Also added a
+  **"Clear board" action** (`Board actions` section, two-click confirm like Remove Territory) that wipes
+  every city and structure but keeps the territories/grid, for restarting authoring from a clean slate.
+  ✅ **Done, 2026-09-13.**
 
 ## What it can't do — the actual gap list
 

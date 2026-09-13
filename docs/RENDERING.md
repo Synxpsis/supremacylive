@@ -104,6 +104,15 @@ uses. Selecting or arming a tile recentres the orbit target on it and freezes
 does on a click outside the board. This is a genuine camera lock, not a suggestion: while a tile is
 selected, drag gestures on the board itself cannot pan or spin the camera away from it.
 
+**Opt-out via `create(canvas, M, { selectionLock: false })`** (2026-09-13) — `game.html` needs this lock
+(a player mid-order shouldn't be able to spin away from the tile they just committed to), but
+`public/editor.html` doesn't pass an options object at all here, meaning it never opts in: *every*
+click there resolves to a tile-inspector selection (a city, a structure, open ground, or open water —
+see [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md)), so the lock would otherwise engage almost constantly and
+fight free camera navigation while authoring a board. Default (no `opts`, or `selectionLock` anything
+but `false`) preserves the original always-on behaviour, so `game.html`'s existing `create(canvas, M)`
+call is untouched.
+
 ### Hit-testing
 
 A plain ray/ground-plane intersection (`tileAt(mx, my)`), correct at any camera angle — simpler than
@@ -138,6 +147,19 @@ drives):
 `armed`, `multi`, `marchPath`, `marchLabelText` — see `board-render-3d.js`'s own header comment for the
 authoritative list; it's the same shape `board-render.js`'s `board()` function takes, deliberately, so
 neither renderer has bespoke input wiring in `game.html`.
+
+**`o.cities` (optional, 2026-09-13)** — everything else in `o` is read fresh every `update()` call, but
+the city/capital piece loop originally read `M.cities` instead: the list `create()` was first handed,
+closed over forever. Fine for `game.html` (a match's cities never change after kickoff — only
+*ownership* does, and that already flowed live through `o.owners`), but wrong for the map editor, where
+adding/deleting/moving a city is a normal edit that doesn't otherwise need a full scene rebuild
+(`reset3D()` — see [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md) — is reserved for land/water-layout changes,
+since only the ground/water tiles are baked into a fixed-instance `InstancedMesh` at `create()` time;
+individual structure pieces are plain `Mesh`es added/removed freely, so no such limit applies to them).
+Without `o.cities`, a deleted city's piece kept rendering — visually present with no way to select it,
+since hit-testing and the side panel both read the live, already-correct board — until some unrelated
+action happened to call `reset3D()`. `editor.html`'s `overlay()` now passes `S.built.cities` here every
+frame; `game.html` doesn't pass it, so `update()` falls back to the original `M.cities`, unchanged.
 
 ## 2D isometric renderer — `public/board-render.js` (`FPRender`)
 
