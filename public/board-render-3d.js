@@ -72,8 +72,16 @@ function labelDiv(text, cls) {
 }
 
 /** @param canvas the WebGL canvas element (sized by the caller)
- *  @param M      built board from FPMap.build — same input board-render.js takes */
-export function create(canvas, M) {
+ *  @param M      built board from FPMap.build — same input board-render.js takes
+ *  @param opts.selectionLock  Recentre the orbit target on whatever's selected
+ *    and freeze rotate/pan until it clears (default true — game.html relies on
+ *    this so a player can't spin away from a tile they just committed to
+ *    mid-order). editor.html passes false: it treats a click as "inspect this
+ *    tile," not "commit to it," and every click there selects *something*
+ *    (even open water), so this lock would otherwise fire almost constantly
+ *    and fight free camera navigation while authoring a board. */
+export function create(canvas, M, opts = {}) {
+  const selectionLock = opts.selectionLock !== false;
   const F = self.FPMap;
   const gridW = M.gridW, gridH = M.gridH;
   const boardCenter = new THREE.Vector3(gridW / 2, 0, gridH / 2);
@@ -318,9 +326,15 @@ export function create(canvas, M) {
       if (cur && PIECE_RANK[cur.kind] >= PIECE_RANK[kind]) return;
       wanted.set(key, { c, r, kind, own });
     };
+    // o.cities lets a caller whose city list can change after create() (the
+    // map editor — add/delete/move a city without a full scene rebuild) hand
+    // in the live list each frame; game.html never passes this (a match's
+    // cities are fixed for its whole lifetime) and gets the original,
+    // create()-time M.cities, same as before this option existed.
+    const liveCities = o.cities || M.cities;
     for (const p of M.provinces) {
-      const cap = F.capitalOf(M, p);
-      for (const city of M.cities) {
+      const cap = F.capitalOf({ cities: liveCities }, p);
+      for (const city of liveCities) {
         if (city.prov !== p.id) continue;
         const c = p.c0 + city.lc, r = p.r0 + city.lr;
         put(c, r, cap && cap.id === city.id ? 'capital' : 'city', owners[F.tileKey(c, r)] ?? null);
@@ -401,7 +415,7 @@ export function create(canvas, M) {
     // zoom stays live. The lock lifts the instant nothing is selected, which
     // game.html already arranges by clearing sel/armed on a click outside
     // the board.
-    const focus = o.sel || o.armed || null;
+    const focus = selectionLock ? (o.sel || o.armed || null) : null;
     if (focus) {
       controls.enableRotate = false;
       controls.enablePan = false;

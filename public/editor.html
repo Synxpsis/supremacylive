@@ -174,6 +174,7 @@
     sel: null,         // { kind: 'tile', c, r } — every click inspects the exact tile, whatever's on it
     placeMode: null,   // null | 'city' | 'industry' | 'barracks' — active placement tool
     confirmRemove: null, // province id currently armed for a two-click "remove territory" — see select()
+    confirmClearBoard: false, // armed for a two-click "clear board" — see select()
     boardError: null, // inline board-resize rejection message — see resizeSlots()
     cam: { zoom: 1, panX: 0, panY: 0 },
     saving: false,
@@ -333,6 +334,11 @@
       owners, garrisons, sel, labels: true, slots: true, seatColour,
       barracks, industry, stacks: [], stackAt: () => null,
       armed: null, multi: null, marchPath: null, marchLabelText: null,
+      // Editing can add/delete/move a city without a full 3D scene rebuild
+      // (see reset3D()'s own comment on why territory/grid changes still
+      // need one but city changes don't) — board-render-3d.js's update()
+      // reads this instead of its own create()-time city list when present.
+      cities: S.built.cities,
     };
   }
 
@@ -374,7 +380,11 @@
     // 'fp-render-3d-ready' event fired once the module finishes loading
     // instead of crashing on self.FPRender3D.create.
     if (!self.FPRender3D) return null;
-    _r3d = self.FPRender3D.create(cv3d, S.built);
+    // selectionLock: false — every click here inspects a tile (even open
+    // water counts as a "selection"), so the game's lock-camera-on-select
+    // behaviour would otherwise engage almost constantly and fight free
+    // navigation while authoring a board. See board-render-3d.js's create().
+    _r3d = self.FPRender3D.create(cv3d, S.built, { selectionLock: false });
     return _r3d;
   }
 
@@ -538,7 +548,7 @@
   // province later) — an armed "confirm remove" is only ever live for the
   // uninterrupted panel render cycle that armed it, never left lying around
   // for a future, unrelated click to land on by surprise.
-  function select(sel) { S.sel = sel; S.confirmRemove = null; renderPanel(); paint(); }
+  function select(sel) { S.sel = sel; S.confirmRemove = null; S.confirmClearBoard = false; renderPanel(); paint(); }
 
   // ── edits ──────────────────────────────────────────────────────────────
   function markDirty() { S.dirty = true; saveStatus.textContent = 'Unsaved changes'; saveStatus.className = ''; }
@@ -655,6 +665,20 @@
     S.def.provinces = S.def.provinces.filter(p => p.id !== id);
     markDirty();
     reset3D(); // same reasoning as addTerritory — the freed slot becomes water
+    select(null);
+    rebuild();
+  }
+
+  /** Wipe every city and structure but keep the territories/grid as-is, so
+   *  authoring can restart from a clean slate without rebuilding the board's
+   *  shape. Leaves every province capital-less until re-authored — an
+   *  expected, if incomplete, mid-edit state, same as removeTerritory()
+   *  briefly leaving a freed slot. Doesn't touch land/water layout, so no
+   *  reset3D() is needed (mirrors deleteCity()/deleteStructure()). */
+  function clearBoard() {
+    S.def.cities = [];
+    S.def.structures = [];
+    markDirty();
     select(null);
     rebuild();
   }
@@ -780,6 +804,11 @@
       ).join('') +
       '</div></div>');
 
+    parts.push('<div><div class="section-title">Board actions</div>' +
+      '<button class="btn danger' + (S.confirmClearBoard ? ' on' : '') + '" id="clearBoardBtn" style="width:100%;">' +
+      (S.confirmClearBoard ? 'Confirm — all cities & structures removed' : 'Clear board (cities & structures)') +
+      '</button></div>');
+
     parts.push('<div><div class="section-title">Symmetry</div><div id="symList">' +
       (S.symmetry.ok
         ? '<div class="sym-ok">✓ Balanced</div>'
@@ -856,6 +885,16 @@
       } else {
         S.confirmRemove = prov.id;
         renderPanel(); // arm it — a second click on the now-relabelled button actually removes
+      }
+    });
+
+    const clearBoardBtn = document.getElementById('clearBoardBtn');
+    if (clearBoardBtn) clearBoardBtn.addEventListener('click', () => {
+      if (S.confirmClearBoard) {
+        clearBoard(); // clearBoard() -> select(null) already resets confirmClearBoard
+      } else {
+        S.confirmClearBoard = true;
+        renderPanel(); // arm it — a second click on the now-relabelled button actually clears
       }
     });
 
