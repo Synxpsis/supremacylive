@@ -206,9 +206,19 @@ D1 is the source of truth from that point on. See [ARCHITECTURE.md](ARCHITECTURE
 A standalone page (`public/editor.html`, plain JS — not the `x-dc`/React-based framework the rest of
 the client uses), served at `editor.supremacy.live` off the same Worker/asset bundle. Lets a signed-in,
 authorized user (`EDITOR_USERS` in `worker.js` — currently one hardcoded account) load a board, rename
-or add/remove whole territories, grow/shrink the slot grid, add/edit/delete/mirror cities and starting
-structures, see a live symmetry check for `duel`, and save back to D1. It's still hardcoded to the
-`duel` key with no board switcher.
+or add/remove whole territories, grow/shrink the slot grid **and each territory's own tile footprint**,
+add/edit/delete/mirror cities and starting structures, **assign which seat (or neutral) a whole
+territory starts owned by**, see a live symmetry check for `duel`, and save back to D1. It's still
+hardcoded to the `duel` key with no board switcher.
+
+**The editor is a game-master authoring tool, not a template picker** (2026-09-13) — a new territory or
+city is created with **no name at all** rather than a fantasy name drawn from `PROVINCE_NAMES`/
+`CITY_NAMES` (those pools are still in `map.js` and still used by the shipped `duel`/`solo` boards'
+static data — just no longer by anything the editor itself creates), and the "Clear board" action (see
+[EDITOR_UPGRADE.md](EDITOR_UPGRADE.md)) blanks every remaining territory's name too, not just its
+cities/structures. The GM names their own world; an editor-picked placeholder name is exactly the kind
+of stale leftover content "Clear board" exists to remove. A blank territory name is rendered as no
+label at all (2D) rather than an empty box — see `board-render.js`.
 
 **Every click inspects the exact tile clicked** (2026-09-12) — a city, a structure, open ground inside
 a territory, or open water all render through one `tileInspector()` path in `editor.html`, rather than
@@ -223,6 +233,13 @@ toolbar (Add City / Add Industry / Add Barracks — grows automatically with `FP
 and add/remove-territory directly, not just as a passive preview. See [RENDERING.md](RENDERING.md).
 
 **This is still the piece growing to match the standard above** — see
-[EDITOR_UPGRADE.md](EDITOR_UPGRADE.md) for what's left (a board switcher to reach `solo`/`grand`,
-editing a territory's own tile footprint (`block.w`/`h`) rather than just the slot grid, win
-condition/name/starts metadata) and the current plan for closing those gaps.
+[EDITOR_UPGRADE.md](EDITOR_UPGRADE.md) for what's left (a board switcher to reach `solo`/`grand`, win
+condition/name metadata) and the current plan for closing those gaps.
+
+**Editor-only UI vocabulary, not a data or plumbing change** (2026-09-13) — the editor's own UI text now
+says "Sector" where the rest of the project says "territory," and displays a seat as "Seat 1"/"Seat 2"
+instead of "Seat 0"/"Seat 1". Both are display-layer relabellings only: the board definition's own
+fields (`provinces`, `starts: [{ seat: 0|1, ... }]`, `cities[].seat`, etc.) are completely unchanged,
+still `0`/`1`, still called what this doc calls them. See [GLOSSARY.md](GLOSSARY.md) for the full
+three-way naming situation this creates (code says `province`, the match UI says `Territory`, the
+editor UI says `Sector`) and why it's flagged there as still-open plumbing work rather than resolved.

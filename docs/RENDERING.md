@@ -106,12 +106,24 @@ selected, drag gestures on the board itself cannot pan or spin the camera away f
 
 **Opt-out via `create(canvas, M, { selectionLock: false })`** (2026-09-13) — `game.html` needs this lock
 (a player mid-order shouldn't be able to spin away from the tile they just committed to), but
-`public/editor.html` doesn't pass an options object at all here, meaning it never opts in: *every*
-click there resolves to a tile-inspector selection (a city, a structure, open ground, or open water —
-see [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md)), so the lock would otherwise engage almost constantly and
-fight free camera navigation while authoring a board. Default (no `opts`, or `selectionLock` anything
-but `false`) preserves the original always-on behaviour, so `game.html`'s existing `create(canvas, M)`
-call is untouched.
+`public/editor.html` passes `selectionLock: false`: *every* click there resolves to a tile-inspector
+selection (a city, a structure, open ground, or open water — see [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md)),
+so the lock would otherwise engage almost constantly and fight free camera navigation while authoring a
+board. Default (no `opts`, or `selectionLock` anything but `false`) preserves the original always-on
+behaviour, so `game.html`'s existing `create(canvas, M)` call is untouched.
+
+**Grid-reference labels via `create(canvas, M, { gridLabels: true })`** (2026-09-13) — draws static
+`CSS2DObject` axis labels along the board's two edges once, at scene setup: spreadsheet-style column
+letters (A, B, C… Z, AA, AB…, so a board wider than 26 tiles stays unambiguous) at `(c + 0.5, 0.02, -0.6)`
+for each column, and row numbers (1, 2, 3…) at `(-0.6, 0.02, r + 0.5)` for each row — just outside the
+board's own tile area on both edges, never overlapping land. `editor.html` passes this (a GM referencing
+"the tile at C, 4" needs *some* coordinate system visible on the board itself); `game.html` doesn't —
+a live match has no use for it. Styled via a new `.fp3d-gridref` class, dimmer and smaller than a
+garrison count's `.fp3d-label` styling (a reference aid, not gameplay content) — each page that hosts
+the 3D scene defines its own CSS2D label classes (see `labelDiv()`'s own comment), and until this
+addition `editor.html` defined none of them at all: garrison counts there were rendering with no
+font/colour/background, relying on the page's dark `color-scheme` making default black text readable by
+accident rather than actually matching `game.html`'s `.fp3d-label` look. Both pages' CSS now agree.
 
 ### Hit-testing
 

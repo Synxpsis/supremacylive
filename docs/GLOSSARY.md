@@ -26,12 +26,35 @@ name predates the `Territory` / `Province` UI copy and refers to the province-st
 When these docs need to talk about the 7×7 block, they say **territory**, matching the UI. When they
 need the individual cell, they say **tile**, to avoid colliding with the UI's own use of "province."
 
+**A third name entered the mix 2026-09-13: `editor.html` now calls the same province-struct a
+"Sector"** in its own UI text only (button labels, the sidebar list, tile-inspector copy) — the game's
+player-facing UI still says "Territory" and the code still says `province`/`territoryAt()`/etc.,
+unchanged. So as of this addition there are three names for one concept depending on where you're
+looking: code → `province`, match UI → **Territory**, editor UI → **Sector**. This was a deliberate,
+scoped decision (UI text only, fast to ship) rather than the deeper rename — **flagged here as
+still-open plumbing work**: the whole codebase (function/field names throughout `map.js`, `sim.js`,
+`board-render*.js`, `game.html`, `editor.html`, and these docs) should eventually be standardized on
+one name, not three. Until that lands, treat "Sector" as editor-only vocabulary — don't assume it
+appears anywhere else, including this glossary's own table above.
+
 ## Seat
 
-A player slot in a match — `0` or `1` today (2-seat matches only; see [MECHANICS.md](MECHANICS.md)).
-`null` owner means neutral/unclaimed. The client always renders "seat 0" as `--sl-faction-self` and
-"seat 1" as `--sl-faction-foe` **from the viewing player's own perspective** — a spectate or replay
-view would need its own seat remapping, which doesn't exist yet (there's no spectate/replay feature).
+A player slot in a match — `0` or `1` internally (2-seat matches only; see [MECHANICS.md](MECHANICS.md)),
+and everywhere in code, storage, and the match UI that number is what you'll see. `null` owner means
+neutral/unclaimed. The client always renders "seat 0" as `--sl-faction-self` and "seat 1" as
+`--sl-faction-foe` **from the viewing player's own perspective** — a spectate or replay view would need
+its own seat remapping, which doesn't exist yet (there's no spectate/replay feature).
+
+**`editor.html` displays these as "Seat 1"/"Seat 2"** (2026-09-13) — a display-only relabelling (GM/
+human-facing seats count from one) with the stored value and every internal seat index still `0`/`1`,
+completely unchanged; the editor just adds 1 when it prints the label and subtracts 1 when it reads a
+dropdown back. There is no viewer-relative colour in the editor either (there's no "viewing player" —
+the GM sees the whole board) — its colour mapping is fixed: seat `0` ("Seat 1") is always
+`--sl-faction-self` (blue), seat `1` ("Seat 2") is always `--sl-faction-foe` (red), matching what a
+seat-0 player would see, not remapped per seat. **Still open plumbing work, same as the Sector rename
+above**: only the editor's *display* was changed; the match UI, storage, and every internal seat index
+still read `0`/`1` and probably should move to the same 1/2 convention eventually for the naming to
+actually be standardized project-wide rather than split between two conventions.
 
 ## Capital
 

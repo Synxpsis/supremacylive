@@ -65,6 +65,21 @@ as of 2026-09-12 (`ba103ce`, `a4c2834`); the rest are still open.
   **"Clear board" action** (`Board actions` section, two-click confirm like Remove Territory) that wipes
   every city and structure but keeps the territories/grid, for restarting authoring from a clean slate.
   ✅ **Done, 2026-09-13.**
+- **Grid-reference labels in the 3D view, GM-first authoring defaults, per-territory starting seat, and
+  editable territory size.** Five changes from one pass of live GM feedback: (1) `board-render-3d.js`'s
+  `create()` gained a `gridLabels` option (editor-only, `game.html` doesn't pass it) that draws static
+  column-letter/row-number axis labels along the board's two edges, so a tile can be referenced by grid
+  coordinate (e.g. "the tile at C, 4") the way a tabletop battle-grid works. (2) A new city or territory
+  is created with no name at all instead of a fantasy name drawn from a pool — the GM names their own
+  world, and "Clear board" now blanks existing territory names too, not just cities/structures (see
+  [MAP_SYSTEM.md](MAP_SYSTEM.md)). (3) Each territory in the sidebar list gets a starting-seat selector
+  (Neutral/Seat 1/Seat 2, colour-coded), editing the board's `starts` field directly and keeping the
+  territory's capital in step. (4) The Board panel gained sector-size inputs (`block.w`/`h`, tiles per
+  territory) alongside the existing slot-grid ones, closing former gap 3 below. (5) The editor's own UI
+  text now says "Sector" instead of "Territory" and "Seat 1"/"Seat 2" instead of "Seat 0"/"Seat 1" — a
+  deliberately scoped, UI-text-only pass (no rename of `province`/`territoryAt()`/etc. in code, no
+  change to the stored `0`/`1` seat values) — see [GLOSSARY.md](GLOSSARY.md) for the three-way naming
+  situation this creates and the plumbing work still open to actually unify it. ✅ **Done, 2026-09-13.**
 
 ## What it can't do — the actual gap list
 
@@ -77,15 +92,21 @@ job):
 2. ~~**Author a sparse/water board.**~~ ✅ **Done, `a4c2834`** — turned out to need no dedicated
    "water mode" at all, just the add/remove-territory UI from (1); a slot with nothing in it already
    renders as water (3D) or a dashed placeholder (2D) with zero further work.
-3. **Edit a board's own dimensions.** *Partially done* — `slots.cols`/`slots.rows` (how many territory
-   slots the grid has) can be grown or shrunk (`a4c2834`), with a guard against shrinking out from
-   under an existing territory. **`block.w`/`block.h`** (a territory's own tile footprint — 7×7 on
-   `duel`, 5×5 on `grand`) is still fixed at whatever the loaded definition has; changing it would
-   reshape every existing territory at once (city `lc`/`lr` positions could fall outside the new
-   footprint) and has no UI or validation yet.
-4. **Edit win condition** (`win.territories`), board `name`/`note`, or `starts` (which territory each
-   seat begins on). None of these have any editor UI; they can only be changed by hand-editing JSON
-   before it's ever loaded into the editor.
+3. ~~**Edit a board's own dimensions.**~~ ✅ **Done, 2026-09-13.** Both halves now have editor UI:
+   `slots.cols`/`slots.rows` (how many territory slots the grid has, `a4c2834`) and **`block.w`/
+   `block.h`** (a territory's own tile footprint — 7×7 on `duel`, 5×5 on `grand`, added 2026-09-13). The
+   block control refuses to shrink out from under an existing city/structure whose `lc`/`lr` would fall
+   outside the new footprint, same philosophy as the slot-grid guard — but note it does *not* reposition
+   anything that survives the check, and a territory's centre tile (its capital slot) moves whenever
+   `block.w`/`h` changes, so resizing a territory that still has a capital placed under the old geometry
+   can leave that capital off-centre. Safe order: clear the board first (see "Clear board" above,
+   which is also why blank-name state matters here), resize, then re-place capitals.
+4. ~~**Edit `starts` (which seat a territory begins on).**~~ ✅ **Done, 2026-09-13** — a seat/neutral
+   selector next to each territory's name in the sidebar list, colour-coded to match (self-blue/
+   foe-red/neutral-grey). Keeps the territory's capital in step automatically (its own `seat`/`garrison`
+   fields are updated to match, since a capital disagreeing with the tiles under it would be a
+   self-contradictory board). **Still no UI for win condition (`win.territories`) or board `name`/
+   `note`** — those can only be changed by hand-editing JSON before it's ever loaded into the editor.
 
 ### Needs new editor UI plus a new preview surface
 
