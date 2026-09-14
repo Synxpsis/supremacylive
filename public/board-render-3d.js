@@ -85,7 +85,13 @@ function labelDiv(text, cls) {
  *    them; editor.html passes true so a GM can reference a tile by grid
  *    coordinate, e.g. "the tile at C, 4"). Built once here, not in update():
  *    like the province grid lines/borders just above, the coordinate grid
- *    itself never changes without a full scene rebuild (reset3D()). */
+ *    itself never changes without a full scene rebuild (reset3D()).
+ *  @param opts.camera  { position, target } to seed the camera/orbit-target
+ *    with instead of the default overview angle — editor.html reads its old
+ *    camera/controls back out before disposing a scene (see reset3D()) and
+ *    passes them straight back in here, so a content edit that forces a
+ *    full rebuild (add/remove sector, resize) doesn't snap the view back to
+ *    the default framing out from under whoever's orbiting the board. */
 export function create(canvas, M, opts = {}) {
   const selectionLock = opts.selectionLock !== false;
   const gridLabels = !!opts.gridLabels;
@@ -99,7 +105,8 @@ export function create(canvas, M, opts = {}) {
   scene.fog = new THREE.Fog(tokens().ink100, Math.max(gridW, gridH) * 2.4, Math.max(gridW, gridH) * 5);
 
   const camera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-  camera.position.set(boardCenter.x + gridW * 0.55, gridW * 0.6, boardCenter.z + gridH * 0.55);
+  if (opts.camera) camera.position.copy(opts.camera.position);
+  else camera.position.set(boardCenter.x + gridW * 0.55, gridW * 0.6, boardCenter.z + gridH * 0.55);
 
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
   renderer.setPixelRatio(Math.min(self.devicePixelRatio || 1, 2));
@@ -112,7 +119,7 @@ export function create(canvas, M, opts = {}) {
   canvas.parentElement.appendChild(cssRenderer.domElement);
 
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.target.copy(boardCenter);
+  controls.target.copy(opts.camera ? opts.camera.target : boardCenter);
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
   controls.maxPolarAngle = Math.PI / 2 - 0.03;

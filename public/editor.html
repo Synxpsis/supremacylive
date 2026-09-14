@@ -404,6 +404,13 @@
   // default. Once created it's kept alive (not disposed) for the rest of the
   // session; only the render loop and canvas visibility toggle with mode.
   let _r3d = null, _r3dRaf = null;
+  // Carries the camera/orbit-target pose across a reset3D()-forced rebuild
+  // (see reset3D()'s own comment) so an edit doesn't snap the view back to
+  // the default overview out from under whoever's orbiting the board. Only
+  // ever read once, by the very next ensure3D() — cleared there so a scene
+  // that outlives the edit that triggered it doesn't keep re-applying a now
+  // long-stale pose.
+  let _camPose = null;
 
   function ensure3D() {
     if (_r3d) return _r3d;
@@ -426,8 +433,11 @@
     // navigation while authoring a board. gridLabels: true draws column-
     // letter/row-number axis labels along the board's two edges (A, B, C… /
     // 1, 2, 3…) so a GM can reference a tile by grid coordinate; game.html
-    // doesn't need this during a match. See board-render-3d.js's create().
-    _r3d = self.FPRender3D.create(cv3d, S.built, { selectionLock: false, gridLabels: true });
+    // doesn't need this during a match. camera restores whatever pose
+    // reset3D() saved off the scene this one's replacing, if any. See
+    // board-render-3d.js's create().
+    _r3d = self.FPRender3D.create(cv3d, S.built, { selectionLock: false, gridLabels: true, camera: _camPose });
+    _camPose = null;
     return _r3d;
   }
 
@@ -449,13 +459,20 @@
     paint3D();
   }
 
-  /** A board swap (reload, or a future board switcher) invalidates the whole
-   *  3D scene — land/water instance counts, city meshes, everything in it is
-   *  sized to the *previous* board. Rebuilding from scratch is simpler and
-   *  cheap enough (editor-only, not the live match loop) rather than trying
-   *  to resize an InstancedMesh in place. */
+  /** A board swap (reload, or a future board switcher), or any edit that
+   *  changes which tiles are land vs. water (add/remove sector, resize),
+   *  invalidates the whole 3D scene — land/water instance counts, city
+   *  meshes, everything in it is sized to the *previous* board. Rebuilding
+   *  from scratch is simpler and cheap enough (editor-only, not the live
+   *  match loop) rather than trying to resize an InstancedMesh in place.
+   *
+   *  Saves the outgoing scene's camera position/orbit-target first so the
+   *  next ensure3D() can hand it straight back to create() — without this,
+   *  every edit would recreate the camera at its default overview framing
+   *  and visibly snap the view out from under whoever's mid-orbit. */
   function reset3D() {
     if (!_r3d) return;
+    _camPose = { position: _r3d.camera.position.clone(), target: _r3d.controls.target.clone() };
     _r3d.dispose();
     _r3d = null;
   }
