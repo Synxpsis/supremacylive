@@ -121,7 +121,7 @@
 
       </header>
 
-      <aside style="position: relative; min-width: 0; display: grid; grid-template-rows: 1fr; background: var(--sl-ink-200); border: {{ asideBorder }};">
+      <aside style="position: relative; min-width: 0; overflow: hidden; display: grid; grid-template-rows: 1fr; background: var(--sl-ink-200); border: {{ asideBorder }};">
 
         <sc-if value="{{ armed }}" hint-placeholder-val="{{ false }}">
           <span style="position: absolute; left: -1px; top: -1px; width: 9px; height: 9px; border-left: 1px solid var(--sl-signal-hot); border-top: 1px solid var(--sl-signal-hot); pointer-events: none;"></span>
@@ -589,7 +589,14 @@ class Component extends DCLogic {
 
     if (this.is3D()) {
       const M = this.built();
-      this._r3d = self.FPRender3D.create(this.cv, M);
+      // selectionLock: false — match the editor's free camera (see
+      // board-render-3d.js's create() docblock). The default locks
+      // rotate/pan and recentres onto whatever's selected until it clears,
+      // meant to stop a player spinning away from a tile they'd just
+      // committed a march order to mid-drag; in practice it fired on every
+      // plain tile-inspect click too, fighting free navigation the same way
+      // the editor's own comment describes for its own UI.
+      this._r3d = self.FPRender3D.create(this.cv, M, { selectionLock: false });
       // Frame the player's own starting territory on join — the 3D
       // equivalent of focusTerritory(), just a one-off camera placement
       // instead of reproducing the 2D camera's exact analytic behaviour.
