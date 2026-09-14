@@ -331,19 +331,34 @@
     return seat === 0 ? t.self : seat === 1 ? t.foe : t.neutral;
   }
 
-  /** Sparse owners/garrisons overlay built straight from the definition's own
-   *  cities — there is no sim here, this is the content being edited, not a
-   *  game in progress. Shaped to satisfy both renderers' overlay contract
+  /** Sparse owners/garrisons overlay built straight from the definition
+   *  being edited — there is no sim here, this is content, not a game in
+   *  progress. Shaped to satisfy both renderers' overlay contract
    *  (board-render.js's `board()` and board-render-3d.js's `update()` — see
    *  docs/RENDERING.md) rather than keeping two separate overlay builders:
    *  the 2D renderer simply ignores the fields it doesn't use, defaulting
-   *  seatColour to its own house palette if this weren't supplied at all. */
+   *  seatColour to its own house palette if this weren't supplied at all.
+   *
+   *  owners starts from seedOwners(S.built) — the exact function sim.create()
+   *  itself calls at kickoff — so a sector's *whole* footprint colours the
+   *  moment a starting seat is assigned to it (see setStartingSeat()), not
+   *  only the single tile a city happens to occupy. This used to be built
+   *  from individual cities' own `seat` fields alone, which is why only a
+   *  city placed exactly on a sector's centre tile appeared to "set the
+   *  whole sector's colour" — that tile is the one territoryOwner() actually
+   *  checks (see map.js), so it was the only position where a city's `seat`
+   *  could ever reach it. In a real match `city.seat` isn't read for
+   *  ownership at all (only `sim.create()`'s `seedOwners()` is) — it's
+   *  authored bookkeeping, not a second source of truth — so it's layered on
+   *  *after* seedOwners() here: enough to let an individual city override a
+   *  single tile if a GM wants that, never required for a sector to read as
+   *  owned. */
   function overlay() {
-    const owners = {}, garrisons = {}, barracks = {}, industry = {};
+    const owners = F().seedOwners(S.built), garrisons = {}, barracks = {}, industry = {};
     for (const c of S.built.cities) {
       const tc = Math.floor(c.tc), tr = Math.floor(c.tr);
       const k = F().tileKey(tc, tr);
-      if (c.seat !== null) owners[k] = c.seat;
+      if (c.seat === 0 || c.seat === 1) owners[k] = c.seat;
       if (c.garrison) garrisons[k] = c.garrison;
     }
     for (const st of S.built.structures) {
@@ -780,24 +795,41 @@
 
   /** Assign (or clear) which seat a whole sector starts owned by — edits the
    *  board's `starts` list (see docs/MAP_SYSTEM.md), which is what actually
-   *  seeds every tile in the sector to that seat at kickoff (FPMap.seedOwners()).
-   *  Also keeps the sector's capital in step: a capital whose own `seat`
+   *  seeds every tile in the sector to that seat at kickoff
+   *  (FPMap.seedOwners() — see overlay()'s own comment for why the editor's
+   *  preview now reads this instead of individual cities' `seat` fields).
+   *
+   *  Capped at one owned sector per seat — a seat only ever has one starting
+   *  home, so assigning a sector to a seat that already owns a different one
+   *  moves the assignment rather than creating a second home; both `starts`
+   *  and the displaced sector's own capital (if it has one) are updated
+   *  together so nothing is left silently claiming a seat it no longer owns.
+   *
+   *  Also keeps a sector's own capital in step: a capital whose own `seat`
    *  disagreed with the tiles under it would be a self-contradictory board
    *  (sim.create() already refuses exactly this mismatch for a pre-placed
    *  structure — see MAP_SYSTEM.md's Structure section — capitals just never
-   *  had a UI path to create the same contradiction before this control existed). */
+   *  had a UI path to create the same contradiction before this control
+   *  existed). This is bookkeeping for the data's own consistency, not what
+   *  makes ownership real — sim.create() never reads a city's `seat` field. */
   function setStartingSeat(provId, seat) {
+    const syncCapital = (id, seatOrNull) => {
+      const p = S.built.province(id);
+      const cap = p && F().capitalOf(S.built, p);
+      const c = cap && findCityDef(cap.id);
+      if (!c) return;
+      if (seatOrNull === 0 || seatOrNull === 1) { c.seat = seatOrNull; delete c.garrison; }
+      else { delete c.seat; if (c.garrison == null) c.garrison = 30; }
+    };
     S.def.starts = (S.def.starts || []).filter(s => s.territory !== provId);
-    if (seat === 0 || seat === 1) S.def.starts.push({ seat, territory: provId });
-    const p = S.built.province(provId);
-    const cap = p && F().capitalOf(S.built, p);
-    if (cap) {
-      const c = findCityDef(cap.id);
-      if (c) {
-        if (seat === 0 || seat === 1) { c.seat = seat; delete c.garrison; }
-        else { delete c.seat; if (c.garrison == null) c.garrison = 30; }
-      }
+    if (seat === 0 || seat === 1) {
+      // Cap of one: whichever sector previously owned this seat gives it up.
+      const displaced = S.def.starts.filter(s => s.seat === seat);
+      S.def.starts = S.def.starts.filter(s => s.seat !== seat);
+      S.def.starts.push({ seat, territory: provId });
+      for (const d of displaced) syncCapital(d.territory, null);
     }
+    syncCapital(provId, seat);
     markDirty();
     rebuild();
   }
