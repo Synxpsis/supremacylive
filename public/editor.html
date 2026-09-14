@@ -713,9 +713,16 @@
     S.def.structures = (S.def.structures || []).filter(s => s.prov !== id);
     S.def.provinces = S.def.provinces.filter(p => p.id !== id);
     markDirty();
+    // reset3D() only *invalidates* the scene — the next paint() lazily
+    // recreates it from S.built (see ensure3D()). rebuild() must run first
+    // to refresh S.built from the trimmed S.def; calling select() (which
+    // also paints) before rebuild() would let ensure3D() eagerly rebuild
+    // the scene from the still-stale S.built, and rebuild()'s own paint
+    // right after would then find _r3d already set and skip rebuilding —
+    // leaving the removed sector's land/grid permanently stuck in 3D.
     reset3D(); // same reasoning as addTerritory — the freed slot becomes water
-    select(null);
     rebuild();
+    select(null);
   }
 
   /** Wipe every city and structure, and blank every sector's name, but keep

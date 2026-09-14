@@ -214,13 +214,23 @@ export function create(canvas, M, opts = {}) {
   // Ground plane for raycasting — math only, no mesh needed.
   const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
-  // ── province grid lines + territory borders ──────────────────────────
+  // ── slot grid lines + territory borders ──────────────────────────────
+  // Every slot gets its own tile grid, sector or not — an empty (water)
+  // slot is exactly as many addressable tiles as a sector, it just has no
+  // province sitting on it, so it reads as a submerged grid rather than one
+  // undivided pool. Land lines sit right at the land surface (y=0); water
+  // lines sit at the water surface (y=-WATER_SINK, see the water mesh above)
+  // so they don't float above/clip through the recessed water tiles.
   const gridLineMat = new THREE.LineBasicMaterial({ color: tokens().ink000, transparent: true, opacity: 0.5 });
-  for (const p of M.provinces) {
+  const waterGridLineMat = new THREE.LineBasicMaterial({ color: tokens().ink000, transparent: true, opacity: 0.32 });
+  for (let sr = 0; sr < M.slots.rows; sr++) for (let sc = 0; sc < M.slots.cols; sc++) {
+    const onLand = !!M.provinceAtSlot(sc, sr);
+    const c0 = sc * M.block.w, r0 = sr * M.block.h, w = M.block.w, h = M.block.h;
+    const y = onLand ? 0.01 : -WATER_SINK + 0.01;
     const pts = [];
-    for (let i = 0; i <= p.w; i++) pts.push(new THREE.Vector3(p.c0 + i, 0.01, p.r0), new THREE.Vector3(p.c0 + i, 0.01, p.r0 + p.h));
-    for (let i = 0; i <= p.h; i++) pts.push(new THREE.Vector3(p.c0, 0.01, p.r0 + i), new THREE.Vector3(p.c0 + p.w, 0.01, p.r0 + i));
-    scene.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), gridLineMat));
+    for (let i = 0; i <= w; i++) pts.push(new THREE.Vector3(c0 + i, y, r0), new THREE.Vector3(c0 + i, y, r0 + h));
+    for (let i = 0; i <= h; i++) pts.push(new THREE.Vector3(c0, y, r0 + i), new THREE.Vector3(c0 + w, y, r0 + i));
+    scene.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), onLand ? gridLineMat : waterGridLineMat));
   }
   const borders = new Map(); // province id -> Line2-ish loop (LineLoop is fine at this scale)
   for (const p of M.provinces) {
