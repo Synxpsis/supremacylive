@@ -340,6 +340,7 @@
       const fs = Math.max(10, Math.min(20, 0.2 * labelPx));
       ctx.font = `700 ${fs}px 'Barlow Condensed', sans-serif`;
       for (const p of M.provinces) {
+        if (!p.name) continue; // no name state (see editor.html's clearBoard()) — nothing to label yet
         const own = F.territoryOwner(M, owners, p);
         const name = p.name.toUpperCase();
         const mid = P(p.c0 + p.w / 2, p.r0 + 0.5);

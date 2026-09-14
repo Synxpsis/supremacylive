@@ -79,9 +79,16 @@ function labelDiv(text, cls) {
  *    mid-order). editor.html passes false: it treats a click as "inspect this
  *    tile," not "commit to it," and every click there selects *something*
  *    (even open water), so this lock would otherwise fire almost constantly
- *    and fight free camera navigation while authoring a board. */
+ *    and fight free camera navigation while authoring a board.
+ *  @param opts.gridLabels  Draw static column-letter / row-number axis labels
+ *    along the board's two edges (default false — a match has no use for
+ *    them; editor.html passes true so a GM can reference a tile by grid
+ *    coordinate, e.g. "the tile at C, 4"). Built once here, not in update():
+ *    like the province grid lines/borders just above, the coordinate grid
+ *    itself never changes without a full scene rebuild (reset3D()). */
 export function create(canvas, M, opts = {}) {
   const selectionLock = opts.selectionLock !== false;
+  const gridLabels = !!opts.gridLabels;
   const F = self.FPMap;
   const gridW = M.gridW, gridH = M.gridH;
   const boardCenter = new THREE.Vector3(gridW / 2, 0, gridH / 2);
@@ -224,6 +231,29 @@ export function create(canvas, M, opts = {}) {
     const line = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: tokens().ink000 }));
     scene.add(line);
     borders.set(p.id, line);
+  }
+
+  // ── grid-reference axis labels (A, B, C… along one edge; 1, 2, 3… along
+  // the other) — spreadsheet-style column naming so a board wider than 26
+  // tiles still gets unambiguous, ever-increasing labels (Z, AA, AB…). ────
+  if (gridLabels) {
+    const colName = i => {
+      let s = '';
+      for (i++; i > 0; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + (i - 1) % 26) + s;
+      return s;
+    };
+    for (let c = 0; c < gridW; c++) {
+      const lbl = new CSS2DObject(labelDiv(colName(c), 'fp3d-gridref'));
+      lbl.center.set(0.5, 0.5);
+      lbl.position.set(c + 0.5, 0.02, -0.6);
+      scene.add(lbl);
+    }
+    for (let r = 0; r < gridH; r++) {
+      const lbl = new CSS2DObject(labelDiv(String(r + 1), 'fp3d-gridref'));
+      lbl.center.set(0.5, 0.5);
+      lbl.position.set(-0.6, 0.02, r + 0.5);
+      scene.add(lbl);
+    }
   }
 
   // ── structures: one box per occupied tile, added/removed/recoloured as

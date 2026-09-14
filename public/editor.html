@@ -103,6 +103,10 @@
     color: var(--sl-text); font-size: var(--sl-fs-ui-xs); padding: 3px 2px;
   }
   .prov-row input:focus { outline: none; border-bottom-color: var(--sl-signal); }
+  .prov-row select {
+    flex: none; background: var(--sl-ink-300); border: 1px solid var(--sl-seam-strong);
+    color: var(--sl-text); font-size: var(--sl-fs-ui-xs); font-family: var(--sl-font-ui); padding: 3px 4px;
+  }
 
   #symList { display: flex; flex-direction: column; gap: 6px; }
   .sym-ok { color: var(--sl-ok); font-size: var(--sl-fs-ui-xs); }
@@ -113,6 +117,27 @@
 
   #emptyPanel { font-size: var(--sl-fs-ui-xs); color: var(--sl-text-mute); line-height: 1.5; }
   .mono { font-family: var(--sl-font-mono); }
+
+  /* CSS2DObject label styling for the 3D view — board-render-3d.js only sets
+   * classNames (fp3d-label always, plus a specific one per label kind), never
+   * inline style, so each page that hosts the 3D scene owns its own look.
+   * game.html defines these for match labels; editor.html didn't define any
+   * of them at all until the grid-reference labels below needed one — meaning
+   * garrison counts here were rendering with no font/colour/background,
+   * relying on the page's dark color-scheme to make default black text
+   * readable by accident. Matches game.html's `.fp3d-label` rule so a number
+   * looks the same whether it's a live match or the editor's preview. */
+  .fp3d-label {
+    font-family: var(--sl-font-mono); font-weight: var(--sl-fw-mono); font-size: var(--sl-fs-label);
+    color: var(--sl-text); background: color-mix(in srgb, var(--sl-ink-100) 78%, transparent);
+    padding: 2px 6px; white-space: nowrap;
+  }
+  /* Grid-reference axis labels (column letters / row numbers) — a reference
+   * aid, not gameplay content, so no background plate and a dimmer, smaller
+   * mono numeral than a garrison count gets. */
+  .fp3d-gridref {
+    font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); color: var(--sl-text-dim);
+  }
 
   #login {
     height: 100vh; display: grid; place-items: center;
@@ -383,8 +408,11 @@
     // selectionLock: false — every click here inspects a tile (even open
     // water counts as a "selection"), so the game's lock-camera-on-select
     // behaviour would otherwise engage almost constantly and fight free
-    // navigation while authoring a board. See board-render-3d.js's create().
-    _r3d = self.FPRender3D.create(cv3d, S.built, { selectionLock: false });
+    // navigation while authoring a board. gridLabels: true draws column-
+    // letter/row-number axis labels along the board's two edges (A, B, C… /
+    // 1, 2, 3…) so a GM can reference a tile by grid coordinate; game.html
+    // doesn't need this during a match. See board-render-3d.js's create().
+    _r3d = self.FPRender3D.create(cv3d, S.built, { selectionLock: false, gridLabels: true });
     return _r3d;
   }
 
@@ -425,6 +453,15 @@
     try { self.localStorage.setItem('sl_render_mode', mode); } catch (_) {}
     cv.style.display = mode === '3d' ? 'none' : 'block';
     cv3d.style.display = mode === '3d' ? 'block' : 'none';
+    // The CSS2DRenderer's DOM layer (garrison/grid-ref labels) is a separate
+    // element appended next to cv3d, not part of it — cv3d's own display
+    // toggle above doesn't touch it. Missing this left every 3D label
+    // visibly overlaid on top of the 2D canvas after switching back to 2D
+    // (harmless-looking before this session added real CSS for these labels,
+    // since unstyled text was nearly invisible — see docs/RENDERING.md).
+    // game.html never hits this: its 2D/3D choice is a fixed page-load
+    // ?render= param, not a runtime toggle.
+    if (_r3d) _r3d.cssRenderer.domElement.style.display = mode === '3d' ? 'block' : 'none';
     mode2dBtn.className = 'btn' + (mode === '2d' ? ' on' : '');
     mode3dBtn.className = 'btn' + (mode === '3d' ? ' on' : '');
     if (mode === '3d') {
@@ -557,14 +594,13 @@
   function findProvDef(id) { return S.def.provinces.find(p => p.id === id); }
   function findStructureDef(id) { return (S.def.structures || []).find(s => s.id === id); }
 
+  // Unnamed on creation (no fantasy-name pool) — see clearBoard()'s comment.
   function addCity(prov, lc, lr) {
-    const existingNames = S.def.cities.map(c => c.name);
     const existingIds = S.def.cities.map(c => c.id);
-    const name = F().pickName(F().CITY_NAMES, existingNames, 'City');
-    const id = F().pickId(name, existingIds);
     lc = Math.max(0, Math.min(prov.w - 1, Math.round(lc)));
     lr = Math.max(0, Math.min(prov.h - 1, Math.round(lr)));
-    S.def.cities.push({ id, name, prov: prov.id, lc, lr, wealth: 2.4, garrison: 34 });
+    const id = F().pickId('city' + (prov.c0 + lc) + '_' + (prov.r0 + lr), existingIds);
+    S.def.cities.push({ id, name: '', prov: prov.id, lc, lr, wealth: 2.4, garrison: 34 });
     S.placeMode = null;
     markDirty();
     rebuild();
@@ -633,25 +669,23 @@
     rebuild();
   }
 
-  /** Place a new territory in an empty slot. Every territory needs a capital
-   *  to actually be fought over and pay income (see docs/MECHANICS.md), so
-   *  this seeds one at the exact centre tile with modest neutral defaults —
-   *  editable afterward exactly like any other city. */
+  /** Place a new sector in an empty slot. Every sector needs a capital to
+   *  actually be fought over and pay income (see docs/MECHANICS.md), so this
+   *  seeds one at the exact centre tile with modest neutral defaults —
+   *  editable afterward exactly like any other city. Both the sector and its
+   *  capital are left unnamed (no fantasy-name pool) — the GM names their own
+   *  world; see clearBoard()'s own comment for the same reasoning. */
   function addTerritory(sc, sr) {
     if (S.built.provinceAtSlot(sc, sr)) return; // already occupied — shouldn't reach here via the UI, but don't clobber it if it does
-    const existingNames = S.def.provinces.map(p => p.name);
     const existingIds = S.def.provinces.map(p => p.id);
-    const name = F().pickName(F().PROVINCE_NAMES, existingNames, 'Territory');
-    const id = F().pickId(name, existingIds);
-    S.def.provinces.push({ id, name, sc, sr });
+    const id = F().pickId('sector' + sc + sr, existingIds);
+    S.def.provinces.push({ id, name: '', sc, sr });
 
     const block = S.def.block || F().DEFAULT_BLOCK;
     const clc = (block.w - 1) >> 1, clr = (block.h - 1) >> 1;
-    const cNames = S.def.cities.map(c => c.name);
     const cIds = S.def.cities.map(c => c.id);
-    const cname = F().pickName(F().CITY_NAMES, cNames, 'City');
-    const cid = F().pickId(cname, cIds);
-    S.def.cities.push({ id: cid, name: cname, prov: id, lc: clc, lr: clr, wealth: 2.4, garrison: 30 });
+    const cid = F().pickId('capital' + sc + sr, cIds);
+    S.def.cities.push({ id: cid, name: '', prov: id, lc: clc, lr: clr, wealth: 2.4, garrison: 30 });
 
     markDirty();
     reset3D(); // adding a territory changes which tiles are land vs. water — the 3D scene's instance layout is baked in at create() and can't be patched in place, see reset3D()'s own comment
@@ -669,15 +703,19 @@
     rebuild();
   }
 
-  /** Wipe every city and structure but keep the territories/grid as-is, so
-   *  authoring can restart from a clean slate without rebuilding the board's
-   *  shape. Leaves every province capital-less until re-authored — an
-   *  expected, if incomplete, mid-edit state, same as removeTerritory()
-   *  briefly leaving a freed slot. Doesn't touch land/water layout, so no
-   *  reset3D() is needed (mirrors deleteCity()/deleteStructure()). */
+  /** Wipe every city and structure, and blank every sector's name, but keep
+   *  the sectors/grid themselves — restarts authoring from a clean slate
+   *  without rebuilding the board's shape. The GM (this editor's whole
+   *  premise — see docs/EDITOR_UPGRADE.md) names their own world; a leftover
+   *  fantasy name from a previous scenario is as much stale content as a
+   *  leftover city would be. Leaves every sector capital-less and nameless
+   *  until re-authored — an expected, if incomplete, mid-edit state, same as
+   *  removeTerritory() briefly leaving a freed slot. Doesn't touch land/water
+   *  layout, so no reset3D() is needed (mirrors deleteCity()/deleteStructure()). */
   function clearBoard() {
     S.def.cities = [];
     S.def.structures = [];
+    for (const p of S.def.provinces) p.name = '';
     markDirty();
     select(null);
     rebuild();
@@ -711,6 +749,59 @@
     rebuild();
   }
 
+  /** Grow or shrink every sector's tile footprint (the board's single global
+   *  `block` field — sector size is uniform across the whole board, there's
+   *  no per-sector override). Same shrink-refusal philosophy as resizeSlots():
+   *  refuse rather than silently strand a city or structure whose lc/lr
+   *  would fall outside the new footprint. Note this does NOT reposition
+   *  anything that survives the check — a sector's centre tile (its capital
+   *  slot, see capitalOf()) moves when block.w/h changes, so a capital placed
+   *  under the old footprint may no longer sit at the new centre. Cheapest
+   *  safe order is: clear the board first (no name state either — see
+   *  clearBoard()), resize, then re-place capitals at the new centres. */
+  function resizeBlock(w, h) {
+    w = Math.max(1, Math.min(15, Math.round(w) || 1));
+    h = Math.max(1, Math.min(15, Math.round(h) || 1));
+    const orphanCity = S.def.cities.find(c => c.lc >= w || c.lr >= h);
+    const orphanStruct = (S.def.structures || []).find(s => s.lc >= w || s.lr >= h);
+    const orphan = orphanCity || orphanStruct;
+    if (orphan) {
+      S.boardError = 'Can’t shrink sectors to ' + w + '×' + h + ' — ' + (orphan.name || orphan.id) +
+        ' sits at local (' + orphan.lc + ', ' + orphan.lr + '), outside the new footprint. Clear or reposition it first.';
+      renderPanel();
+      return;
+    }
+    S.boardError = null;
+    S.def.block = { w, h };
+    markDirty();
+    reset3D(); // sector footprint changes which tiles are land vs. water — same reasoning as addTerritory()
+    rebuild();
+  }
+
+  /** Assign (or clear) which seat a whole sector starts owned by — edits the
+   *  board's `starts` list (see docs/MAP_SYSTEM.md), which is what actually
+   *  seeds every tile in the sector to that seat at kickoff (FPMap.seedOwners()).
+   *  Also keeps the sector's capital in step: a capital whose own `seat`
+   *  disagreed with the tiles under it would be a self-contradictory board
+   *  (sim.create() already refuses exactly this mismatch for a pre-placed
+   *  structure — see MAP_SYSTEM.md's Structure section — capitals just never
+   *  had a UI path to create the same contradiction before this control existed). */
+  function setStartingSeat(provId, seat) {
+    S.def.starts = (S.def.starts || []).filter(s => s.territory !== provId);
+    if (seat === 0 || seat === 1) S.def.starts.push({ seat, territory: provId });
+    const p = S.built.province(provId);
+    const cap = p && F().capitalOf(S.built, p);
+    if (cap) {
+      const c = findCityDef(cap.id);
+      if (c) {
+        if (seat === 0 || seat === 1) { c.seat = seat; delete c.garrison; }
+        else { delete c.seat; if (c.garrison == null) c.garrison = 30; }
+      }
+    }
+    markDirty();
+    rebuild();
+  }
+
   // ── tile inspector ────────────────────────────────────────────────────
   // Every click resolves here — a city, a structure, open ground inside a
   // territory, or open water all render through this one function, so a tile
@@ -723,11 +814,11 @@
 
     if (city) {
       const isNeutral = city.seat === undefined || city.seat === null;
-      return '<div><div class="section-title">City — ' + escapeHtml(city.name) + ' ' + coord + '</div>' +
-        field('Name', 'text', 'name', city.name) +
+      return '<div><div class="section-title">City' + (city.name ? ' — ' + escapeHtml(city.name) : '') + ' ' + coord + '</div>' +
+        field('Name', 'text', 'name', city.name, null, 'Unnamed — click to set') +
         '<div class="row2">' + field('Col (lc)', 'number', 'lc', city.lc) + field('Row (lr)', 'number', 'lr', city.lr) + '</div>' +
         fieldSelect('seat', isNeutral ? 'neutral' : String(city.seat), [
-          ['neutral', 'Neutral'], ['0', 'Seat 0'], ['1', 'Seat 1'],
+          ['neutral', 'Neutral'], ['0', 'Seat 1'], ['1', 'Seat 2'],
         ]) +
         field('Wealth', 'number', 'wealth', city.wealth, '0.1') +
         (isNeutral ? field('Garrison', 'number', 'garrison', city.garrison || 0) : '') +
@@ -741,7 +832,7 @@
       const kit = F().STRUCTURE_KIT[structure.kind];
       const canMirror = !structure.twin && !!F().territoryAt(S.built, c, r).twin;
       return '<div><div class="section-title">Structure — ' + escapeHtml(kit.label) + ' ' + coord + '</div>' +
-        '<div class="field"><label>Seat</label><div class="mono" style="padding:7px 0 3px;">SEAT ' + structure.seat + '</div></div>' +
+        '<div class="field"><label>Seat</label><div class="mono" style="padding:7px 0 3px;">SEAT ' + (structure.seat + 1) + '</div></div>' +
         '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">Seat is fixed by tile position — clear and re-place to move it.</div>' +
         '<div style="display:flex; gap:8px;">' +
         '<button class="btn" id="mirrorStructureBtn"' + (canMirror ? '' : ' disabled') + '>Mirror to twin</button>' +
@@ -753,16 +844,16 @@
       const armed = S.confirmRemove === prov.id;
       const n = prov.cities.length;
       return '<div><div class="section-title">Open ground ' + coord + '</div>' +
-        '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">Territory: ' + escapeHtml(prov.name) +
-        '. No structure here — use Place below, then click this tile.</div>' +
+        '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">Sector: ' + (prov.name ? escapeHtml(prov.name) : '<em>unnamed — set it in the Sectors list</em>') +
+        '. No structure here — use Place below, then click this tile. Starting seat is set from the Sectors list above.</div>' +
         '<button class="btn danger' + (armed ? ' on' : '') + '" id="removeTerritoryBtn" style="width:100%;">' +
-        (armed ? 'Confirm — ' + n + (n === 1 ? ' city' : ' cities') + ' removed' : 'Remove territory') +
+        (armed ? 'Confirm — ' + n + (n === 1 ? ' city' : ' cities') + ' removed' : 'Remove sector') +
         '</button></div>';
     }
 
     return '<div><div class="section-title">Open water ' + coord + '</div>' +
-      '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">Open ground, not part of any territory. Renders as water.</div>' +
-      '<button class="btn primary" id="addTerritoryBtn" style="width:100%;">Add territory here</button></div>';
+      '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">Open ground, not part of any sector. Renders as water.</div>' +
+      '<button class="btn primary" id="addTerritoryBtn" style="width:100%;">Add sector here</button></div>';
   }
 
   // ── panel rendering ───────────────────────────────────────────────────
@@ -770,23 +861,37 @@
     const parts = [];
     const slots = S.def.slots || F().DEFAULT_SLOTS;
 
+    const block = S.def.block || F().DEFAULT_BLOCK;
     parts.push(
       '<div><div class="section-title">Board</div>' +
       '<div class="row2">' +
-      '<div class="field"><label>Cols</label><input data-board-field="cols" type="number" min="1" max="12" value="' + escapeAttr(slots.cols) + '"></div>' +
-      '<div class="field"><label>Rows</label><input data-board-field="rows" type="number" min="1" max="12" value="' + escapeAttr(slots.rows) + '"></div>' +
+      '<div class="field"><label>Sector cols</label><input data-board-field="cols" type="number" min="1" max="12" value="' + escapeAttr(slots.cols) + '"></div>' +
+      '<div class="field"><label>Sector rows</label><input data-board-field="rows" type="number" min="1" max="12" value="' + escapeAttr(slots.rows) + '"></div>' +
       '</div>' +
-      '<div style="font-size:12.5px;color:var(--sl-text-dim);">Growing only adds empty (water) slots. Shrinking is refused if a territory would fall outside the new grid.</div>' +
+      '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">How many sectors make up the board. Growing only adds empty (water) slots; shrinking is refused if a sector would fall outside the new grid.</div>' +
+      '<div class="row2">' +
+      '<div class="field"><label>Sector width</label><input data-block-field="w" type="number" min="1" max="15" value="' + escapeAttr(block.w) + '"></div>' +
+      '<div class="field"><label>Sector height</label><input data-block-field="h" type="number" min="1" max="15" value="' + escapeAttr(block.h) + '"></div>' +
+      '</div>' +
+      '<div style="font-size:12.5px;color:var(--sl-text-dim);">Tiles per sector (' + block.w + '×' + block.h + ' = ' + (block.w * block.h) + '). Shrinking is refused if it would strand an existing city or structure outside the new footprint — clear the sector first.</div>' +
       (S.boardError ? '<div class="sym-issue" style="margin-top:8px;">' + escapeHtml(S.boardError) + '</div>' : '') +
       '</div>'
     );
 
-    parts.push('<div class="section-title">Provinces</div>');
+    parts.push('<div class="section-title">Sectors</div>');
     for (const p of S.def.provinces) {
+      const startSeat = (S.def.starts || []).find(s => s.territory === p.id);
+      const seatVal = startSeat ? startSeat.seat : null;
+      const dotColour = seatVal === 0 ? 'var(--sl-faction-self)' : seatVal === 1 ? 'var(--sl-faction-foe)' : 'var(--sl-faction-neutral)';
       parts.push(
         '<div class="prov-row">' +
-        '<span class="dot" style="background:var(--sl-faction-neutral)"></span>' +
-        '<input data-prov-name="' + p.id + '" value="' + escapeAttr(p.name) + '">' +
+        '<span class="dot" style="background:' + dotColour + '"></span>' +
+        '<input data-prov-name="' + p.id + '" value="' + escapeAttr(p.name) + '" placeholder="Unnamed sector">' +
+        '<select data-prov-seat="' + p.id + '">' +
+        '<option value=""' + (seatVal === null ? ' selected' : '') + '>Neutral</option>' +
+        '<option value="0"' + (seatVal === 0 ? ' selected' : '') + '>Seat 1</option>' +
+        '<option value="1"' + (seatVal === 1 ? ' selected' : '') + '>Seat 2</option>' +
+        '</select>' +
         '</div>'
       );
     }
@@ -794,7 +899,7 @@
     if (S.sel && S.sel.kind === 'tile') {
       parts.push(tileInspector(S.sel.c, S.sel.r));
     } else {
-      parts.push('<div id="emptyPanel">Click any tile to inspect it — a city, a structure, open ground inside a territory, or open water.</div>');
+      parts.push('<div id="emptyPanel">Click any tile to inspect it — a city, a structure, open ground inside a sector, or open water.</div>');
     }
 
     parts.push('<div><div class="section-title">Place</div><div style="display:flex; flex-direction:column; gap:6px;">' +
@@ -819,10 +924,11 @@
     wirePanel();
   }
 
-  function field(label, type, key, value, step) {
+  function field(label, type, key, value, step, placeholder) {
     return '<div class="field"><label>' + label + '</label>' +
       '<input data-city-field="' + key + '" type="' + type + '" value="' + escapeAttr(value) + '"' +
-      (step ? ' step="' + step + '"' : '') + '></div>';
+      (step ? ' step="' + step + '"' : '') +
+      (placeholder ? ' placeholder="' + escapeAttr(placeholder) + '"' : '') + '></div>';
   }
   function fieldSelect(key, value, options) {
     return '<div class="field"><label>Seat</label><select data-city-field="' + key + '">' +
@@ -846,6 +952,22 @@
         const cols = inp.getAttribute('data-board-field') === 'cols' ? Number(inp.value) : slots.cols;
         const rows = inp.getAttribute('data-board-field') === 'rows' ? Number(inp.value) : slots.rows;
         resizeSlots(cols, rows);
+      });
+    });
+
+    panel.querySelectorAll('[data-block-field]').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const block = S.def.block || F().DEFAULT_BLOCK;
+        const w = inp.getAttribute('data-block-field') === 'w' ? Number(inp.value) : block.w;
+        const h = inp.getAttribute('data-block-field') === 'h' ? Number(inp.value) : block.h;
+        resizeBlock(w, h);
+      });
+    });
+
+    panel.querySelectorAll('[data-prov-seat]').forEach(sel => {
+      sel.addEventListener('change', () => {
+        const seat = sel.value === '' ? null : Number(sel.value);
+        setStartingSeat(sel.getAttribute('data-prov-seat'), seat);
       });
     });
 
