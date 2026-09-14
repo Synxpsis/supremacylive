@@ -208,8 +208,16 @@ the client uses), served at `editor.supremacy.live` off the same Worker/asset bu
 authorized user (`EDITOR_USERS` in `worker.js` — currently one hardcoded account) load a board, rename
 or add/remove whole territories, grow/shrink the slot grid **and each territory's own tile footprint**,
 add/edit/delete/mirror cities and starting structures, **assign which seat (or neutral) a whole
-territory starts owned by**, see a live symmetry check for `duel`, and save back to D1. It's still
-hardcoded to the `duel` key with no board switcher.
+territory starts owned by** (capped at one owned territory per seat — assigning a new one moves the
+seat's home rather than creating a second), see a live symmetry check for `duel`, and save back to D1.
+It's still hardcoded to the `duel` key with no board switcher.
+
+The starting-seat assignment actually colours the *whole* territory in the editor's own preview by
+seeding its `owners` overlay from `FPMap.seedOwners()` — the same function `sim.create()` calls at
+kickoff — rather than from individual cities' own `seat` fields the way it first shipped. That first
+version only ever coloured a territory when a city happened to sit exactly on the centre tile
+`territoryOwner()` checks, which read as "only the capital tile can set the whole territory's colour."
+See [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md) for the fix.
 
 **The editor is a game-master authoring tool, not a template picker** (2026-09-13) — a new territory or
 city is created with **no name at all** rather than a fantasy name drawn from `PROVINCE_NAMES`/

@@ -80,6 +80,19 @@ as of 2026-09-12 (`ba103ce`, `a4c2834`); the rest are still open.
   deliberately scoped, UI-text-only pass (no rename of `province`/`territoryAt()`/etc. in code, no
   change to the stored `0`/`1` seat values) — see [GLOSSARY.md](GLOSSARY.md) for the three-way naming
   situation this creates and the plumbing work still open to actually unify it. ✅ **Done, 2026-09-13.**
+- **Fix: assigning a sector's starting seat didn't actually colour the sector.** The bug behind
+  "only the exact centre tile seems to set a whole sector's colour," found immediately after the above
+  shipped: `overlay()` built its `owners` map purely from individual cities' own `seat` fields, so a
+  sector only read as owned where a city happened to sit *and* have a matching seat — and since
+  `territoryOwner()` (map.js) only ever checks the centre tile, a city was only ever "the one that
+  colours everything" when it happened to be placed exactly there. `overlay()` now starts from
+  `FPMap.seedOwners(S.built)` — the same function `sim.create()` calls at kickoff — so the sector's
+  *entire* footprint colours the instant a starting seat is assigned via the sidebar selector, matching
+  what a real match would actually look like; individual cities' `seat` fields still layer on top for a
+  GM who wants one specific tile to differ, but are no longer required for a sector to read as owned at
+  all. Also added a cap of one owned sector per seat in `setStartingSeat()` — assigning a new sector to
+  a seat that already owns one moves the assignment rather than creating a second home, keeping both
+  `starts` and the displaced sector's capital in step. ✅ **Done, 2026-09-13.**
 
 ## What it can't do — the actual gap list
 
