@@ -75,7 +75,26 @@
       const [c, r] = m.centreTile(M, p);
       const k = m.tileKey(c, r);
       const own = owners[k] ?? null;
-      garrisons[k] = own === null ? RULES.neutralCapital : RULES.homeCapital;
+      // The starting garrison always sits on the centre tile — the capture
+      // point (see the cascade below and centreTile()'s own comment) — never
+      // wherever the capital city itself happens to be placed (capitalOf()
+      // is now position-independent; see map.js). Undefending the actual
+      // capture point in favour of the capital's tile would make a
+      // territory's defense trivially bypassable by rushing centre instead.
+      // Neutral territories use the capital's own authored `garrison`
+      // when set (2026-09-15 — this used to always be the flat
+      // RULES.neutralCapital regardless of what a GM configured, discarding
+      // it silently), falling back to that constant if unset. A seated
+      // (home) capital has no `garrison` field at all by design (mutually
+      // exclusive with `seat` — see MAP_SYSTEM.md's City field reference),
+      // so RULES.homeCapital — a deliberately fixed, balance-tuned value
+      // (see its own comment above) — is the only source there, unchanged.
+      if (own === null) {
+        const cap = m.capitalOf(M, p);
+        garrisons[k] = (cap && cap.garrison != null) ? cap.garrison : RULES.neutralCapital;
+      } else {
+        garrisons[k] = RULES.homeCapital;
+      }
       // Your home capital starts with a barracks, so there is something to do
       // on tick one.
       if (own !== null) barracks[k] = own;

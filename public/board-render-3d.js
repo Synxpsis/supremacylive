@@ -41,6 +41,13 @@ function tokens() {
     const m = /^#([0-9a-f]{6})$/i.exec((v || '').trim());
     return m ? parseInt(m[1], 16) : fallback;
   };
+  // --sl-seam-* tokens are rgba() strings (see tokens.css), not #rrggbb —
+  // Three.js materials only take a bare colour, so this pulls the RGB triple
+  // out and leaves alpha to the material's own `opacity`, tuned per use below.
+  const toHexRgba = (v, fallback) => {
+    const m = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec((v || '').trim());
+    return m ? (parseInt(m[1], 10) << 16 | parseInt(m[2], 10) << 8 | parseInt(m[3], 10)) : fallback;
+  };
   const root = typeof document !== 'undefined' ? document.documentElement : null;
   const g = n => root ? getComputedStyle(root).getPropertyValue(n) : '';
   _tok = {
@@ -51,6 +58,13 @@ function tokens() {
     land: toHex(g('--sl-ink-300'), 0x141a1f),
     ink000: toHex(g('--sl-ink-000'), 0x06080a),
     ink100: toHex(g('--sl-ink-100'), 0x0a0d10),
+    // The board's own perimeter/piece outlines stay ink000 (a shadow line,
+    // meant to recede) — grid lines use the lighter seam tone instead (see
+    // their own comment below): a boundary hairline drawn in the exact
+    // colour of the void it sits against is invisible by construction,
+    // which is what made unclaimed ground unreadable as "there" rather than
+    // empty (2026-09-15).
+    seam: toHexRgba(g('--sl-seam-strong'), 0xe6e8e4),
     // Water is the one deliberate exception to the board's achromatic
     // palette — it borrows the existing --sl-info token (status blue)
     // rather than inventing a new hue, so there's no new gap to flag.
@@ -228,8 +242,14 @@ export function create(canvas, M, opts = {}) {
   // undivided pool. Land lines sit right at the land surface (y=0); water
   // lines sit at the water surface (y=-WATER_SINK, see the water mesh above)
   // so they don't float above/clip through the recessed water tiles.
-  const gridLineMat = new THREE.LineBasicMaterial({ color: tokens().ink000, transparent: true, opacity: 0.5 });
-  const waterGridLineMat = new THREE.LineBasicMaterial({ color: tokens().ink000, transparent: true, opacity: 0.32 });
+  // Colour is the seam tone (a light, desaturated hairline — see tokens()'s
+  // own comment on why ink000 was the wrong choice), opacity borrowed
+  // straight from the CSS tokens these stand in for: --sl-seam-strong's 0.18
+  // ("panel edge, control edge" — a defined boundary) for land, --sl-seam-
+  // dash's 0.14 ("placeholder, empty, drop-zone" — exactly what an
+  // unclaimed/water slot is) for water, so nothing here is an invented value.
+  const gridLineMat = new THREE.LineBasicMaterial({ color: tokens().seam, transparent: true, opacity: 0.18 });
+  const waterGridLineMat = new THREE.LineBasicMaterial({ color: tokens().seam, transparent: true, opacity: 0.14 });
   for (let sr = 0; sr < M.slots.rows; sr++) for (let sc = 0; sc < M.slots.cols; sc++) {
     const onLand = !!M.provinceAtSlot(sc, sr);
     const c0 = sc * M.block.w, r0 = sr * M.block.h, w = M.block.w, h = M.block.h;
