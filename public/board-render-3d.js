@@ -30,6 +30,21 @@ import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer
 const KIT = self.FPMap.STRUCTURE_KIT;
 const PIECE_RANK = self.FPMap.STRUCTURE_RANK;
 
+// Same algorithm as board-render.js's own shade() (string-hex there, numeric
+// here — this module caches tokens as ints, see tokens() below), so a piece
+// gets the identical brightening treatment in either renderer: f<1 darkens
+// toward black, f>1 lightens toward white. Used to keep a structure's own
+// colour visibly distinct from the ground it stands on (see upsertPiece()) —
+// without it, a piece rendered at the raw, unbrightened faction colour reads
+// as barely-there against ground already filled with a dimmed version of
+// that same colour, especially the more a view angle favours the piece's
+// flat (similarly-lit) top face over its shaded side walls.
+function shade(hex, f) {
+  const c = [hex >> 16 & 255, hex >> 8 & 255, hex & 255].map(v =>
+    Math.max(0, Math.min(255, Math.round(f < 1 ? v * f : v + (255 - v) * (f - 1)))));
+  return c[0] << 16 | c[1] << 8 | c[2];
+}
+
 /* Three.js materials take numeric hex, not CSS colour strings, so the faction
  * tokens are read from the DOM once (as "#rrggbb") and parsed to numbers here,
  * then cached — the same reasoning as board-render.js's tokens(). Re-run this
@@ -315,8 +330,12 @@ export function create(canvas, M, opts = {}) {
     if (cur && cur.kind === kind && cur.owner === owner) return;
     if (cur) { scene.remove(cur.mesh); cur.mesh.geometry.dispose(); cur.mesh.material.dispose(); }
     const k = KIT[kind];
+    // Brightened the same way board-render.js's own piece() already treats
+    // its roof colour (2026-09-15 — this used to be the raw, unbrightened
+    // faction colour here, unlike 2D, which is what let a piece blend into
+    // ground already filled with a dimmed version of that same hue).
     const mesh = new THREE.Mesh(pieceGeo[kind], new THREE.MeshStandardMaterial({
-      color: owner === null ? tokens().neutral : seatColour(owner), roughness: 0.6,
+      color: owner === null ? shade(tokens().neutral, 1.3) : shade(seatColour(owner), 1.5), roughness: 0.6,
     }));
     mesh.position.set(c + 0.5, k.h / 2, r + 0.5);
     mesh.castShadow = true; mesh.receiveShadow = true;
