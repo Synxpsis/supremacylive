@@ -254,11 +254,17 @@
       note: 'Symmetric 1v1. Homes diagonally opposite, two neutral provinces contested.',
       slots: { cols: 2, rows: 2 }, block: { w: 7, h: 7 },
       starts: [{ seat: 0, territory: 'verrand' }, { seat: 1, territory: 'dunmar' }],
+      // Province `name` is blank by default (2026-09-14) — same as a
+      // sector the editor creates fresh — so a GM names their own world
+      // instead of inheriting fantasy names, on every board this ships
+      // with, not just new content. `id` is unrelated to `name` and stays
+      // fixed (`starts`/city `prov` references, twin pairing) — only the
+      // display name changed.
       provinces: [
-        { id: 'verrand', name: 'Verrand', sc: 0, sr: 0 },
-        { id: 'kolstig', name: 'Kolstig', sc: 1, sr: 0 },
-        { id: 'aumere', name: 'Aumère', sc: 0, sr: 1 },
-        { id: 'dunmar', name: 'Dunmar', sc: 1, sr: 1 },
+        { id: 'verrand', name: '', sc: 0, sr: 0 },
+        { id: 'kolstig', name: '', sc: 1, sr: 0 },
+        { id: 'aumere', name: '', sc: 0, sr: 1 },
+        { id: 'dunmar', name: '', sc: 1, sr: 1 },
       ],
       // capital: true picks the one city per province that pays income (see
       // map.js's capitalOf()) — assigned in mirrored pairs (Halbrook/
@@ -285,11 +291,12 @@
       note: 'Original campaign board. Asymmetric by design — Dunmar is the endgame.',
       slots: { cols: 2, rows: 2 }, block: { w: 7, h: 7 },
       starts: [{ seat: 0, territory: 'verrand' }],
+      // See duel's own comment above — same reasoning, applied here too.
       provinces: [
-        { id: 'verrand', name: 'Verrand', sc: 0, sr: 0 },
-        { id: 'kolstig', name: 'Kolstig', sc: 1, sr: 0 },
-        { id: 'aumere', name: 'Aumère', sc: 0, sr: 1 },
-        { id: 'dunmar', name: 'Dunmar', sc: 1, sr: 1 },
+        { id: 'verrand', name: '', sc: 0, sr: 0 },
+        { id: 'kolstig', name: '', sc: 1, sr: 0 },
+        { id: 'aumere', name: '', sc: 0, sr: 1 },
+        { id: 'dunmar', name: '', sc: 1, sr: 1 },
       ],
       // No symmetry constraint here (solo isn't symmetric by design) — each
       // province's higher-wealth city is picked as its capital.
@@ -310,7 +317,9 @@
    * so a province IS a tile and a territory IS a slot — 625 provinces in all.
    * Players start in opposite corners; 18 of 25 territories wins.
    *
-     * Named by grid reference for now; territories get real names later.
+     * Territories are unnamed by default (2026-09-14, same as duel/solo) —
+     * a GM names their own world; see describeProvince()'s coordinate
+     * fallback for anywhere a name is needed before that happens.
      *
      * Seat 0 starts at t44 and seat 1 at t00 — with the board presented as a
      * diamond (top-down at a 45° bearing) those are the bottom and top points,
@@ -321,10 +330,13 @@
     win: { territories: 18 },
     starts: [{ seat: 0, territory: 't44' }, { seat: 1, territory: 't00' }],
     slots: { cols: 5, rows: 5 }, block: { w: 5, h: 5 },
+    // Blank by default, same as duel/solo (2026-09-14) — describeProvince()
+    // (map.js) falls back to a coordinate label wherever one's needed
+    // before a GM sets a real name.
     provinces: (() => {
       const out = [];
       for (let sr = 0; sr < 5; sr++) for (let sc = 0; sc < 5; sc++) {
-        out.push({ id: `t${sc}${sr}`, name: `${'ABCDE'[sc]}${sr + 1}`, sc, sr });
+        out.push({ id: `t${sc}${sr}`, name: '', sc, sr });
       }
       return out;
     })(),
@@ -391,6 +403,26 @@
     return [p.c0 + ((p.w - 1) >> 1), p.r0 + ((p.h - 1) >> 1)];
   }
 
+  /** A province's name, or — since every province defaults to unnamed now
+   *  (2026-09-14: `duel`/`solo`/`grand`'s own fantasy names were dropped in
+   *  favour of a blank slate the GM fills in, same as an editor-added
+   *  sector already did) — its centre tile coordinate, in the same
+   *  "(c, r)" format the tile inspector already uses for anything else
+   *  unnamed. Used anywhere a province needs to be identified in a message
+   *  a GM can actually act on: an internal `id` slug like "sector01" tells
+   *  them nothing about where on the board it is; a coordinate does. */
+  function describeProvince(map, p) {
+    if (p.name) return p.name;
+    const [c, r] = centreTile(map, p);
+    return `Sector (${c}, ${r})`;
+  }
+
+  /** Same idea as describeProvince(), for a city. */
+  function describeCity(c) {
+    if (c.name) return c.name;
+    return `City (${Math.floor(c.tc)}, ${Math.floor(c.tr)})`;
+  }
+
   /** The territory's capital — the one city, anywhere in the territory, with
    *  `capital: true` — or null if none is marked yet. This is what pays
    *  income (sim.js's step()) and nothing else: a capital's board *position*
@@ -414,8 +446,9 @@
     const issues = [];
     for (const p of map.provinces) {
       const caps = map.cities.filter(c => c.prov === p.id && c.capital);
-      if (caps.length === 0) issues.push(`${p.name || p.id} has no capital — mark a city as its capital`);
-      else if (caps.length > 1) issues.push(`${p.name || p.id} has ${caps.length} capitals — only one city per sector may be the capital`);
+      const label = describeProvince(map, p);
+      if (caps.length === 0) issues.push(`${label} has no capital — mark a city as its capital`);
+      else if (caps.length > 1) issues.push(`${label} has ${caps.length} capitals — only one city per sector may be the capital`);
     }
     return issues;
   }
@@ -710,16 +743,18 @@
     const issues = [];
 
     for (const p of m.provinces) {
-      if (!p.twin) issues.push(`${p.name} has no province in the opposite slot`);
+      if (!p.twin) issues.push(`${describeProvince(m, p)} has no province in the opposite slot`);
     }
     for (const a of m.cities) {
+      const an = describeCity(a);
       const b = a.twin && m.city(a.twin);
-      if (!b) { issues.push(`${a.name} has no counterpart across the board`); continue; }
-      if (a.wealth !== b.wealth) issues.push(`${a.name} pays ${a.wealth} but ${b.name} pays ${b.wealth}`);
-      if (a.garrison !== b.garrison) issues.push(`${a.name} holds ${a.garrison} but ${b.name} holds ${b.garrison}`);
+      if (!b) { issues.push(`${an} has no counterpart across the board`); continue; }
+      const bn = describeCity(b);
+      if (a.wealth !== b.wealth) issues.push(`${an} pays ${a.wealth} but ${bn} pays ${b.wealth}`);
+      if (a.garrison !== b.garrison) issues.push(`${an} holds ${a.garrison} but ${bn} holds ${b.garrison}`);
       const want = a.seat === null ? null : 1 - a.seat;
-      if (b.seat !== want) issues.push(`${a.name} is ${a.seat === null ? 'neutral' : 'seat ' + a.seat} but ${b.name} is ${b.seat === null ? 'neutral' : 'seat ' + b.seat}`);
-      if (!!a.capital !== !!b.capital) issues.push(`${a.name} is${a.capital ? '' : ' not'} a capital but its twin ${b.name} is${b.capital ? '' : ' not'}`);
+      if (b.seat !== want) issues.push(`${an} is ${a.seat === null ? 'neutral' : 'seat ' + a.seat} but ${bn} is ${b.seat === null ? 'neutral' : 'seat ' + b.seat}`);
+      if (!!a.capital !== !!b.capital) issues.push(`${an} is${a.capital ? '' : ' not'} a capital but its twin ${bn} is${b.capital ? '' : ' not'}`);
     }
     for (const a of (m.structures || [])) {
       const b = a.twin && m.structure(a.twin);
