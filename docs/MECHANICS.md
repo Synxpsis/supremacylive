@@ -35,8 +35,11 @@ tick and is called in a loop by whatever's driving the clock (the client's own l
 The only currency. Stored as milli-coin to avoid float rounding ever diverging between two clients.
 Two income sources, both continuous (paid every tick, scaled by `1000 / tickHz`):
 
-- **Capitals.** Every capital you hold pays its city's `wealth` value per second, always — this is
-  the baseline income and the reason capturing a territory (not just land) matters.
+- **Capitals.** Every capital you hold pays its `wealth` value per second, always — this is the
+  baseline income and the reason capturing a territory (not just land) matters. A territory has exactly
+  one capital, marked explicitly (`FPMap.capitalOf()`/the map editor's "Make capital" toggle) rather
+  than inferred from position — see [GLOSSARY.md](GLOSSARY.md) → Capital. A city that isn't the capital
+  carries a `wealth` value too, but nothing reads it; it pays nothing while held.
 - **Industry.** A flat `RULES.industryYield` (1.5 coin/s) per industry building you still hold. Razed
   automatically the instant the tile changes hands (`step()` deletes any `S.industry[k]` whose owner
   no longer matches).

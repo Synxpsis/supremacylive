@@ -114,6 +114,29 @@ as of 2026-09-12 (`ba103ce`, `a4c2834`); the rest are still open.
   before disposing it, and the next `create()` call seeds the new camera/controls from that saved pose
   instead of the default framing (see [RENDERING.md](RENDERING.md) → Camera).
   ✅ **Done, 2026-09-14, `45068e4`.**
+- **A capital is now an explicit flag on a city, not implied by its board position — plus a live
+  "Capitals" panel and save-blocking validation.** Found while chasing a report that a live AI match's
+  board looked nothing like what the editor showed for the same key: the board itself was fine (D1
+  read/write both work correctly), but its `cities` array was completely empty. Digging into *why* the
+  editor ever let that happen surfaced something bigger — `FPMap.capitalOf()` used to require a capital
+  to sit at its province's exact geometric centre tile, and the game's own shipped default `duel`/`solo`
+  boards never actually satisfied that (their two hand-placed cities per province both sit off-centre
+  by design). Capital income (`sim.js`'s `step()`, gated on `capitalOf()` returning non-null) had
+  therefore been silently paying zero for every territory on those boards this whole time, editor bug or
+  not. `capitalOf()` now finds a city by an explicit `capital: true` field instead of position — a
+  capital can sit anywhere in its sector and still pay out (see [GLOSSARY.md](GLOSSARY.md) → Capital,
+  [MAP_SYSTEM.md](MAP_SYSTEM.md) → `City`) — and the sidebar's city inspector gained a "Make capital of
+  this sector" toggle (steals the flag from any other city in the same sector, since at most one may
+  hold it) so a GM can place one anywhere and reassign it freely. A new "Capitals" panel (next to
+  Symmetry, but checked on every board, not just `duel`) shows live which sectors are missing one —
+  `FPMap.capitalIssues()`, shared with the server-side check below. `mirrorCity()` syncs the flag to a
+  city's twin the same way it already syncs wealth/garrison/seat, and `symmetry()` now checks a capital
+  flag matches its twin's. `addTerritory()`'s auto-seeded capital is flagged explicitly rather than
+  relying on its starting position. `worker.js`'s `handlePutMap` now hard-refuses to save any board
+  (any key, not just `duel`) with a province that has zero or more than one capital — the actual
+  production `duel` board (its cities lost entirely, unrelated to this fix — see
+  [KNOWN_ISSUES.md](KNOWN_ISSUES.md)) would have been rejected outright had this existed sooner. See
+  [MECHANICS.md](MECHANICS.md) → Coin. ✅ **Done, 2026-09-14.**
 
 ## What it can't do — the actual gap list
 

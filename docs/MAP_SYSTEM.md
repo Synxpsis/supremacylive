@@ -94,7 +94,8 @@ Everything else on a province (`w`, `h`, `c0`, `r0`, `index`, `cities`, `twin`, 
 | `name` | string | yes | Display name |
 | `prov` | string | yes | The owning province's `id` |
 | `lc`, `lr` | int | yes | Local tile position **within** the province (0-indexed from the province's own corner, not the board) |
-| `wealth` | number | yes | Coin/second this city's capital pays while held — see [MECHANICS.md](MECHANICS.md) |
+| `wealth` | number | yes | Coin/second this city pays while held, **if it's the province's capital** (see `capital` below) — see [MECHANICS.md](MECHANICS.md). A non-capital city still carries a `wealth` value but nothing ever reads it |
+| `capital` | `true` \| absent | no (but exactly one per province, enforced at save time) | Marks this city as its province's capital — the one that actually pays `wealth` (`FPMap.capitalOf()`/`sim.js`'s income loop). Independent of `lc`/`lr` (2026-09-14) — a capital can sit anywhere in its province, not just the centre tile. `handlePutMap` refuses to save a board where any province has zero or more than one (`FPMap.capitalIssues()`); the editor surfaces the same check live via its Capitals panel and a per-city "Make capital" toggle |
 | `seat` | `0 \| 1 \| null` | one of `seat`/`garrison` | Starting owner. Present = seat-owned from kickoff |
 | `garrison` | int | one of `seat`/`garrison` | Starting neutral troop count. Present = neutral at kickoff. **A city has one or the other, never both** — `build()` derives `garrison: 0` for a seated city and `owner: seat` either way |
 

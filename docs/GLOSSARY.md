@@ -58,8 +58,14 @@ actually be standardized project-wide rather than split between two conventions.
 
 ## Capital
 
-The city on a territory's centre tile. Capturing it flips ownership of every tile in the whole
-territory at once (see [MECHANICS.md](MECHANICS.md) → Combat). Every territory has exactly one.
+The one city in a territory marked `capital: true` (`FPMap.capitalOf()`) — what pays that territory's
+income while held (see [MECHANICS.md](MECHANICS.md) → Coin). Every territory has exactly one, enforced
+at save time (`FPMap.capitalIssues()`, `worker.js`'s `handlePutMap`). **Not the same tile as the
+territory's centre** (2026-09-14) — capturing the *centre* tile is what flips ownership of the whole
+territory at once (see [MECHANICS.md](MECHANICS.md) → Combat); the capital city can sit anywhere in the
+territory and still pay out. The two used to always be the same tile by convention, which is why they're
+easy to conflate in older code/docs — if you see "capital" meaning "centre tile," that's the
+pre-2026-09-14 sense.
 
 ## Garrison
 
