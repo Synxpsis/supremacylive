@@ -49,6 +49,13 @@ mode" needed. See [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md). None of the three ship
 (`duel`/`solo`/`grand`) actually use this yet — they all still fill their whole grid — so no board a
 real match is played on has ever had a water tile; that's a content choice now, not a tooling gap.
 
+**A water slot is a real 7×7 (or whatever `block` is) grid of individually addressable tiles, not one
+undivided cell** — `territoryAt()` resolves every `(c, r)` inside it to `null` independently, exactly
+like a province resolves every tile inside it to itself. The 3D renderer didn't visually reflect that
+until 2026-09-14 (see [RENDERING.md](RENDERING.md) → Ground): it drew tile-grid lines only for occupied
+slots, so an empty slot's tiles had nothing separating them and read as one flat quad even though each
+one was still independently clickable/inspectable underneath.
+
 ## Board definition — full field reference
 
 This is the JSON shape `FPMap.build()` accepts (a `MAPS` entry in `map.js`, or a `maps` table row in

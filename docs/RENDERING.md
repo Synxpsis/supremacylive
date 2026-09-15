@@ -54,6 +54,15 @@ always fully tiled by land-or-water.
 Cells not on land are hidden via a zero instance scale on the land mesh (and vice versa for water) —
 see the seeding loop in `create()` for the exact pattern if extending this.
 
+**Grid lines are drawn per *slot*, land or water alike (2026-09-14; previously land-only).** Each of
+the board's `slots.cols × slots.rows` cells gets its own tile-grid `LineSegments` regardless of whether
+`provinceAtSlot()` resolves it to a province — an empty slot's `WATER_SINK`-height lines at the water
+surface, an occupied one's at the land surface (`y = 0.01`). Before this, the line-drawing loop only
+ever iterated `M.provinces`, so an empty slot's water tiles — each still an individually addressable,
+independently clickable cell (see [MAP_SYSTEM.md](MAP_SYSTEM.md) → Sparse boards and water) — had no
+lines separating them and rendered as one undivided quad, indistinguishable from a single giant cell
+even though nothing about the underlying tile grid had actually changed.
+
 ### Structures: one `Mesh` per occupied tile
 
 Added/removed/recoloured as the piece set changes tick to tick, never instanced (there are far fewer
@@ -99,18 +108,38 @@ to know before touching this code:
 ### Camera
 
 A real `THREE.PerspectiveCamera` + `OrbitControls`, not the `map.js` projection math the 2D renderer
-uses. Selecting or arming a tile recentres the orbit target on it and freezes
-`enableRotate`/`enablePan` (zoom stays live) until the selection clears — which `game.html` already
-does on a click outside the board. This is a genuine camera lock, not a suggestion: while a tile is
-selected, drag gestures on the board itself cannot pan or spin the camera away from it.
+uses. `selectionLock: true` (the default) recentres the orbit target on whatever's selected or armed
+and freezes `enableRotate`/`enablePan` (zoom stays live) until the selection clears — a genuine camera
+lock, not a suggestion: while it's engaged, drag gestures on the board itself cannot pan or spin the
+camera away from the selection.
 
-**Opt-out via `create(canvas, M, { selectionLock: false })`** (2026-09-13) — `game.html` needs this lock
-(a player mid-order shouldn't be able to spin away from the tile they just committed to), but
-`public/editor.html` passes `selectionLock: false`: *every* click there resolves to a tile-inspector
-selection (a city, a structure, open ground, or open water — see [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md)),
-so the lock would otherwise engage almost constantly and fight free camera navigation while authoring a
-board. Default (no `opts`, or `selectionLock` anything but `false`) preserves the original always-on
-behaviour, so `game.html`'s existing `create(canvas, M)` call is untouched.
+**Both `editor.html` and `game.html` pass `create(canvas, M, { selectionLock: false })` as of
+2026-09-14** — free camera everywhere the module is used; the `true` default now exists purely for a
+future caller that wants it, not for either shipped page. `editor.html` needed this from the start
+(2026-09-13): *every* click there resolves to a tile-inspector selection (a city, a structure, open
+ground, or open water — see [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md)), so the lock engaged almost
+constantly and fought free navigation while authoring a board. `game.html` originally kept the default
+lock intentionally — "a player mid-order shouldn't be able to spin away from the tile they just
+committed to" — but in practice it fired on every plain tile-inspect click too (checking a garrison
+count, say), not just an armed march order, fighting free navigation during ordinary play the same way
+it did in the editor. Turning it off there doesn't reopen the original concern: the actual march-drag
+gesture (`game.html`'s `_onDown3D`/`_onUp3D`) already disables/re-enables `controls.enabled` directly
+around the drag itself, independent of `selectionLock` entirely, so a player still can't spin the
+camera out from under an in-progress drag — `selectionLock` was only ever adding the recentre-and-freeze
+on top of that for *any* selection, armed or not.
+
+**Camera pose survives a scene rebuild via `create(canvas, M, { camera: { position, target } })`**
+(2026-09-14, `editor.html` only) — any edit that changes land/water layout (add/remove a sector, resize
+the slot grid or block size) forces `reset3D()` → a full scene recreate (see
+[EDITOR_UPGRADE.md](EDITOR_UPGRADE.md) below), and `create()` used to always seed a fresh camera/target
+at the default overview framing regardless of where the outgoing scene's camera actually was. Every
+such edit while orbiting or zoomed in visibly snapped the view back to the default angle.
+`editor.html`'s `reset3D()` now reads the outgoing scene's `camera.position`/`controls.target` back out
+before disposing it and hands that straight to the next `create()` call via this option; `create()`
+seeds the camera/`OrbitControls.target` from it instead of the default `boardCenter`-relative framing
+when present, falling back to the default only when there's no prior pose (first load, or a board swap
+that never had a scene yet). `game.html` never rebuilds its scene mid-match, so it has no use for this
+option and doesn't pass it.
 
 **Grid-reference labels via `create(canvas, M, { gridLabels: true })`** (2026-09-13) — draws static
 `CSS2DObject` axis labels along the board's two edges once, at scene setup: spreadsheet-style column

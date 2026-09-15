@@ -93,6 +93,27 @@ as of 2026-09-12 (`ba103ce`, `a4c2834`); the rest are still open.
   all. Also added a cap of one owned sector per seat in `setStartingSeat()` — assigning a new sector to
   a seat that already owns one moves the assignment rather than creating a second home, keeping both
   `starts` and the displaced sector's capital in step. ✅ **Done, 2026-09-13.**
+- **Fix: removing a sector left its land and grid lines stuck in the 3D view, and water tiles read as
+  one undivided blob.** Two related bugs found while dogfooding "remove a sector" for the first time
+  against a real board. (1) `removeTerritory()` called `select(null)` — which also repaints — *between*
+  `reset3D()` and `rebuild()`. Since `ensure3D()` only rebuilds the scene lazily (reuses `_r3d` if
+  already set), that stray repaint let the scene get eagerly recreated from the still-stale board (the
+  sector not yet removed from `S.built`); `rebuild()`'s own repaint right after then found `_r3d`
+  already set and skipped rebuilding it, so the removed sector's land and grid lines stuck around
+  permanently in 3D even though the tile inspector (reading the now-correct board) already called it
+  open water. Reordered to `reset3D()` → `rebuild()` → `select(null)`, matching `addTerritory()`'s
+  already-correct order. (2) Once the scene *was* rebuilt correctly, an empty slot's water tiles had no
+  grid lines between them at all (the line-drawing loop only ever iterated existing provinces), so 49
+  individually clickable tiles rendered as one flat quad. See [RENDERING.md](RENDERING.md) →
+  Ground, [MAP_SYSTEM.md](MAP_SYSTEM.md) → Sparse boards and water. ✅ **Done, 2026-09-14, `855e2bf`.**
+- **Fix: any content edit snapped the 3D camera back to the default view.** Every edit that changes
+  land/water layout (add/remove sector, resize) forces a full scene rebuild, and `create()` always
+  seeded a fresh camera at the default overview framing with no memory of where the previous scene's
+  camera was — so orbiting or zooming in, then adding or removing one sector, threw the view straight
+  back to the default angle. `reset3D()` now saves the outgoing scene's camera position/orbit-target
+  before disposing it, and the next `create()` call seeds the new camera/controls from that saved pose
+  instead of the default framing (see [RENDERING.md](RENDERING.md) → Camera).
+  ✅ **Done, 2026-09-14, `45068e4`.**
 
 ## What it can't do — the actual gap list
 
