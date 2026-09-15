@@ -98,7 +98,14 @@ change can't drift between the two views. (This used to be two independently har
 `capital`/`city` as *not* placeable via the board's `structures` array (they come from `cities`
 instead); the renderers themselves only ever read `fp`/`h`.
 
-Piece colour is the owning seat's faction colour, or `tokens().neutral` for an unowned city.
+Piece colour is the owning seat's faction colour, or `tokens().neutral` for an unowned city — brightened
+via a local `shade()` (2026-09-15, `owner === null ? shade(neutral, 1.3) : shade(seatColour(owner), 1.5)`),
+the identical algorithm and factors `board-render.js`'s own `piece()` already uses for its roof colour,
+adapted for the numeric hex this module caches tokens as. Ground beneath a piece is filled with a
+*dimmed* version of the same faction colour (`×0.82`/`×0.62` — see Ground above), so without this a
+piece rendered at the raw colour read as barely-there against its own ground, reported as "red objects
+on red tiles" — worst from a top-down-favouring angle, where a piece's flat top face (lit similarly to
+the ground plane beside it) contributes more to what's visible than its shaded side walls do.
 
 ### Labels — `CSS2DObject`s, not baked into the WebGL canvas
 
