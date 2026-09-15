@@ -117,3 +117,7 @@ Command-console clipped. Uppercase mono for labels, sentence case for the explan
 ## When something is missing
 
 If you have to invent a value, a component, or a state to finish a screen, that is a gap in the design system. Flag it rather than filling it — it gets designed in the design project and lands in `tokens.css`, not in feature code.
+
+## Process
+
+This file is UI rules only. For branching, PRs, CI, and how a merge to `main` reaches production, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
