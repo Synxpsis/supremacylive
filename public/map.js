@@ -260,15 +260,19 @@
         { id: 'aumere', name: 'Aumère', sc: 0, sr: 1 },
         { id: 'dunmar', name: 'Dunmar', sc: 1, sr: 1 },
       ],
+      // capital: true picks the one city per province that pays income (see
+      // map.js's capitalOf()) — assigned in mirrored pairs (Halbrook/
+      // Coilhaven, Ravensfeld/Fauconde) so symmetry() sees a match on both
+      // sides, same as wealth/garrison/seat already had to.
       cities: [
-        { id: 'halbrook', name: 'Halbrook', prov: 'verrand', lc: 1, lr: 2, wealth: 3.0, seat: 0 },
+        { id: 'halbrook', name: 'Halbrook', prov: 'verrand', lc: 1, lr: 2, wealth: 3.0, seat: 0, capital: true },
         { id: 'stenn', name: 'Stenn', prov: 'verrand', lc: 4, lr: 5, wealth: 2.2, seat: 0 },
-        { id: 'ravensfeld', name: 'Ravensfeld', prov: 'kolstig', lc: 2, lr: 1, wealth: 3.6, garrison: 60 },
+        { id: 'ravensfeld', name: 'Ravensfeld', prov: 'kolstig', lc: 2, lr: 1, wealth: 3.6, garrison: 60, capital: true },
         { id: 'ott', name: 'Ott', prov: 'kolstig', lc: 5, lr: 4, wealth: 2.4, garrison: 34 },
         { id: 'lisiel', name: 'Lisiel', prov: 'aumere', lc: 1, lr: 2, wealth: 2.4, garrison: 34 },
-        { id: 'fauconde', name: 'Fauconde', prov: 'aumere', lc: 4, lr: 5, wealth: 3.6, garrison: 60 },
+        { id: 'fauconde', name: 'Fauconde', prov: 'aumere', lc: 4, lr: 5, wealth: 3.6, garrison: 60, capital: true },
         { id: 'brackwater', name: 'Brackwater', prov: 'dunmar', lc: 2, lr: 1, wealth: 2.2, seat: 1 },
-        { id: 'coilhaven', name: 'Coilhaven', prov: 'dunmar', lc: 5, lr: 4, wealth: 3.0, seat: 1 },
+        { id: 'coilhaven', name: 'Coilhaven', prov: 'dunmar', lc: 5, lr: 4, wealth: 3.0, seat: 1, capital: true },
       ],
     },
 
@@ -287,15 +291,17 @@
         { id: 'aumere', name: 'Aumère', sc: 0, sr: 1 },
         { id: 'dunmar', name: 'Dunmar', sc: 1, sr: 1 },
       ],
+      // No symmetry constraint here (solo isn't symmetric by design) — each
+      // province's higher-wealth city is picked as its capital.
       cities: [
-        { id: 'halbrook', name: 'Halbrook', prov: 'verrand', lc: 1, lr: 2, wealth: 3.0, seat: 0 },
+        { id: 'halbrook', name: 'Halbrook', prov: 'verrand', lc: 1, lr: 2, wealth: 3.0, seat: 0, capital: true },
         { id: 'stenn', name: 'Stenn', prov: 'verrand', lc: 4, lr: 5, wealth: 2.2, seat: 0 },
         { id: 'ott', name: 'Ott', prov: 'kolstig', lc: 5, lr: 4, wealth: 2.4, garrison: 34 },
-        { id: 'ravensfeld', name: 'Ravensfeld', prov: 'kolstig', lc: 2, lr: 1, wealth: 3.6, garrison: 60 },
+        { id: 'ravensfeld', name: 'Ravensfeld', prov: 'kolstig', lc: 2, lr: 1, wealth: 3.6, garrison: 60, capital: true },
         { id: 'lisiel', name: 'Lisiel', prov: 'aumere', lc: 4, lr: 1, wealth: 2.8, garrison: 42 },
-        { id: 'fauconde', name: 'Fauconde', prov: 'aumere', lc: 1, lr: 4, wealth: 3.2, garrison: 52 },
+        { id: 'fauconde', name: 'Fauconde', prov: 'aumere', lc: 1, lr: 4, wealth: 3.2, garrison: 52, capital: true },
         { id: 'brackwater', name: 'Brackwater', prov: 'dunmar', lc: 2, lr: 2, wealth: 2.6, garrison: 55 },
-        { id: 'coilhaven', name: 'Coilhaven', prov: 'dunmar', lc: 5, lr: 5, wealth: 4.0, garrison: 88 },
+        { id: 'coilhaven', name: 'Coilhaven', prov: 'dunmar', lc: 5, lr: 5, wealth: 4.0, garrison: 88, capital: true },
       ],
     },
   };
@@ -332,7 +338,7 @@
         out.push({
           id: `c${sc}${sr}`,
           name: home || CITY_NAMES[(sr * 5 + sc) % CITY_NAMES.length],
-          prov: `t${sc}${sr}`, lc: 2, lr: 2,
+          prov: `t${sc}${sr}`, lc: 2, lr: 2, capital: true,
           // Richer toward the middle: the centre of the board is worth fighting for.
           wealth: [3.6, 3.0, 2.4][ring] ?? 2.4,
         });
@@ -374,16 +380,44 @@
     return out;
   }
 
-  /** The centre province of a territory — its capital seat. Even-sized blocks
-   *  round down, so the choice is deterministic at any block size. */
+  /** The centre province of a territory — the tile a military capture
+   *  targets (territoryOwner() below reads ownership from here, and taking
+   *  it flips the whole territory at once). Purely positional, and
+   *  independent of which tile the territory's capital *city* actually
+   *  stands on (see capitalOf()) — those used to be the same tile by
+   *  convention; they no longer have to be. Even-sized blocks round down, so
+   *  the choice is deterministic at any block size. */
   function centreTile(map, p) {
     return [p.c0 + ((p.w - 1) >> 1), p.r0 + ((p.h - 1) >> 1)];
   }
 
-  /** The city standing on a territory's centre province, if any. */
+  /** The territory's capital — the one city, anywhere in the territory, with
+   *  `capital: true` — or null if none is marked yet. This is what pays
+   *  income (sim.js's step()) and nothing else: a capital's board *position*
+   *  is no longer relevant to anything (2026-09-14 — it used to have to sit
+   *  on the territory's exact centre tile, capitalOf()'s old position-match
+   *  implementation, which meant the very board this game ships with never
+   *  actually had a real capital by that definition; see
+   *  docs/KNOWN_ISSUES.md). A GM marks a city as the capital explicitly (the
+   *  map editor's "Make capital" toggle) and can freely move it anywhere in
+   *  its sector afterward without losing that status. */
   function capitalOf(map, p) {
-    const lc = (p.w - 1) >> 1, lr = (p.h - 1) >> 1;
-    return map.cities.find(c => c.prov === p.id && c.lc === lc && c.lr === lr) || null;
+    return map.cities.find(c => c.prov === p.id && c.capital) || null;
+  }
+
+  /** Every province that doesn't have exactly one capital, as ready-to-show
+   *  messages (same shape as symmetry()'s issues list). Zero capitals means
+   *  no income ever, silently; more than one is just ambiguous — capitalOf()
+   *  would only ever see the first. worker.js's handlePutMap() refuses to
+   *  save while this is non-empty; editor.html shows it live. */
+  function capitalIssues(map) {
+    const issues = [];
+    for (const p of map.provinces) {
+      const caps = map.cities.filter(c => c.prov === p.id && c.capital);
+      if (caps.length === 0) issues.push(`${p.name || p.id} has no capital — mark a city as its capital`);
+      else if (caps.length > 1) issues.push(`${p.name || p.id} has ${caps.length} capitals — only one city per sector may be the capital`);
+    }
+    return issues;
   }
 
   /**
@@ -685,6 +719,7 @@
       if (a.garrison !== b.garrison) issues.push(`${a.name} holds ${a.garrison} but ${b.name} holds ${b.garrison}`);
       const want = a.seat === null ? null : 1 - a.seat;
       if (b.seat !== want) issues.push(`${a.name} is ${a.seat === null ? 'neutral' : 'seat ' + a.seat} but ${b.name} is ${b.seat === null ? 'neutral' : 'seat ' + b.seat}`);
+      if (!!a.capital !== !!b.capital) issues.push(`${a.name} is${a.capital ? '' : ' not'} a capital but its twin ${b.name} is${b.capital ? '' : ' not'}`);
     }
     for (const a of (m.structures || [])) {
       const b = a.twin && m.structure(a.twin);
@@ -707,7 +742,7 @@
     camera, fitCamera, orbitCamera, stableFit, boardExtent, ISO_BEARINGS,
     ORTHO_BEARINGS, TOP_DOWN, BASE_SCALE, BASE_YAW, BASE_PITCH,
     tileKey, neighbours, territoryAt, tilesOf, territoryOwner, score, frontier,
-    centreTile, capitalOf, mirrorTile, seedOwners,
+    centreTile, capitalOf, capitalIssues, mirrorTile, seedOwners,
     isRoad, roadTiles, roadNeighbours, roadPath, travelPath,
     DEFAULT_BLOCK, DEFAULT_SLOTS, PROVINCE_NAMES, CITY_NAMES,
     STRUCTURE_KIT, STRUCTURE_RANK, AUTHORABLE_KINDS,

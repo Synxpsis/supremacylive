@@ -1556,7 +1556,11 @@ class Component extends DCLogic {
       detail.selRows = [
         { key: 'kind', label: 'Province', value: isCap ? 'Territory capital' : 'Open ground', colour: isCap ? 'var(--sl-signal)' : 'var(--sl-text-mute)', font: uiFont },
         { key: 'terr', label: 'Territory held by', value: terrOwn === null ? 'No one' : terrOwn === seat ? 'You' : `Seat ${terrOwn}`, colour: 'var(--sl-text-dim)', font: uiFont },
-        { key: 'coin', label: 'Coin / sec', value: city ? city.wealth.toFixed(1) : '—', colour: city ? 'var(--sl-coin)' : 'var(--sl-text-mute)', font: monoFont },
+        // Only the capital actually pays (sim.js's income loop reads
+        // capitalOf(), not "any city") — a non-capital city still carries a
+        // wealth value in the data but nothing pays it, so showing it here
+        // would read as income that isn't real.
+        { key: 'coin', label: 'Coin / sec', value: isCap ? city.wealth.toFixed(1) : '—', colour: isCap ? 'var(--sl-coin)' : 'var(--sl-text-mute)', font: monoFont },
         { key: 'reach', label: 'In reach', value: mine ? 'Held' : reachable ? 'Yes' : 'No', colour: mine ? 'var(--sl-text-dim)' : reachable ? 'var(--sl-ok)' : 'var(--sl-text-mute)', font: uiFont },
       ];
       detail.capNote = isCap

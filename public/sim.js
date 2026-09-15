@@ -6,8 +6,12 @@
  * in a Durable Object and having two clients agree.
  *
  * Rules that matter:
- *   · Every territory has a capital on its centre province. Take the capital,
- *     take the territory.
+ *   · Every territory's centre province is what a capture targets — take it,
+ *     take the whole territory. Separately, every territory has exactly one
+ *     capital *city* (map.js's capitalOf(), a flag on the city, not a board
+ *     position), which is what pays income while held. The two used to
+ *     always be the same tile by convention; they no longer have to be — a
+ *     capital can sit anywhere in its territory and still pay out.
  *   · Roads are the centre cross of each territory, joined into highways.
  *     Troops may cross any province, but roads are twice the pace.
  *   · Barracks raise troops in place. They cost coin, escalating per barracks

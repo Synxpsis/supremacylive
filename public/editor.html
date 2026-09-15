@@ -196,6 +196,7 @@
     def: null,        // raw definition, mutated in place then rebuilt
     built: null,
     symmetry: null,
+    capitalIssues: null, // provinces missing (or duplicating) a capital — see rebuild()
     sel: null,         // { kind: 'tile', c, r } — every click inspects the exact tile, whatever's on it
     placeMode: null,   // null | 'city' | 'industry' | 'barracks' — active placement tool
     confirmRemove: null, // province id currently armed for a two-click "remove territory" — see select()
@@ -270,6 +271,13 @@
   function rebuild() {
     S.built = F().build(S.def);
     S.symmetry = S.key === 'duel' ? F().symmetry(S.built) : { ok: true, issues: [] };
+    // A sector's capital is now an explicit flag on a city (see map.js's
+    // capitalOf()), not a board position, so it's easy to lose track of
+    // mid-edit — deleting a city, or un-marking one, can leave a sector with
+    // none. Surfaced live here (unlike symmetry, checked on every board, not
+    // just duel) so that's visible before Save ever gets clicked and rejects
+    // it — see handlePutMap's matching, save-blocking check in worker.js.
+    S.capitalIssues = F().capitalIssues(S.built);
     S.boardError = null; // any successful edit supersedes a stale board-resize error
     renderPanel();
     paint();
@@ -646,6 +654,27 @@
     rebuild();
   }
 
+  /** Toggle whether a city is its sector's capital — see map.js's
+   *  capitalOf() for what this actually means now (income only; the city's
+   *  board position is irrelevant). Turning one on steals the flag from any
+   *  other city in the same sector first, since at most one may hold it;
+   *  turning the current capital off just leaves the sector capital-less
+   *  until another city is marked (surfaced by the Capitals panel/save
+   *  check, not blocked here — an editing board is allowed to be briefly
+   *  incomplete). */
+  function toggleCapital(id) {
+    const c = findCityDef(id);
+    if (!c) return;
+    if (c.capital) {
+      delete c.capital;
+    } else {
+      for (const other of S.def.cities) if (other.prov === c.prov) delete other.capital;
+      c.capital = true;
+    }
+    markDirty();
+    rebuild();
+  }
+
   function mirrorCity(id) {
     const built = S.built.city(id);
     if (!built || !built.twin) return;
@@ -658,6 +687,14 @@
     } else {
       dst.seat = 1 - src.seat;
       delete dst.garrison;
+    }
+    // Capital status mirrors too — same one-per-sector rule as toggleCapital(),
+    // applied to the twin's own sector rather than the source's.
+    if (src.capital) {
+      for (const other of S.def.cities) if (other.prov === dst.prov) delete other.capital;
+      dst.capital = true;
+    } else {
+      delete dst.capital;
     }
     markDirty();
     rebuild();
@@ -703,10 +740,13 @@
 
   /** Place a new sector in an empty slot. Every sector needs a capital to
    *  actually be fought over and pay income (see docs/MECHANICS.md), so this
-   *  seeds one at the exact centre tile with modest neutral defaults —
-   *  editable afterward exactly like any other city. Both the sector and its
-   *  capital are left unnamed (no fantasy-name pool) — the GM names their own
-   *  world; see clearBoard()'s own comment for the same reasoning. */
+   *  seeds one — flagged capital: true (see map.js's capitalOf(); the flag
+   *  is what makes it the capital, not where it sits) — at the centre tile
+   *  as a sane starting spot, with modest neutral defaults, editable
+   *  afterward exactly like any other city, freely movable without losing
+   *  capital status. Both the sector and its capital are left unnamed (no
+   *  fantasy-name pool) — the GM names their own world; see clearBoard()'s
+   *  own comment for the same reasoning. */
   function addTerritory(sc, sr) {
     if (S.built.provinceAtSlot(sc, sr)) return; // already occupied — shouldn't reach here via the UI, but don't clobber it if it does
     const existingIds = S.def.provinces.map(p => p.id);
@@ -717,7 +757,7 @@
     const clc = (block.w - 1) >> 1, clr = (block.h - 1) >> 1;
     const cIds = S.def.cities.map(c => c.id);
     const cid = F().pickId('capital' + sc + sr, cIds);
-    S.def.cities.push({ id: cid, name: '', prov: id, lc: clc, lr: clr, wealth: 2.4, garrison: 30 });
+    S.def.cities.push({ id: cid, name: '', prov: id, lc: clc, lr: clr, wealth: 2.4, garrison: 30, capital: true });
 
     markDirty();
     reset3D(); // adding a territory changes which tiles are land vs. water — the 3D scene's instance layout is baked in at create() and can't be patched in place, see reset3D()'s own comment
@@ -793,11 +833,13 @@
    *  no per-sector override). Same shrink-refusal philosophy as resizeSlots():
    *  refuse rather than silently strand a city or structure whose lc/lr
    *  would fall outside the new footprint. Note this does NOT reposition
-   *  anything that survives the check — a sector's centre tile (its capital
-   *  slot, see capitalOf()) moves when block.w/h changes, so a capital placed
-   *  under the old footprint may no longer sit at the new centre. Cheapest
-   *  safe order is: clear the board first (no name state either — see
-   *  clearBoard()), resize, then re-place capitals at the new centres. */
+   *  anything that survives the check — a sector's centre tile (the tile a
+   *  military capture targets, see centreTile()) moves when block.w/h
+   *  changes, so a structure sitting under the old footprint may no longer
+   *  sit exactly on the new centre. A capital city is unaffected either way
+   *  — capitalOf() no longer cares where in the sector it sits (see its own
+   *  comment) — this only matters for a pre-placed structure that was
+   *  deliberately positioned on the old centre tile specifically. */
   function resizeBlock(w, h) {
     w = Math.max(1, Math.min(15, Math.round(w) || 1));
     h = Math.max(1, Math.min(15, Math.round(h) || 1));
@@ -878,6 +920,9 @@
         ]) +
         field('Wealth', 'number', 'wealth', city.wealth, '0.1') +
         (isNeutral ? field('Garrison', 'number', 'garrison', city.garrison || 0) : '') +
+        '<button class="btn' + (city.capital ? ' on' : '') + '" id="capitalBtn" style="width:100%; margin-top:6px;">' +
+        (city.capital ? '✓ Capital of this sector' : 'Make capital of this sector') + '</button>' +
+        '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-top:4px;">The capital is what pays income while held — exactly one per sector, anywhere in it. Marking this one clears the flag from any other city here.</div>' +
         '<div style="display:flex; gap:8px; margin-top:6px;">' +
         '<button class="btn" id="mirrorBtn"' + (city.twin ? '' : ' disabled') + '>Mirror to twin</button>' +
         '<button class="btn danger" id="deleteBtn">Clear tile</button>' +
@@ -970,6 +1015,12 @@
       (S.confirmClearBoard ? 'Confirm — all cities & structures removed' : 'Clear board (cities & structures)') +
       '</button></div>');
 
+    parts.push('<div><div class="section-title">Capitals</div><div id="capList">' +
+      (S.capitalIssues.length === 0
+        ? '<div class="sym-ok">✓ Every sector has a capital</div>'
+        : S.capitalIssues.map(i => '<div class="sym-issue">' + escapeHtml(i) + '</div>').join('')) +
+      '</div></div>');
+
     parts.push('<div><div class="section-title">Symmetry</div><div id="symList">' +
       (S.symmetry.ok
         ? '<div class="sym-ok">✓ Balanced</div>'
@@ -1047,6 +1098,9 @@
 
     const deleteBtn = document.getElementById('deleteBtn');
     if (deleteBtn) deleteBtn.addEventListener('click', () => cityHere && deleteCity(cityHere.id));
+
+    const capitalBtn = document.getElementById('capitalBtn');
+    if (capitalBtn) capitalBtn.addEventListener('click', () => cityHere && toggleCapital(cityHere.id));
 
     const mirrorStructureBtn = document.getElementById('mirrorStructureBtn');
     if (mirrorStructureBtn) mirrorStructureBtn.addEventListener('click', () => structureHere && mirrorStructure(structureHere.id));

@@ -265,6 +265,17 @@ async function handlePutMap(env, request, key) {
   try { built = self.FPMap.build({ ...def, id: key }); }
   catch (err) { return problem(400, 'invalid map definition', { detail: String(err && err.message || err) }); }
 
+  // A capital-less (or multi-capital) province is silently broken, not just
+  // incomplete: with no capital, sim.js's income loop pays that territory
+  // nothing even fully held, forever, with no error anywhere — see
+  // docs/MECHANICS.md and the 2026-09-14 KNOWN_ISSUES.md entry this guards
+  // against a second occurrence of (a real production board lost its whole
+  // cities array once already, and nothing stopped it being saved that way).
+  // Checked for every province on every board, not just duel's symmetric
+  // ones — every province needs exactly one capital regardless of symmetry.
+  const capIssues = self.FPMap.capitalIssues(built);
+  if (capIssues.length) return problem(400, 'sector missing a capital', { issues: capIssues });
+
   if (key === 'duel') {
     const sym = self.FPMap.symmetry(built);
     if (!sym.ok) return problem(400, 'map is not symmetric', { issues: sym.issues });
