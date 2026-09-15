@@ -72,7 +72,7 @@
   </sc-if>
 
   <sc-if value="{{ inMatch }}" hint-placeholder-val="{{ false }}">
-    <div style="height: 100vh; display: grid; grid-template-columns: {{ gridCols }}; grid-template-rows: auto 1fr; gap: 10px; padding: 10px; box-sizing: border-box; background: var(--sl-ink-000);">
+    <div style="height: 100vh; display: grid; grid-template-columns: {{ gridCols }}; transition: grid-template-columns var(--sl-dur-3) var(--sl-ease-mono); grid-template-rows: auto 1fr; gap: 10px; padding: 10px; box-sizing: border-box; background: var(--sl-ink-000);">
 
       <header style="grid-column: 1 / -1; display: flex; align-items: stretch; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); overflow: hidden;">
 
@@ -687,12 +687,41 @@ class Component extends DCLogic {
    *  flip for either side of an online match. */
   is3D() { return this.param('render') === '3d'; }
 
-  board() {
+  boardKey() {
     const fromUrl = this.param('board');
     // Grand is shelved for now — 1v1 (duel) is the only board on offer
     // until it comes back, so anything that isn't an explicit ?board=grand
     // falls through to duel rather than the old grand default.
-    const key = fromUrl === 'duel' || fromUrl === 'grand' ? fromUrl : 'duel';
+    return fromUrl === 'duel' || fromUrl === 'grand' ? fromUrl : 'duel';
+  }
+
+  /** The static bundled definition — fine for the pre-match menu-stats
+   *  preview (territory/province/win counts, see _renderVals()), which is
+   *  cosmetic and synchronous by nature, but NOT what an actual match should
+   *  ever be built from. See loadBoardDef() below for the version that
+   *  matters. */
+  board() { return self.FPMap.MAPS[this.boardKey()]; }
+
+  /** Board content is live-editable at editor.supremacy.live and stored in
+   *  D1 — not the static MAPS[key] baked into whatever public/map.js
+   *  happened to ship with the last deploy (see match.js's loadBoardDef(),
+   *  the server-side counterpart this mirrors). A networked match already
+   *  gets this right: the server resolves the live definition and sends it
+   *  down as boardDef (see onNetMessage's 'start' handler). An AI match
+   *  never talks to the Match Durable Object at all, so without fetching
+   *  this itself it would always render whatever MAPS[key] happened to be
+   *  baked into the last deploy — silently and permanently out of step with
+   *  whatever's actually been edited and saved, which is what "the AI board
+   *  doesn't match the editor" was actually describing. Falls back to the
+   *  static bundle only if the fetch itself fails (logged out, offline,
+   *  network error) — same fallback shape as match.js's own loadBoardDef(). */
+  async loadBoardDef() {
+    const key = this.boardKey();
+    try {
+      const r = await fetch(`/api/maps/${encodeURIComponent(key)}`, { credentials: 'same-origin' });
+      const j = await r.json().catch(() => null);
+      if (r.ok && j && j.ok && j.map && j.map.definition) return j.map.definition;
+    } catch (_) { /* fall through to the static bundle below */ }
     return self.FPMap.MAPS[key];
   }
 
@@ -703,9 +732,15 @@ class Component extends DCLogic {
     return this.props.opponent || 'Steady';
   }
 
-  play() {
+  async play() {
     if (!self.FPMap || !self.FPSim) return;
-    const def = this.board();
+    // Reuses the 'connecting' screen's spinner/message — this is a genuine
+    // network round-trip (loadBoardDef()), not instant, and an AI match has
+    // no other loading state of its own to show while it's in flight.
+    this._netMessage = 'Loading board…';
+    this.setState({ screen: 'connecting' });
+    const def = await this.loadBoardDef();
+    if (!self.FPMap || !self.FPSim) return; // unmounted mid-fetch
     const M = self.FPMap.build(def);
     this._framedSeat = null;
     this.sim = self.FPSim.create(M);
