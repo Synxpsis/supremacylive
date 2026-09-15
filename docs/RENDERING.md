@@ -141,6 +141,17 @@ when present, falling back to the default only when there's no prior pose (first
 that never had a scene yet). `game.html` never rebuilds its scene mid-match, so it has no use for this
 option and doesn't pass it.
 
+**The match sidebar's width transition also drives the camera's aspect ratio smoothly, for free
+(2026-09-14).** `game.html`'s outer grid column for the sidebar now animates between `0px` and `348px`
+via CSS `transition` (see [KNOWN_ISSUES.md](KNOWN_ISSUES.md) → Design-system gaps for why this is a
+deliberate exception to the in-match motion rule) instead of snapping. The board canvas's existing
+`ResizeObserver` → `this._r3d.resize()` hookup (`wire()`) already fires on every layout size change, CSS
+transitions included, so `camera.aspect`/`updateProjectionMatrix()` now re-run on effectively every
+frame of the sidebar's animation — the camera eases its reprojection right along with the panel with no
+camera-specific code needed. Before this, the grid column (and therefore the canvas) resized in one
+instant layout pass, so the camera's aspect ratio jumped in a single frame the same way the panel itself
+snapped open/closed.
+
 **Grid-reference labels via `create(canvas, M, { gridLabels: true })`** (2026-09-13) — draws static
 `CSS2DObject` axis labels along the board's two edges once, at scene setup: spreadsheet-style column
 letters (A, B, C… Z, AA, AB…, so a board wider than 26 tiles stays unambiguous) at `(c + 0.5, 0.02, -0.6)`

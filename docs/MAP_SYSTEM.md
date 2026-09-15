@@ -208,6 +208,16 @@ row from `MAPS.duel` the first time it's asked for (`ensureMapSeeded`) and never
 D1 is the source of truth from that point on. See [ARCHITECTURE.md](ARCHITECTURE.md) and
 [API.md](API.md) for the editor's read/write endpoints.
 
+**This only ever covered a networked 1v1 match — an AI match had no equivalent until 2026-09-14.**
+`game.html`'s local (non-networked) `play()` never talks to the `Match` Durable Object at all, so it
+built its sim straight from the static bundled `MAPS[key]`, completely bypassing D1. Any editor save —
+a rename, a moved capital, a resized sector, anything — showed up in a real 1v1 but never against the
+AI, reported as "the map for AI battles is not the same map as what we built in the editor." `play()`
+now calls its own `loadBoardDef()` (mirroring `match.js`'s function of the same name and the same
+D1-first/static-bundle-fallback shape) before building the sim, closing the gap: every board a player
+can actually see — editor preview, 1v1, AI match — now reads from the same live source. See
+[KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+
 ## The map editor today
 
 A standalone page (`public/editor.html`, plain JS — not the `x-dc`/React-based framework the rest of
