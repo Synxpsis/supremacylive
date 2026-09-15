@@ -137,6 +137,17 @@ as of 2026-09-12 (`ba103ce`, `a4c2834`); the rest are still open.
   production `duel` board (its cities lost entirely, unrelated to this fix — see
   [KNOWN_ISSUES.md](KNOWN_ISSUES.md)) would have been rejected outright had this existed sooner. See
   [MECHANICS.md](MECHANICS.md) → Coin. ✅ **Done, 2026-09-14.**
+- **Fix: an error message named a sector by its internal id, and every board still shipped with
+  built-in fantasy names.** Two related reports right after the above landed. (1) `capitalIssues()`'s
+  fallback for a blank-named province was `p.id` — a raw slug like `sector01` — which told the GM
+  nothing about where on the board it actually was. Now falls back to a `(c, r)` centre-tile
+  coordinate instead (`describeProvince()`/`describeCity()` in map.js), the same format the tile
+  inspector already uses for unnamed ground; `symmetry()`'s issue messages use it too. (2) `duel`,
+  `solo`, and `grand`'s static definitions carried their own built-in province names (Verrand, Dunmar,
+  Kolstig, Aumère, grand's grid-reference labels) — the GM wanted every sector, on every board, to
+  start blank and be named individually, same as a sector added fresh through the editor already was.
+  All three boards' province names are now blank by default; city names (Halbrook, Stenn, ...) are
+  unchanged. ✅ **Done, 2026-09-15, `75c9685`.**
 
 ## What it can't do — the actual gap list
 
