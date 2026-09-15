@@ -55,6 +55,29 @@ moving between tiles (a `stack`). No unit classes, no upgrades, no per-unit stat
 Troops are produced by **barracks**: every `RULES.barrackEvery` ticks (50 ticks = 2.5s), each barracks
 you own adds one trooper to its tile's garrison, capped at `RULES.barrackCap` (150) per tile.
 
+### Kickoff garrison
+
+`FPSim.create()` seeds exactly one garrison per territory, always on the **centre tile** — the capture
+point (see Combat below), never wherever the capital city itself is placed (`capitalOf()` is
+position-independent — see [GLOSSARY.md](GLOSSARY.md) → Capital). Seeding it anywhere else would leave
+the actual capture point undefended and trivially rushable, regardless of how strong the named capital
+"is."
+
+The *amount* differs by who starts owning the territory:
+
+- **A seat-owned (home) territory** always gets `RULES.homeCapital` (20) — a fixed, deliberately
+  balance-tuned value (see its own comment in `sim.js`: "a single early stack flipped a territory in
+  seconds" at a lower value once tried). A home capital city has no `garrison` field at all by design
+  (mutually exclusive with `seat` — see [MAP_SYSTEM.md](MAP_SYSTEM.md) → `City`), so there's nothing
+  else to read here.
+- **A neutral territory** uses its capital's own authored `garrison` field when set, falling back to
+  `RULES.neutralCapital` (30) only if it isn't. This used to always be the flat constant regardless of
+  what a GM configured (fixed 2026-09-15 — see [KNOWN_ISSUES.md](KNOWN_ISSUES.md)), silently discarding
+  whatever value was actually authored.
+
+Also seeded here: a starting **barracks** on every seat-owned territory's centre tile (again, position
+fixed regardless of the capital's own placement), so there's something to spend coin on from tick one.
+
 ## Structures
 
 One structure per tile, mutually exclusive, and destroyed the instant the tile is captured

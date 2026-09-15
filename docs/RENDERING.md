@@ -63,6 +63,19 @@ independently clickable cell (see [MAP_SYSTEM.md](MAP_SYSTEM.md) → Sparse boar
 lines separating them and rendered as one undivided quad, indistinguishable from a single giant cell
 even though nothing about the underlying tile grid had actually changed.
 
+**Grid-line colour is the seam tone, not ink000 (2026-09-15).** Both `gridLineMat` and
+`waterGridLineMat` used `tokens().ink000` — the exact colour of `scene.background` and the void the
+board sits in — so a hairline drawn in it is invisible by construction; it only ever showed up at all
+via incidental shading on the `y = 0.01`/`-WATER_SINK + 0.01` offset. This is what made an unclaimed
+neutral territory (dark `land` fill, and now correctly-drawn but functionally invisible grid lines) read
+as empty void in a screenshot rather than real, synced ground. Both materials now use `tokens().seam` —
+a new cached hex pulled from `--sl-seam-strong` (an rgba() string; `toHexRgba()` strips it to a bare
+colour, leaving alpha to the material's own `opacity`) — at 0.18 (land) / 0.14 (water) opacity, the
+exact values `--sl-seam-strong` ("panel edge, control edge") and `--sl-seam-dash` ("placeholder, empty,
+drop-zone") already assign to those two cases in the 2D UI, so nothing here is an invented value. The
+board's own perimeter/piece-shadow lines are unchanged (still `ink000` — a receding shadow, not a
+boundary meant to be seen).
+
 ### Structures: one `Mesh` per occupied tile
 
 Added/removed/recoloured as the piece set changes tick to tick, never instanced (there are far fewer
