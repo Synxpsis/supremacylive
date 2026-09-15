@@ -44,13 +44,19 @@ version of what's still open there:
   as an armed-frame example.
 - `--sl-focus-ring` isn't retrofitted onto every interactive element (nothing violates the
   accessibility floor — no bare `outline: none` — but the polished custom ring isn't wired up broadly).
-- **`game.html`'s match sidebar animates `grid-template-columns` open/closed (2026-09-14)** — a
-  deliberate, user-approved exception to non-negotiable #8 (in-match motion capped at 220ms, colour and
-  opacity only): a layout-geometry property, not colour/opacity. Duration still respects `--sl-dur-3`
-  (220ms) and gets `prefers-reduced-motion` handling for free via the existing token, so the *only*
-  actual rule broken is the property-type restriction, not the timing one. See the "Fixed this session
-  (2026-09-14)" table below for the full tradeoff this was weighed against (a fixed-width, always-on
-  rail, which would have needed no exception at all).
+- **`game.html`'s match sidebar animates its own `width` open/closed (2026-09-14, mechanism changed
+  2026-09-15)** — a deliberate, user-approved exception to non-negotiable #8 (in-match motion capped at
+  220ms, colour and opacity only): a layout-geometry property, not colour/opacity. Duration still
+  respects `--sl-dur-3` (220ms) and gets `prefers-reduced-motion` handling for free via the existing
+  token, so the *only* actual rule broken is the property-type restriction, not the timing one. See the
+  "Fixed this session (2026-09-14)" table below for the full tradeoff this was weighed against (a
+  fixed-width, always-on rail, which would have needed no exception at all). Originally animated
+  `grid-template-columns` on the whole match layout, which resized the board canvas's own layout box
+  (and therefore its WebGL backing store) every frame of the transition — reported as the camera
+  flickering while the sidebar moved. The sidebar is now an absolutely-positioned overlay
+  (`var(--sl-z-hud)`) on top of a board layer that's always full-size (`var(--sl-z-board)`), so only the
+  sidebar's own box animates; the board's is untouched by this transition at all. See the
+  fixed-this-session table below for that fix's own row and commit.
 
 ## Fixed this session (2026-09-11 – 2026-09-13)
 
@@ -89,6 +95,7 @@ Kept here for traceability — these were real bugs, now resolved on `main`:
 | Reported as "the neutral capitals only read as 30" despite being authored at 75 — a genuinely wrong-data bug, not the perceived-void rendering issue below. `FPSim.create()`'s kickoff garrison seeding never read a capital city's own `garrison` field at all; it always used the flat `RULES.neutralCapital` (30) / `RULES.homeCapital` (20) constants, silently discarding whatever a GM actually authored. Pre-existing (not caused by the capital-decoupling work above), but only became visible once a GM had a real reason to set a specific neutral-capital garrison. | Neutral territories now read the capital's own `garrison` when set, falling back to the constant only if unset; seat-owned (home) territories are unaffected (a home capital has no `garrison` field by design, so `RULES.homeCapital` remains the only source). The seed position is unchanged — still the centre tile (the capture point), never the capital's own position — moving it would leave the actual capture point undefended. See [MECHANICS.md](MECHANICS.md) → Kickoff garrison. | `7264c0d` |
 | Alongside the above, a screenshot of an early-game AI match appeared to show an unclaimed neutral territory as a "pentagon in a black void," read as more evidence of a data-sync bug. It wasn't — watched live, it was a correctly-synced neutral capital on real, correctly-drawn grid tiles that flipped to fully legible red the moment the AI captured it a few ticks later. The actual cause: 3D grid lines were drawn in `--sl-ink-000`, the *exact colour of the void background itself* — invisible by construction, not a data problem. | Grid lines (land and water both) now use the design system's `--sl-seam-strong`/`--sl-seam-dash` tones instead, at those tokens' own opacities. See [RENDERING.md](RENDERING.md) → Ground. | `7264c0d` |
 | Reported as "red objects on red tiles" — a captured territory's capital piece hard to make out against its own ground in the editor's 3D view. A real, concrete inconsistency: `board-render.js`'s 2D `piece()` has always brightened a structure's roof colour above the raw faction colour (`shade(seatColour(own), 1.5)`) specifically so it reads as distinct from ground filled with a *dimmed* version of that same colour — `board-render-3d.js`'s `upsertPiece()` never got the equivalent treatment and used the raw, unbrightened colour, worst from a top-down-favouring angle where a piece's flat top face (lit like the ground beside it) outweighs its shaded side walls. | Added a `shade()` to `board-render-3d.js` — the identical algorithm 2D already uses, adapted for the numeric hex this module caches tokens as — and applied it to piece colour the same way 2D's `piece()` does. Verified live against production data at both a normal and a steep top-down angle. See [RENDERING.md](RENDERING.md) → Structures. | `c2b3e4d` |
+| Reported: the camera/renderer flickers as the match sidebar animates open and closed, in both AI and networked matches. The sidebar's width transition was a `grid-template-columns` animation on the whole match layout — the board canvas shared that grid with the sidebar, so its own layout box (and therefore its WebGL backing store) resized on every frame of the transition, forcing a `renderer.setSize()`/new framebuffer each time, racing the browser's own repaint of the animating layout. | The outer layout is now a plain flex column (header, then a `position: relative` wrapper) instead of a grid. The board div is an absolutely-positioned base layer (`var(--sl-z-board)`) filling that wrapper unconditionally — its box never changes size when the sidebar opens or closes. The sidebar is an absolutely-positioned overlay (`var(--sl-z-hud)`) on top of it, still easing its own `width` between `0px` and `348px` on the same transition/duration as before — same animation, now fully decoupled from the board's layout. `gridCols` renamed to `asideWidth` to match. Verified locally: sidebar opens/closes over the board with no shift or resize, hit-testing and the march-drag gesture unaffected. | `5b9b998` |
 
 ## Known limitations (by design or by scope, not bugs)
 
