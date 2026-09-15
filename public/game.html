@@ -72,9 +72,9 @@
   </sc-if>
 
   <sc-if value="{{ inMatch }}" hint-placeholder-val="{{ false }}">
-    <div style="height: 100vh; display: grid; grid-template-columns: {{ gridCols }}; transition: grid-template-columns var(--sl-dur-3) var(--sl-ease-mono); grid-template-rows: auto 1fr; gap: 10px; padding: 10px; box-sizing: border-box; background: var(--sl-ink-000);">
+    <div style="height: 100vh; display: flex; flex-direction: column; gap: 10px; padding: 10px; box-sizing: border-box; background: var(--sl-ink-000);">
 
-      <header style="grid-column: 1 / -1; display: flex; align-items: stretch; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); overflow: hidden;">
+      <header style="flex: none; display: flex; align-items: stretch; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); overflow: hidden;">
 
         <div style="flex: none; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-right: 1px solid var(--sl-seam-strong);">
           <div style="width: 22px; height: 22px; flex: none; background: var(--sl-coin-wash); display: flex; align-items: center; justify-content: center; color: var(--sl-coin);">
@@ -121,7 +121,9 @@
 
       </header>
 
-      <aside style="position: relative; min-width: 0; overflow: hidden; display: grid; grid-template-rows: 1fr; background: var(--sl-ink-200); border: {{ asideBorder }};">
+      <div style="position: relative; flex: 1 1 auto; min-height: 0;">
+
+      <aside style="position: absolute; inset: 0 auto 0 0; width: {{ asideWidth }}; transition: width var(--sl-dur-3) var(--sl-ease-mono); overflow: hidden; display: grid; grid-template-rows: 1fr; background: var(--sl-ink-200); border: {{ asideBorder }}; z-index: var(--sl-z-hud);">
 
         <sc-if value="{{ armed }}" hint-placeholder-val="{{ false }}">
           <span style="position: absolute; left: -1px; top: -1px; width: 9px; height: 9px; border-left: 1px solid var(--sl-signal-hot); border-top: 1px solid var(--sl-signal-hot); pointer-events: none;"></span>
@@ -234,7 +236,7 @@
 
       </aside>
 
-      <div style="position: relative; min-width: 0; overflow: hidden; background: var(--sl-ink-100); border: 1px solid var(--sl-seam-strong); ">
+      <div style="position: absolute; inset: 0; overflow: hidden; background: var(--sl-ink-100); border: 1px solid var(--sl-seam-strong); z-index: var(--sl-z-board);">
         <canvas ref="{{ canvasRef }}" style="position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: {{ cursor }};"></canvas>
 
         <sc-if value="{{ showOver }}" hint-placeholder-val="{{ false }}">
@@ -249,6 +251,8 @@
         <div style="position: absolute; left: 14px; bottom: 12px; max-width: calc(100% - 28px); box-sizing: border-box; padding: 8px 12px; background: color-mix(in srgb, var(--sl-ink-100) 76%, transparent); border: 1px solid var(--sl-seam-strong); font-size: var(--sl-fs-ui-xs); color: var(--sl-text-mute); backdrop-filter: blur(6px);">
 Drag a garrison to march it · Shift to send all · roads are twice the pace · scroll to zoom · R to fit
         </div>
+      </div>
+
       </div>
 
     </div>
@@ -1465,7 +1469,7 @@ class Component extends DCLogic {
     const blankPill = { name: '—', colour: 'var(--sl-faction-neutral)', nameColour: 'var(--sl-text-dim)', terr: '0', trophies: 0 };
     const blank = {
       headerLeft: blankPill, headerRight: blankPill,
-      myCoin: 0, gridCols: '0px 1fr', asideBorder: 'none', armed: false,
+      myCoin: 0, asideWidth: '0px', asideBorder: 'none', armed: false,
       hasSel: false, hasMulti: false, noSel: true, selCoord: '—',
       multiCount: '', multiTroops: '', clearMulti: () => {},
       selHeading: '', selOwnerLine: '', selOwnerColour: 'var(--sl-faction-neutral)', selRows: [],
@@ -1635,7 +1639,7 @@ class Component extends DCLogic {
     return {
       ...base, ...menuStats, headerLeft, headerRight, ...detail,
       myCoin: money[seat] ?? 0,
-      gridCols: detail.noSel ? '0px 1fr' : '348px 1fr',
+      asideWidth: detail.noSel ? '0px' : '348px',
       asideBorder: detail.noSel ? 'none' : '1px solid var(--sl-seam-strong)',
       armed: !detail.noSel,
       notice: this.state.notice,
