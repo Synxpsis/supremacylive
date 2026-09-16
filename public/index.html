@@ -103,6 +103,7 @@
           </div>
           <nav style="display: flex; align-items: center; gap: 6px;">
             <span style="padding: 7px 14px; background: var(--sl-ink-500); border: 1px solid transparent; color: var(--sl-text); font-size: var(--sl-fs-ui-xs);">Home</span>
+            <a href="{{ profileHref }}" style="padding: 7px 14px; background: transparent; border: 1px solid transparent; color: var(--sl-text-dim); font-size: var(--sl-fs-ui-xs);" style-hover="color: var(--sl-text);">Profile</a>
           </nav>
         </div>
         <div style="display: flex; align-items: center; gap: 16px;">
@@ -491,6 +492,7 @@ class Component extends DCLogic {
       playLabel: st.user ? 'Enter hub' : 'Play for free',
       commander: st.user ? st.user.username : 'Guest commander',
       trophies: 0,
+      profileHref: st.user ? `profile.html?u=${encodeURIComponent(st.user.username)}` : 'profile.html',
 
       // Auth
       authTitle: st.authMode === 'signup' ? 'Create your account' : 'Welcome back',

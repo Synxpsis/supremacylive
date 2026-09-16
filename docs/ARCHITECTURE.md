@@ -10,6 +10,7 @@ API share one origin.
                          │                              │
                          │  /            → routed HTML  │──▶ Workers Assets (public/)
                          │  /api/auth/*  → D1            │
+                         │  /api/users/* → D1  (public)  │
                          │  /api/maps/*  → D1            │
                          │  /queue       → Matchmaker DO │
                          │  /match/:id   → Match DO      │

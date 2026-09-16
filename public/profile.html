@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html data-faction="cobalt-ember">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Supremacy Live — Profile</title>
+<link rel="stylesheet" href="./tokens.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow+Semi+Condensed:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh;
+    background: var(--sl-ink-100); color: var(--sl-text);
+    font-family: 'Barlow Semi Condensed', sans-serif;
+    font-variant-numeric: tabular-nums;
+  }
+  a { color: var(--sl-signal); text-decoration: none; }
+  a:hover { color: var(--sl-signal-hot); }
+  ::selection { background: var(--sl-signal-glow); }
+  :focus-visible { outline: none; box-shadow: var(--sl-focus-ring); }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between; gap: 24px;
+    height: 56px; padding: 0 24px;
+    background: var(--sl-ink-200); border-bottom: 1px solid var(--sl-seam-strong);
+  }
+  .headerLeft { display: flex; align-items: stretch; height: 56px; }
+  .brand { display: flex; align-items: center; gap: 10px; padding-right: 24px; }
+  .brand .dot { width: 9px; height: 9px; background: var(--sl-signal); flex: none; }
+  .brand span {
+    font-family: var(--sl-font-display); font-weight: var(--sl-fw-display);
+    font-size: var(--sl-fs-ui-md); letter-spacing: var(--sl-tr-display); text-transform: uppercase;
+  }
+  nav { display: flex; align-items: stretch; }
+  nav a {
+    display: flex; align-items: center; padding: 0 16px;
+    font-family: var(--sl-font-mono); font-size: var(--sl-fs-label); font-weight: 500;
+    letter-spacing: var(--sl-tr-label); text-transform: uppercase;
+    color: var(--sl-text-dim); border-bottom: 2px solid transparent;
+  }
+  nav a:hover { color: var(--sl-text); }
+  nav a.active { color: var(--sl-text); border-bottom-color: var(--sl-signal); }
+
+  .headerRight { display: flex; align-items: center; gap: 14px; }
+  .chip {
+    display: flex; align-items: center; gap: 9px; padding: 5px 12px 5px 5px;
+    background: var(--sl-ink-300); border: 1px solid var(--sl-seam-strong);
+  }
+  .chip .ico {
+    width: 26px; height: 26px; flex: none; display: flex; align-items: center; justify-content: center;
+    background: var(--sl-seam); color: var(--sl-text-dim);
+  }
+  .chip span { font-size: var(--sl-fs-ui-sm); color: var(--sl-text-dim); }
+  .btn {
+    height: var(--sl-ctl-h-sm); padding: 0 var(--sl-ctl-pad-x-sm);
+    background: var(--sl-seam); border: 1px solid var(--sl-seam-strong);
+    color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-xs);
+    cursor: pointer;
+  }
+  .btn:hover { color: var(--sl-signal-hot); border-color: rgba(255,255,255,0.55); }
+
+  main { max-width: 760px; margin: 0 auto; padding: 40px 24px 64px; display: flex; flex-direction: column; gap: 24px; }
+  #result { display: flex; flex-direction: column; gap: 16px; }
+
+  .panel { position: relative; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); padding: 20px; }
+  .panel-label {
+    position: absolute; left: 14px; top: -8px; padding: 0 6px; background: var(--sl-ink-200);
+    font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); font-weight: 500;
+    letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-mute);
+  }
+
+  .searchRow { display: flex; gap: 8px; }
+  .searchField {
+    flex: 1; display: flex; align-items: center; gap: 8px; padding: 0 12px;
+    height: var(--sl-ctl-h-md); background: var(--sl-ink-300); border: 1px solid var(--sl-seam-strong);
+  }
+  .searchField svg { color: var(--sl-text-mute); flex: none; }
+  .searchField input {
+    flex: 1; min-width: 0; background: transparent; border: none; padding: 0;
+    color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-data-md);
+  }
+  .searchField input:focus { outline: none; }
+  .searchBtn {
+    height: var(--sl-ctl-h-md); padding: 0 var(--sl-ctl-pad-x); flex: none;
+    background: var(--sl-signal); border: 1px solid var(--sl-signal); color: var(--sl-text-invert);
+    font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase;
+    letter-spacing: var(--sl-tr-display); font-size: var(--sl-fs-ui-sm); cursor: pointer;
+  }
+  .searchBtn:hover { background: var(--sl-signal-hot); border-color: var(--sl-signal-hot); }
+
+  .identity { display: flex; align-items: center; gap: 20px; }
+  .avatar {
+    width: 72px; height: 72px; flex: none; display: flex; align-items: center; justify-content: center;
+    background: var(--sl-ink-300); border: 1px solid var(--sl-seam-strong);
+    font-family: var(--sl-font-mono); font-weight: var(--sl-fw-display); font-size: var(--sl-fs-d4); color: var(--sl-text);
+  }
+  .identity h1 {
+    margin: 0; font-family: var(--sl-font-display); font-weight: var(--sl-fw-display);
+    text-transform: uppercase; letter-spacing: var(--sl-tr-display);
+    font-size: var(--sl-fs-d2); line-height: var(--sl-lh-d2);
+  }
+
+  .stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .stat { background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .stat .k {
+    font-family: var(--sl-font-mono); font-size: var(--sl-fs-label); font-weight: 500;
+    letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-mute);
+  }
+  .stat .v { font-family: var(--sl-font-mono); font-size: var(--sl-fs-data-lg); font-weight: var(--sl-fw-mono); color: var(--sl-text); }
+
+  .note { font-size: var(--sl-fs-ui-sm); line-height: 1.55; color: var(--sl-text-dim); }
+
+  .empty {
+    display: flex; flex-direction: column; gap: 11px; padding: 18px;
+    background: var(--sl-ink-100); border: 1px dashed var(--sl-seam-dash);
+  }
+  .empty span {
+    font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase;
+    letter-spacing: var(--sl-tr-display); font-size: var(--sl-fs-ui-lg); color: var(--sl-text-mute);
+  }
+  .empty p { margin: 0; font-size: var(--sl-fs-ui-sm); line-height: 1.55; color: var(--sl-text-mute); text-wrap: pretty; }
+
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="headerLeft">
+    <div class="brand"><span class="dot"></span><span>Supremacy</span></div>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="profile.html" class="active" aria-current="page">Profile</a>
+    </nav>
+  </div>
+  <div class="headerRight" id="headerRight"></div>
+</header>
+
+<main>
+
+  <div class="panel">
+    <span class="panel-label">Commander lookup</span>
+    <form class="searchRow" id="searchForm">
+      <label class="searchField">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" vector-effect="non-scaling-stroke" aria-hidden="true"><circle cx="7" cy="7" r="4"></circle><path d="M10 10l3.5 3.5"></path></svg>
+        <input id="searchInput" type="text" placeholder="Username" autocomplete="off" maxlength="20" aria-label="Commander username">
+      </label>
+      <button type="submit" class="searchBtn">View</button>
+    </form>
+  </div>
+
+  <div id="result"></div>
+
+</main>
+
+<script>
+(function () {
+  const USERNAME = /^[a-z0-9_-]{3,20}$/i;
+
+  const headerRight = document.getElementById('headerRight');
+  const result = document.getElementById('result');
+  const searchForm = document.getElementById('searchForm');
+  const searchInput = document.getElementById('searchInput');
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function fmtDate(ms) {
+    if (!ms) return null;
+    try {
+      return new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(ms));
+    } catch (_) { return null; }
+  }
+
+  function currentUsername() {
+    const q = new URLSearchParams(location.search).get('u') || '';
+    return q.trim();
+  }
+
+  function renderHeader(me) {
+    if (me) {
+      const profileIco = '<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" vector-effect="non-scaling-stroke" aria-hidden="true"><circle cx="8" cy="5.5" r="2.8"></circle><path d="M2.5 14v-1.2l2.5-2h6l2.5 2V14"></path></svg>';
+      headerRight.innerHTML = `
+        <a class="chip" href="profile.html?u=${encodeURIComponent(me.username)}">
+          <span class="ico">${profileIco}</span>
+          <span>${esc(me.username)}</span>
+        </a>
+        <button class="btn" id="signOutBtn" type="button">Sign out</button>
+      `;
+      document.getElementById('signOutBtn').addEventListener('click', async () => {
+        try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); } catch (_) {}
+        location.href = 'index.html';
+      });
+    } else {
+      headerRight.innerHTML = `<a class="btn" href="index.html">Sign in</a>`;
+    }
+  }
+
+  function renderEmpty(title, body) {
+    result.innerHTML = `<div class="empty"><span>${esc(title)}</span><p>${body}</p></div>`;
+  }
+
+  function renderProfile(user) {
+    const initials = user.username.slice(0, 2).toUpperCase();
+    const since = fmtDate(user.createdAt) || '—';
+    const seen = fmtDate(user.lastLogin) || '—';
+    result.innerHTML = `
+      <div class="identity">
+        <div class="avatar">${esc(initials)}</div>
+        <h1>${esc(user.username)}</h1>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="k">Member since</span><span class="v">${esc(since)}</span></div>
+        <div class="stat"><span class="k">Last seen</span><span class="v">${esc(seen)}</span></div>
+      </div>
+      <div class="panel">
+        <span class="panel-label">Match record</span>
+        <p class="note">Not tracked yet. Wins, losses and head-to-head history will appear here once match results are recorded.</p>
+      </div>
+    `;
+  }
+
+  async function loadProfile(username) {
+    if (!USERNAME.test(username)) {
+      renderEmpty('Not a valid username', 'Commander names are 3–20 characters: letters, numbers, underscores or hyphens.');
+      return;
+    }
+    result.innerHTML = `<p class="note">Loading commander record…</p>`;
+    try {
+      const r = await fetch(`/api/users/${encodeURIComponent(username)}`, { credentials: 'same-origin' });
+      if (r.status === 404) {
+        renderEmpty('No commander found', `No commander named &ldquo;${esc(username)}&rdquo;. Check the spelling and try again.`);
+        return;
+      }
+      if (!r.ok) throw new Error('bad status');
+      const j = await r.json();
+      renderProfile(j.user);
+    } catch (_) {
+      renderEmpty('Could not load profile', 'Could not reach the server. Try again.');
+    }
+  }
+
+  searchForm.addEventListener('submit', e => {
+    e.preventDefault();
+    const v = searchInput.value.trim();
+    if (!v) return;
+    location.href = `profile.html?u=${encodeURIComponent(v)}`;
+  });
+
+  (async function boot() {
+    let me = null;
+    try {
+      const r = await fetch('/api/auth/me', { credentials: 'same-origin' });
+      const j = r.ok ? await r.json() : { user: null };
+      me = j.user || null;
+    } catch (_) {}
+    renderHeader(me);
+
+    let username = currentUsername();
+    if (!username && me) {
+      username = me.username;
+      history.replaceState(null, '', `profile.html?u=${encodeURIComponent(username)}`);
+    }
+    searchInput.value = username;
+
+    if (username) {
+      loadProfile(username);
+    } else {
+      renderEmpty('No commander selected', 'Search for a commander above, or <a href="index.html">sign in</a> to see your own profile.');
+    }
+  })();
+})();
+</script>
+
+</body>
+</html>
