@@ -25,8 +25,9 @@ premise ("real-time, no-turns" in the README tagline).
   A commander profile (`GET /api/users/:username`) shows account info — username, member-since,
   last-seen — looked up by username, no login required to view. No win/loss or match history yet;
   see [KNOWN_ISSUES.md](KNOWN_ISSUES.md). Two front ends read it: `index.html`'s hub has an in-app
-  `profile` screen (click the header's commander chip/"Profile" tab, or the header's search box to
-  look up anyone) with no page navigation, matching every other hub screen; `profile.html` is a
+  `profile` screen (click the header's commander chip to view your own, or the header's search box
+  to look up anyone — there is no separate "Profile" nav tab) with no page navigation, matching
+  every other hub screen; `profile.html` is a
   separate standalone page for a shareable/logged-out-reachable link
   (`profile.html?u=<username>`). Same endpoint, two presentations, kept deliberately duplicated
   rather than sharing markup — see `index.html`'s and `profile.html`'s own scripts.
