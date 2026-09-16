@@ -22,9 +22,14 @@ premise ("real-time, no-turns" in the README tagline).
   (`?render=3d`) real Three.js 3D renderer (`board-render-3d.js`) that is newer and actively being
   built out (camera behavior, tile depth, water — see [RENDERING.md](RENDERING.md)).
 - **Accounts**: username/email/password signup+login, sessions as HttpOnly cookies, backed by D1.
-  A public profile page (`profile.html`, `GET /api/users/:username`) shows account info — username,
-  member-since, last-seen — looked up by username, no login required to view. No win/loss or match
-  history yet; see [KNOWN_ISSUES.md](KNOWN_ISSUES.md).
+  A commander profile (`GET /api/users/:username`) shows account info — username, member-since,
+  last-seen — looked up by username, no login required to view. No win/loss or match history yet;
+  see [KNOWN_ISSUES.md](KNOWN_ISSUES.md). Two front ends read it: `index.html`'s hub has an in-app
+  `profile` screen (click the header's commander chip/"Profile" tab, or the header's search box to
+  look up anyone) with no page navigation, matching every other hub screen; `profile.html` is a
+  separate standalone page for a shareable/logged-out-reachable link
+  (`profile.html?u=<username>`). Same endpoint, two presentations, kept deliberately duplicated
+  rather than sharing markup — see `index.html`'s and `profile.html`'s own scripts.
 
 ## What's shelved or missing
 
@@ -55,9 +60,9 @@ public/            static client — no build step, plain <script> includes
   ai.js              opponent bot (FPAI)
   board-render.js    2D canvas renderer (FPRender)
   board-render-3d.js 3D Three.js renderer (ES module)
-  index.html         hub (landing, auth, mode picker, matchmaking)
+  index.html         hub (landing, auth, mode picker, matchmaking, in-app profile screen)
   game.html          the match screen (HUD, both renderers, netcode client)
-  profile.html       public commander profile — lookup by username, account info only
+  profile.html       standalone public commander profile — lookup by username, shareable link
   editor.html        live map editor (editor.supremacy.live)
   tokens.css         design-system token layer
   support.js         generated UI-framework runtime (dc-runtime) — do not hand-edit
