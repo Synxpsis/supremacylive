@@ -52,9 +52,12 @@ shipped to production is a worse outcome than a paused turn spent asking a quest
 
 ## Notion
 
-Not wired up for this project yet. `docs/README.md`'s code-grounded documentation set is the only
-authoritative source right now — don't assume a Supremacy Live Notion workspace exists, and don't
-search or fetch Notion for project context, until `docs/README.md` says that's changed.
+Wired up. The Supremacy Live Notion team space has a **Claude Documentation Hub** database — the
+natural-language counterpart to `docs/`, one page per doc here (see `docs/README.md`). It is not
+authoritative over `docs/`: `docs/` is the code-grounded source of truth, and the Hub is kept in
+sync with it deliberately, not automatically. If you change something `docs/` describes, update the
+matching Hub page too, in the same session if practical — see the Hub's own `Claude.md` page for
+working conventions.
 
 ## Design system
 

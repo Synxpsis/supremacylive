@@ -41,6 +41,10 @@ duplicating it.
 
 ## Notion
 
-Once the Notion connector is wired up, it holds the natural-language, easier-to-browse counterpart to
-this set — same subject matter, written for someone who wants an answer without reading source, kept
-in sync with what's here rather than duplicated by hand from memory.
+The Notion connector is wired up. The **Claude Documentation Hub** database in the Supremacy Live
+Notion team space holds the natural-language, easier-to-browse counterpart to this set — same
+subject matter, written for someone who wants an answer without reading source. It is not
+auto-synced with this `docs/` set: when a change here changes a fact a Hub page states, update that
+Hub page as a deliberate follow-up (see the Notion workspace's own `Claude.md` page for the working
+conventions). The Hub currently has one page per doc here except `ONBOARDING.md` (human/agent dev
+setup, not in scope for the natural-language hub).
