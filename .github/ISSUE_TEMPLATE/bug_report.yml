@@ -1,0 +1,38 @@
+name: Bug report
+description: Something in the live game or editor is broken
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1.
+        2.
+        3.
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      description: URL, board (duel/grand), match ID, or username if relevant.
+    validations:
+      required: false
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Production (supremacy.live)
+        - Editor (editor.supremacy.live)
+        - Local dev
+    validations:
+      required: true

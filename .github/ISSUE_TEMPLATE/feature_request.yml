@@ -1,0 +1,26 @@
+name: Feature / change request
+description: Propose a gameplay, editor, or UI change
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or gap
+      description: What's missing or awkward today.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+  - type: checkboxes
+    id: design-system
+    attributes:
+      label: Design system
+      description: If this touches UI, does it fit inside Command Console v1.0 (see CLAUDE.md)?
+      options:
+        - label: This is UI-facing and I've checked it against CLAUDE.md / design-system/HANDOFF.md
+        - label: This needs a new token/component that doesn't exist yet (flag it, don't invent it locally)
+        - label: Not UI-facing

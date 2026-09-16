@@ -8,7 +8,9 @@
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "db:migrations:local": "wrangler d1 migrations apply supremacy-live --local",
-    "db:migrations:remote": "wrangler d1 migrations apply supremacy-live --remote"
+    "db:migrations:remote": "wrangler d1 migrations apply supremacy-live --remote",
+    "lint": "eslint .",
+    "validate": "wrangler deploy --dry-run"
   },
   "repository": {
     "type": "git",
@@ -20,6 +22,9 @@
   },
   "homepage": "https://github.com/Synxpsis/supremacylive#readme",
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.10.0",
+    "globals": "^17.12.0",
     "wrangler": "^4.129.0"
   }
 }

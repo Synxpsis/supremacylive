@@ -16,6 +16,9 @@ inventory, known issues — lives in [`docs/`](docs/). Start at [`docs/README.md
 UI design-system rules (Command Console v1.0) live in [`design-system/`](design-system/) and
 [`CLAUDE.md`](CLAUDE.md).
 
+Branching, PR, and CI process — read this before your first PR — is in
+[`CONTRIBUTING.md`](CONTRIBUTING.md).
+
 ## Project layout
 
 - `public/` — static client (HTML/CSS/JS, no build step)
@@ -39,4 +42,5 @@ npm run dev
 npm run deploy
 ```
 
-Pushes to `main` deploy automatically via GitHub Actions (`.github/workflows/deploy.yml`).
+Merges to `main` deploy automatically via GitHub Actions (`.github/workflows/deploy.yml`). `main`
+is protected — changes land via PR, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
