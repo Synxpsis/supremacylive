@@ -1,5 +1,5 @@
-# Default owner for everything not matched below.
-* @Synxpsis
+# Default owners for everything not matched below.
+* @Synxpsis @tinkerfasttrack
 
 # The design system is the source of truth for UI rules across the whole
 # client. Changes here affect every screen, so route them past the owner.
@@ -9,6 +9,3 @@
 # CI/deploy pipeline and branch rules — changes here affect what "safe to
 # merge" means for everyone, not just the PR author.
 /.github/ @Synxpsis
-
-# TODO: once the second collaborator's GitHub handle is known, add them here
-# (e.g. `* @Synxpsis @their-handle`) so review requests auto-assign both ways.
