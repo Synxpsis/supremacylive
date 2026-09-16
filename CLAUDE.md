@@ -12,6 +12,10 @@ access). Production is live at supremacy.live and editor.supremacy.live; a merge
 within a minute or two, with no staging environment in between. Treat every session in this repo
 as production-adjacent — there is no sandbox to fail safely in.
 
+New contributors' agents are pointed at [`supremacy.live/llms.txt`](https://supremacy.live/llms.txt)
+(`public/llms.txt` in this repo) as the very first stop, which sends them to this file next — if
+you're reading this file without having come from there, that's fine too, it changes nothing below.
+
 ## Before writing any code
 
 Read these, in order, before touching a file — read them, don't skim them, and don't rely on a

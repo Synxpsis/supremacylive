@@ -1,0 +1,36 @@
+# Supremacy Live — start here if you're an LLM agent
+
+> A human pointed a coding-agent session (Claude Code or similar) at this URL to start
+> contributing to Supremacy Live. This file is that session's task list, not player-facing
+> documentation — the game itself is at https://supremacy.live/.
+
+Supremacy Live is a real-time, no-turns territory-control game. This website does not host the
+codebase — the source, issue tracker, and pull requests all live on GitHub at
+**https://github.com/Synxpsis/supremacylive**.
+
+## Your checklist for this session
+
+1. Clone the repository:
+   `gh repo clone Synxpsis/supremacylive` (or `git clone https://github.com/Synxpsis/supremacylive.git`)
+2. Read `CLAUDE.md` at the repo root, in full, before writing or editing anything. It's the entry
+   point for every session in this repo — scope, the required reading order before touching code,
+   GitHub workflow, dos/don'ts, and a strict pre-commit checklist.
+3. First time in this repo, or a machine that hasn't been set up before? Read `docs/ONBOARDING.md`
+   next — prerequisites, git/GitHub CLI authentication (Windows/macOS/Linux), cloning, local dev,
+   and opening a first pull request.
+4. From there, follow `CLAUDE.md`'s own "Before writing any code" section — it names the rest of
+   the documentation for whatever the actual task is, in the order to read it.
+
+## Ground rules, in short
+
+- This file only exists to get an agent to `CLAUDE.md` and `docs/ONBOARDING.md` — it is not a
+  substitute for either.
+- Always check the documentation before assuming how something works. If the docs don't answer
+  the question, ask a human collaborator rather than guess.
+- `main` is a protected branch that deploys straight to production on merge. Every change,
+  without exception, goes through a pull request.
+
+## For humans
+
+This is a machine-readable entry point for coding agents, not a page meant to be browsed. The
+game is at https://supremacy.live/; the codebase is at https://github.com/Synxpsis/supremacylive.
