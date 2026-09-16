@@ -11,6 +11,7 @@ expands on this content — see the note at the bottom of this file.
 
 | Doc | Covers |
 |---|---|
+| [ONBOARDING.md](ONBOARDING.md) | New-contributor setup — git/gh auth, clone, local dev, first PR |
 | [OVERVIEW.md](OVERVIEW.md) | What the game is, current maturity, what's live vs. shelved |
 | [GLOSSARY.md](GLOSSARY.md) | Terminology — **read this first**, the code and the UI don't always use the same words for the same thing |
 | [MECHANICS.md](MECHANICS.md) | The simulation: territories, garrisons, combat, structures, currency, win/loss |

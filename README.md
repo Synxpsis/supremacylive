@@ -17,7 +17,8 @@ UI design-system rules (Command Console v1.0) live in [`design-system/`](design-
 [`CLAUDE.md`](CLAUDE.md).
 
 Branching, PR, and CI process — read this before your first PR — is in
-[`CONTRIBUTING.md`](CONTRIBUTING.md).
+[`CONTRIBUTING.md`](CONTRIBUTING.md). New to this repo entirely? Start at
+[`docs/ONBOARDING.md`](docs/ONBOARDING.md) instead — it covers git/gh auth and local setup from zero.
 
 ## Project layout
 
