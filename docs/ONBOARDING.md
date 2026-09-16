@@ -1,5 +1,8 @@
 # Onboarding — new contributor setup
 
+If you landed here from https://supremacy.live/llms.txt, this is where it sends you — keep going,
+you're in the right place.
+
 This is for Matt (GitHub: `tinkerfasttrack`) and whichever Claude Code instance he's running
 locally. Follow it top to bottom on a fresh machine to go from nothing installed to opening your
 first PR. Repo: `Synxpsis/supremacylive`. Matt already has **Write** access — no invite step
