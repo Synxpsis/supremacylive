@@ -3,6 +3,9 @@
 Two people push to this repo, and `main` deploys straight to production. This document is the
 whole process — read it once, it's short.
 
+New here and need to set up git/`gh` auth from scratch? See [`docs/ONBOARDING.md`](docs/ONBOARDING.md)
+first — this doc picks up where that one leaves off.
+
 ## Setup
 
 ```
