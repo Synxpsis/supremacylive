@@ -237,6 +237,20 @@ async function handleMe(env, request) {
   return json({ ok: true, user: { id: user.id, username: user.username, email: user.email } });
 }
 
+// ── public profile (profile.html) ───────────────────────────────────────────
+// No auth required — this is a public-by-username lookup. Deliberately never
+// returns email, unlike /api/auth/me: that field stays private even to the
+// profile's own owner on this view-only, publicly-reachable route.
+async function handleGetUserProfile(env, request, username) {
+  if (!USERNAME.test(username)) return problem(400, 'invalid username');
+  await ensureSchema(env.DB);
+  const row = await env.DB.prepare(
+    `SELECT username, created_at, last_login FROM users WHERE username = ?1 LIMIT 1`
+  ).bind(username).first();
+  if (!row) return problem(404, 'no such user');
+  return json({ ok: true, user: { username: row.username, createdAt: row.created_at, lastLogin: row.last_login } });
+}
+
 // ── map content (editor.supremacy.live) ─────────────────────────────────────
 const MAP_KEY = /^[a-z0-9_-]{1,40}$/i;
 
@@ -308,6 +322,8 @@ export default {
         if (path === '/api/auth/login'  && request.method === 'POST') return await handleLogin(env, request);
         if (path === '/api/auth/logout' && request.method === 'POST') return await handleLogout(env, request);
         if (path === '/api/auth/me'     && request.method === 'GET')  return await handleMe(env, request);
+        const userMatch = path.match(/^\/api\/users\/([^/]+)$/);
+        if (userMatch && request.method === 'GET') return await handleGetUserProfile(env, request, userMatch[1]);
         const mapMatch = path.match(/^\/api\/maps\/([^/]+)$/);
         if (mapMatch && request.method === 'GET') return await handleGetMap(env, request, mapMatch[1]);
         if (mapMatch && request.method === 'PUT') return await handlePutMap(env, request, mapMatch[1]);

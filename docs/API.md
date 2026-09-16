@@ -17,6 +17,24 @@ read or forge) — see [ARCHITECTURE.md](ARCHITECTURE.md) for the session model 
 "looks like an email" regex (not a real deliverability check — the point is catching obvious garbage,
 not verifying mail can actually reach it), password 8–200 characters.
 
+## HTTP — public profile (`public/profile.html`)
+
+| Method | Path | Auth | Body | Returns |
+|---|---|---|---|---|
+| GET | `/api/users/:username` | none | — | `{ ok, user: { username, createdAt, lastLogin } }`, or `404` if no such user, or `400` for a username that fails the same `/^[a-z0-9_-]{3,20}$/i` check signup uses |
+
+Public and unauthenticated by design — anyone can look up anyone's profile by username, which is
+the whole point of `profile.html`'s lookup box. Deliberately returns fewer fields than
+`/api/auth/me`: **never email**, on this route, for any username including the caller's own — that
+field stays private even to a signed-in owner viewing their own public profile page. `createdAt`/
+`lastLogin` are the same epoch-ms values `users.created_at`/`users.last_login` store; `lastLogin` is
+`null` until the account's first explicit `/api/auth/login` call (signup alone doesn't set it — see
+`handleSignup`).
+
+There's no match-history/win-loss data behind this endpoint — `src/match.js` doesn't persist match
+outcomes anywhere today, so there's nothing to query. `profile.html` says so explicitly rather than
+inventing a stat; see [KNOWN_ISSUES.md](KNOWN_ISSUES.md) for the design-system gap this leaves open.
+
 ## HTTP — map content (`src/worker.js`, editor)
 
 | Method | Path | Auth | Body | Returns |

@@ -111,3 +111,13 @@ Kept here for traceability — these were real bugs, now resolved on `main`:
   [CONTENT_INVENTORY.md](CONTENT_INVENTORY.md).
 - **`public/proto3d.html`** is unmigrated scratch code, not a shipped screen — see
   `design-system/HANDOFF-GAPS.md` item 9.
+- **`public/profile.html` (2026-09-16) ships a deliberately reduced version of the design system's
+  `Supremacy DS — Screens II.dc.html` "04 Profile" reference** — that mockup's rating-history chart,
+  meters, "form" strip and rivals/head-to-head list all assume a rating/ranking and match-history
+  system that doesn't exist anywhere in this codebase (`src/match.js` never persists a match outcome
+  to D1; there is no ELO/rating field on `users` at all). Building that reference screen for real
+  today would mean fabricating the numbers it shows, which the design files themselves explicitly
+  rule out ("rating band is real data, never a fake progress bar"). Shipped instead: account info
+  only (username, member-since, last-seen — all real `users` columns), plus an honest "not tracked
+  yet" note in the match-record panel instead of the chart/meters/rivals. Scope choice, not an
+  oversight — revisit once match outcomes are actually persisted somewhere.
