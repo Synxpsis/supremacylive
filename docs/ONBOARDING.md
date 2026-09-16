@@ -5,36 +5,76 @@ locally. Follow it top to bottom on a fresh machine to go from nothing installed
 first PR. Repo: `Synxpsis/supremacylive`. Matt already has **Write** access — no invite step
 needed, just auth.
 
-If you're a Claude Code instance running this for the first time in this repo: read
-[`CONTRIBUTING.md`](../CONTRIBUTING.md) and [`CLAUDE.md`](../CLAUDE.md) right after finishing this
-doc — they're the actual working rules. This doc only gets you to the point where you can follow
-them.
+If you're a Claude Code instance running this for the first time in this repo: **read
+[`CLAUDE.md`](../CLAUDE.md) in full before doing anything else** — it's the whole-repo entry
+point (scope, process, dos/don'ts, pre-commit checklist) and it says to read
+[`CONTRIBUTING.md`](../CONTRIBUTING.md) and the relevant docs next. This onboarding doc only gets
+your local machine to the point where you can follow them; it isn't a substitute for reading them.
+
+Commands below work the same in any shell unless a step says otherwise. Where install commands
+differ by OS, each has its own tab — use the one for your machine and skip the others.
+
+## Getting help
+
+If the docs don't answer a question, ask rather than guess — see `CLAUDE.md`'s "Always check the
+docs before assuming" rule. Reach Alex (or Matt) via:
+- GitHub — PR or issue comments, so the answer stays attached to the work
+- Google Chat — for anything faster than a PR comment; Matt already has this set up with Alex directly
+- Email — alex@supremacy.live, mainly for anything security-sensitive (see `SECURITY.md`)
 
 ## 1. Prerequisites
 
-- **Node.js 24** — matches what CI and deploy run on. Check with `node --version`. Install from
-  [nodejs.org](https://nodejs.org) or a package manager (`winget install OpenJS.NodeJS.LTS`,
-  `brew install node@24`, etc.) if missing.
-- **git** — `git --version`. Install from [git-scm.com](https://git-scm.com) if missing.
-- **GitHub CLI (`gh`)** — `gh --version`. Install from [cli.github.com](https://cli.github.com)
-  (`winget install GitHub.cli`, `brew install gh`, `apt install gh`). This repo's workflow (this
-  doc, `CONTRIBUTING.md`) assumes `gh` for opening PRs and checking CI status — it's not optional
-  tooling here.
+Install these three, then confirm each with the version command shown.
+
+**Windows:**
+```
+winget install OpenJS.NodeJS.LTS
+winget install Git.Git
+winget install GitHub.cli
+```
+
+**macOS** (via [Homebrew](https://brew.sh) — install that first if you don't have it):
+```
+brew install node@24
+brew install git
+brew install gh
+```
+
+**Linux** (Debian/Ubuntu shown; use your distro's package manager — `dnf`, `pacman`, etc. — if different):
+```
+curl -fsSL https://deb.nodesource.com/setup_24.x | sudo -E bash -
+sudo apt-get install -y nodejs git
+sudo apt-get install -y gh
+```
+(If `gh` isn't in your distro's default repos, follow the Linux install steps at
+[cli.github.com](https://cli.github.com/manual/installation) — it's a one-time repo-add, not a
+manual binary download.)
+
+**All platforms — confirm:**
+```
+node --version   # expect v24.x — matches what CI and deploy run on
+git --version
+gh --version
+```
+
+This repo's workflow (this doc, `CONTRIBUTING.md`) assumes `gh` for opening PRs and checking CI
+status — it's not optional tooling here, on any platform.
 
 ## 2. Authenticate
 
 ### git identity
 
+Same command on every OS:
 ```
 git config --global user.name "Matt"
 git config --global user.email "<matt's email>"
 ```
-
-Use whatever name/email should show up as the commit author. Doesn't have to match the GitHub
+Use whatever name/email should show up as the commit author — doesn't have to match the GitHub
 account email.
 
 ### GitHub CLI + git credentials
 
+Also the same command on every OS:
 ```
 gh auth login
 ```
@@ -46,7 +86,7 @@ Choose:
 - `Login with a web browser` (opens a one-time code + browser flow — no token to copy/paste)
 
 Once this finishes, both `gh` and plain `git push`/`git pull` over HTTPS work without any further
-setup. Confirm with:
+setup, on Windows, macOS, or Linux alike. Confirm with:
 
 ```
 gh auth status
@@ -54,9 +94,15 @@ gh auth status
 
 You should see `tinkerfasttrack` logged in with the `repo` scope.
 
-**If you'd rather use SSH remotes instead of HTTPS:** generate a key (`ssh-keygen -t ed25519`),
-add it at https://github.com/settings/keys, then use the `git@github.com:...` clone URL in step 3
-instead. Not necessary if `gh auth login` above worked — HTTPS is enough.
+**If you'd rather use SSH remotes instead of HTTPS:** generate a key —
+```
+ssh-keygen -t ed25519 -C "your-email@example.com"
+```
+(macOS/Linux: also run `eval "$(ssh-agent -s)"` then `ssh-add ~/.ssh/id_ed25519` so the key is
+picked up automatically; Windows' OpenSSH agent usually does this on its own via `ssh-agent`
+service) — then add the printed public key at https://github.com/settings/keys, and use the
+`git@github.com:...` clone URL in step 3 instead. Not necessary if `gh auth login` above worked —
+HTTPS is enough for everything in this doc.
 
 ## 3. Clone the repo
 
@@ -66,7 +112,7 @@ cd supremacylive
 ```
 
 (`gh repo clone` is equivalent to `git clone` but uses your `gh` auth automatically — no URL
-fiddling either way.)
+fiddling on any platform.)
 
 ## 4. Install and run locally
 
@@ -75,10 +121,10 @@ npm install
 npm run dev
 ```
 
-`wrangler dev` starts the Worker and a local D1 instance entirely on-machine. **No Cloudflare
-account, login, or API token is needed for this** — those only exist as GitHub Actions secrets
-for the production deploy, and you won't have or need access to them. If `npm run dev` gets you a
-local server, you're set up correctly.
+`wrangler dev` starts the Worker and a local D1 instance entirely on-machine, identically on
+Windows, macOS, and Linux. **No Cloudflare account, login, or API token is needed for this** —
+those only exist as GitHub Actions secrets for the production deploy, and you won't have or need
+access to them. If `npm run dev` gets you a local server, you're set up correctly.
 
 ## 5. Verify the tooling that gates every PR
 
@@ -122,13 +168,17 @@ instead of merging it.
 - You have Write access, not Admin — repo settings, branch protection, and the Cloudflare
   deploy secrets aren't visible or editable from this account. If a task seems to need any of
   those, that's a sign to stop and ask rather than look for a workaround.
-- UI work follows Command Console v1.0 — read `CLAUDE.md` before writing any UI. No raw hex, no
-  px font-size, no border-radius outside tokens. If a value/component/state doesn't exist in
-  `public/tokens.css`, flag the gap instead of inventing one locally.
+- Read `CLAUDE.md`'s pre-commit checklist before every commit, not just once at setup — it
+  includes actually running the change (`npm run dev`) and, for UI changes, driving it in a real
+  browser (Claude in Chrome, if available) rather than trusting the diff.
+- UI work follows Command Console v1.0 — read `design-system/UI-RULES.md` before writing any UI.
+  No raw hex, no px font-size, no border-radius outside tokens. If a value/component/state doesn't
+  exist in `public/tokens.css`, flag the gap instead of inventing one locally.
 
 ## 8. Where to go next
 
-- [`CONTRIBUTING.md`](../CONTRIBUTING.md) — the actual process rules this doc pointed you to
-- [`CLAUDE.md`](../CLAUDE.md) — UI/design-system rules
+- [`CLAUDE.md`](../CLAUDE.md) — whole-repo rules, read every session, not just this first one
+- [`CONTRIBUTING.md`](../CONTRIBUTING.md) — the process rules this doc pointed you to
+- [`design-system/UI-RULES.md`](../design-system/UI-RULES.md) — UI/design-system rules
 - [`docs/README.md`](README.md) — full technical inventory (architecture, mechanics, API, known issues)
 - [`SECURITY.md`](../SECURITY.md) — how to report anything exploitable rather than opening a public issue

@@ -25,8 +25,9 @@ expands on this content — see the note at the bottom of this file.
 | [KNOWN_ISSUES.md](KNOWN_ISSUES.md) | Open bugs and gaps, with source and status |
 
 Design-system-specific documentation (`Command Console v1.0` — tokens, components, UI rules) already
-lives in [`design-system/`](../design-system/) and [`CLAUDE.md`](../CLAUDE.md); this docs set links to
-it rather than duplicating it.
+lives in [`design-system/`](../design-system/), condensed in
+[`design-system/UI-RULES.md`](../design-system/UI-RULES.md); this docs set links to it rather than
+duplicating it.
 
 ## Keeping this current
 

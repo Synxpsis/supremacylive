@@ -10,11 +10,14 @@ backed by D1.
 
 ## Documentation
 
+[`CLAUDE.md`](CLAUDE.md) is the entry point for any Claude Code session working in this repo —
+scope, process, dos/don'ts, and the pre-commit checklist. Read it first, every session.
+
 Full technical inventory — mechanics, map system, AI, rendering, architecture, API reference, content
 inventory, known issues — lives in [`docs/`](docs/). Start at [`docs/README.md`](docs/README.md).
 
-UI design-system rules (Command Console v1.0) live in [`design-system/`](design-system/) and
-[`CLAUDE.md`](CLAUDE.md).
+UI design-system rules (Command Console v1.0) live in [`design-system/`](design-system/), condensed
+in [`design-system/UI-RULES.md`](design-system/UI-RULES.md).
 
 Branching, PR, and CI process — read this before your first PR — is in
 [`CONTRIBUTING.md`](CONTRIBUTING.md). New to this repo entirely? Start at

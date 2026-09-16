@@ -2,9 +2,9 @@
 
 Two independent renderers exist for the same board/sim state today. Both read colour and type from
 the Command Console design system (`public/tokens.css`) rather than owning their own palette — see
-`CLAUDE.md` and `design-system/README.md` for the token rules themselves; this doc covers how each
-renderer is built, how it reads those tokens, and — for the 3D renderer — the exact contract a map
-editor upgrade needs to target.
+`design-system/UI-RULES.md` and `design-system/README.md` for the token rules themselves; this doc
+covers how each renderer is built, how it reads those tokens, and — for the 3D renderer — the exact
+contract a map editor upgrade needs to target.
 
 **The 3D renderer (`board-render-3d.js`) and the map system it consumes are the standard going
 forward.** It's currently opt-in (`?render=3d`) and the 2D canvas renderer is still the client's
@@ -12,10 +12,10 @@ default, but new board/rendering work should be written against the 3D contract 
 [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md) is the concrete plan for bringing the map editor up to the same
 standard (it currently only knows the 2D renderer).
 
-**The board's geometry is explicitly outside the design system's authority** (`CLAUDE.md`: "The board
-is out of scope... The design system does not specify board geometry. It does own the colour and type
-the renderer paints with."). Both renderers below keep to the achromatic + faction-hue palette by
-convention, not because the token rules force geometry choices on them.
+**The board's geometry is explicitly outside the design system's authority** (`design-system/UI-RULES.md`:
+"The board is out of scope... The design system does not specify board geometry. It does own the
+colour and type the renderer paints with."). Both renderers below keep to the achromatic +
+faction-hue palette by convention, not because the token rules force geometry choices on them.
 
 ## 3D renderer — `public/board-render-3d.js` (ES module, opt-in via `?render=3d`)
 
@@ -264,7 +264,8 @@ item 9 if you're wondering why it still has unmigrated literals.
 ## Copy voice and accessibility
 
 Both renderers, and the HUD around them, follow the Command Console copy and accessibility rules
-verbatim (`CLAUDE.md`): uppercase mono labels, sentence-case explanations, no colour-only faction
-identity, visible focus rings, `prefers-reduced-motion` handled centrally in `tokens.css`. Not
-re-documented here — `CLAUDE.md` is the source of truth and is loaded automatically into every Claude
-Code session working in this repo.
+verbatim (`design-system/UI-RULES.md`): uppercase mono labels, sentence-case explanations, no
+colour-only faction identity, visible focus rings, `prefers-reduced-motion` handled centrally in
+`tokens.css`. Not re-documented here — `UI-RULES.md` is the source of truth; `CLAUDE.md` (repo
+root) is loaded automatically into every Claude Code session working in this repo and points here
+for UI specifics.

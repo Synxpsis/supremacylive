@@ -9,8 +9,12 @@ Black ground, grey structure, white signal. The interface is achromatic end to e
 | File | Goes where | What it is |
 |---|---|---|
 | `tokens.css` | `public/tokens.css` | The token layer. 132 custom properties, 4 faction palettes, reduced-motion overrides. The single source of truth for values. |
-| `CLAUDE.md` | repo root | The condensed rules. Every Claude Code session loads it automatically. |
+| `UI-RULES.md` | `design-system/` | The condensed rules — read before any UI work. |
 | `HANDOFF.md` | `design-system/` | Full spec: migration order, literal-by-literal replacement tables, board contract, governance. |
+
+`CLAUDE.md` (repo root) is the whole-repo entry point every Claude Code session loads
+automatically — scope, process, dos/don'ts, pre-commit checklist. It points here for design-system
+specifics rather than restating them.
 
 ## The design files
 

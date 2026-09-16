@@ -6,8 +6,9 @@ hashes, session cookies) in D1.
 ## Reporting a vulnerability
 
 Don't open a public issue for anything exploitable (auth bypass, session/token leakage, SQL
-injection, XSS, secrets exposure). Email alex@lab168.ca instead with what you found and how to
-reproduce it. You'll get an acknowledgment and a fix timeline back.
+injection, XSS, secrets exposure). Email alex@supremacy.live instead with what you found and how
+to reproduce it — or, if you already have Alex on Google Chat, that works too and is faster.
+You'll get an acknowledgment and a fix timeline back.
 
 Non-exploitable bugs (broken UI, incorrect game logic) are fine as normal public issues.
 

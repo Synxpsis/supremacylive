@@ -1,123 +1,109 @@
-# Supremacy Live — UI rules for Claude Code
+# Supremacy Live — CLAUDE.md
 
-The client's visual language is **Command Console v1.0**. Full spec in `design-system/HANDOFF.md`; token layer is `public/tokens.css`. This file is the short version — read it before writing any UI.
+Read this file first, in full, every time you start working in this repo — before writing any
+code, before running any other tool. It's the entry point. Everything it points to below is
+required reading for the area you're touching, not optional background.
 
-## The one rule
+## Scope
 
-**Feature code contains no raw hex, no px font-size, no ms literal, and no `border-radius`.**
+Supremacy Live is a real-time, no-turns territory-control game (`README.md`, `docs/OVERVIEW.md`).
+Two people ship to it: Alex (owner, GitHub `Synxpsis`) and Matt (GitHub `tinkerfasttrack`, write
+access). Production is live at supremacy.live and editor.supremacy.live; a merge to `main` deploys
+within a minute or two, with no staging environment in between. Treat every session in this repo
+as production-adjacent — there is no sandbox to fail safely in.
 
-Every value comes from `public/tokens.css` as a `var(--sl-*)`. If the value you need isn't there, that is a gap in the design system — raise it, don't invent it locally.
+## Before writing any code
 
-## Non-negotiables
+Read these, in order, before touching a file — read them, don't skim them, and don't rely on a
+previous session's memory of what they said, since they're living documents and change:
 
-1. **The interface is achromatic.** White, grey, black. Hue is reserved for game state the player acts on — faction, status, coin. A gold icon, a green nav item or a tinted heading is a bug.
-2. **Radius is 0.** The corner language is the 9px bracket tick, reserved for the one *armed* region in a view. The only non-zero radius in the system is the loading spinner.
-3. **Depth is ground steps + seams**, never shadows. `box-shadow` is legal in exactly two places: the modal scrim and `--sl-focus-ring`.
-4. **One white fill per view** — the primary action. Everything else that wants emphasis gets a white *edge*, white *numerals*, or a step up the ground.
-5. **Every player-facing number is `--sl-font-mono`.** Counts, coin, timers, deltas, costs, ranks, scores. A count that reflows when it ticks is a defect.
-6. **Never hardcode a seat colour.** Read `--sl-faction-self` / `-foe` / `-neutral`. `self` is always the viewing player, which is what makes spectate and replay work with no per-element branching.
-7. **Display type is always uppercase** Barlow Condensed 700. Sentences are Barlow Semi Condensed. Numbers are JetBrains Mono. Bitter is retired.
-8. **In-match motion is capped at 220ms** (`--sl-dur-3`) and limited to colour and opacity. State must never arrive after the player has already acted.
-9. **Layout uses flex/grid `gap`** — not margins on children, not whitespace between inline siblings.
-10. **Four frames only** — panel, armed, telemetry, void. A new feature picks one; if none fits, the frame set changes in the design system first.
+1. This file, in full — you're doing that now.
+2. [`CONTRIBUTING.md`](CONTRIBUTING.md) — branch/PR/CI process, how a merge becomes a production deploy.
+3. [`docs/README.md`](docs/README.md) — the documentation index — then whichever specific docs
+   actually cover the area you're touching. [`docs/GLOSSARY.md`](docs/GLOSSARY.md) first if any
+   term in the task is unfamiliar; `ARCHITECTURE.md` / `MECHANICS.md` / `MAP_SYSTEM.md` / `API.md`
+   / `AI.md` / `RENDERING.md` / `KNOWN_ISSUES.md` as relevant to the change.
+4. If the task touches anything a player or GM sees: [`design-system/UI-RULES.md`](design-system/UI-RULES.md)
+   (condensed) and [`design-system/HANDOFF.md`](design-system/HANDOFF.md) (full spec) — see
+   "Design system" below.
+5. If the task touches auth, sessions, or anything exploitable: [`SECURITY.md`](SECURITY.md).
+6. First session in this repo, or setting up tooling from scratch: [`docs/ONBOARDING.md`](docs/ONBOARDING.md).
 
-## Wiring
+**Always check the docs before assuming.** If a question about behavior, schema, API shape, or
+design intent isn't answered by what's already written, don't guess and don't infer it from a
+similar-looking codebase you've worked in before — read further, or ask. A wrong assumption
+shipped to production is a worse outcome than a paused turn spent asking a question.
 
-```html
-<html data-faction="cobalt-ember">
-<head>
-  <link rel="stylesheet" href="./tokens.css">
-</head>
-```
+## GitHub
 
-```html
-<div style="background: var(--sl-ink-200);
-            border: var(--sl-border) solid var(--sl-seam-strong);
-            padding: var(--sl-pad-panel);
-            color: var(--sl-text);
-            font-family: var(--sl-font-ui);
-            font-size: var(--sl-fs-ui-sm);">
-```
+- `main` is protected: PRs required, the `Lint and validate` CI check must pass, review approval
+  is optional (see `CONTRIBUTING.md` for why a 2-person team doesn't mandate cross-review yet).
+  Alex can bypass as repo admin; nobody else can — direct pushes to `main` from any other account
+  will simply be rejected.
+- [`.github/CODEOWNERS`](.github/CODEOWNERS) routes `design-system/`, `CLAUDE.md`, and `.github/`
+  to Alex specifically. Flag changes in those paths to Alex instead of merging solo, even where
+  nothing technically blocks the merge yet.
+- Full workflow — branch naming, opening a PR, what CI actually checks, what "merge = deploy"
+  means in practice — lives in `CONTRIBUTING.md`. Don't duplicate it here; read it there.
 
-## Token groups
+## Notion
 
-`--sl-<group>-<role>[-<modifier>]`
+Not wired up for this project yet. `docs/README.md`'s code-grounded documentation set is the only
+authoritative source right now — don't assume a Supremacy Live Notion workspace exists, and don't
+search or fetch Notion for project context, until `docs/README.md` says that's changed.
 
-| Group | Holds |
-|---|---|
-| `ink` | Ground steps `000`–`500` |
-| `seam` | Hairlines: default, `strong`, `signal`, `dash` |
-| `text` | `text`, `-dim`, `-mute`, `-ghost`, `-invert` |
-| `signal` | The **white** interface accent: base, `-hot`, `-dim`, `-wash`, `-glow` |
-| `coin` | Gameplay currency accent (gold): base, `-wash` |
-| `ok / warn / danger / info` | Status, each with `-wash` and `-fill` |
-| `faction` | `-self`, `-foe`, `-third`, `-fourth`, `-neutral`, each with `-wash` / `-edge` |
-| `font / fs / lh / tr / fw` | Family, size, line-height, tracking, weight |
-| `space` | `0`–`9` on a 4px base |
-| `ctl` | Control heights (24/30/36/44) and padding |
-| `dur / ease` | Motion |
-| `z` | Layers |
+## Design system
 
-## Screen geometry
+UI rules used to live in this file; they've moved to
+[`design-system/UI-RULES.md`](design-system/UI-RULES.md) (condensed — read before any UI work,
+every time) and [`design-system/HANDOFF.md`](design-system/HANDOFF.md) (full spec). This file
+stayed the whole-repo entry point; the design system now owns its own rules since there's more
+than UI to document here. Command Console v1.0 in one sentence: achromatic, zero-radius outside
+the loading spinner, token-only — no value, component, or state gets invented locally. If it's not
+in `public/tokens.css`, that's a gap to flag, not fill.
 
-| | Out of match | In match |
-|---|---|---|
-| Header height | 56px | 44px |
-| Gutter between regions | 20px | 10px |
-| Panel padding | 24px | 16px |
-| Table / list row | 44px | 36px |
-| Side rail | 320–380px | 300px |
-| Primary action height | 44px | 36px |
+## Dos and don'ts
 
-Desktop only for v1. Minimum viewport 1280×760.
+**Do:**
+- Read the docs relevant to a task before forming an opinion about how something works.
+- Flag a design-system or documentation gap instead of filling it locally.
+- Ask Alex or Matt (GitHub PR/issue comments, or Google Chat) when the docs don't answer the question.
+- Update the relevant doc in the same PR that changes the behavior it describes — `docs/README.md`'s
+  own rule, and it applies to this file and `design-system/` too.
 
-## Icons
+**Don't:**
+- Don't push directly to `main` — open a PR, always, even for a one-line fix.
+- Don't invent a token, component, state, or API shape that isn't already specified.
+- Don't touch `.github/workflows/`, branch protection settings, or repo secrets. You likely don't
+  have access to the latter; changes to the former should go through Alex regardless of access.
+- Don't commit anything resembling a secret, token, password, or `.dev.vars` content.
+- Don't mark a change "done" without actually running it — see the checklist below.
 
-28 drawn icons, no library. Copy the SVG from the design system's Icons file.
+## General guidelines
 
-```html
-<svg width="16" height="16" viewBox="0 0 16 16" fill="none"
-     stroke="currentColor" stroke-width="1.5"
-     stroke-linecap="square" stroke-linejoin="miter"
-     vector-effect="non-scaling-stroke"
-     aria-hidden="true">…</svg>
-```
+- Two-person team, no dedicated QA, no staging environment beyond CI and the checklist below.
+  Verification is the contributor's job, every time, not a safety net that catches it later.
+- Prefer reading docs/source over asking a human when the answer is genuinely in the repo; prefer
+  asking a human over guessing when it isn't. Neither substitutes for the other.
+- Documentation is a living artifact, not a snapshot. If code changes a fact stated in `docs/`,
+  this file, or `design-system/`, update the doc in the same commit — not a follow-up.
 
-Square caps and mitre joins — rounded strokes contradict the zero-radius frames. `currentColor` only. Sizes 14 / 16 / 20, never below 14. Icon-only control gets an `aria-label`.
+## Before you commit — checklist
 
-## The board is out of scope
+Every item, every time, before `git commit`:
 
-`public/board-render.js` owns the board: isometric extruded province volumes, orbit camera, territory blocks, structure kit, depth sort. **The design system does not specify board geometry.**
-
-It does own the colour and type the renderer paints with. Canvas can't resolve `var()`, so read tokens once at init and cache:
-
-```js
-const tok = n => getComputedStyle(document.documentElement)
-  .getPropertyValue(n).trim();
-```
-
-Re-read on palette change. Full literal-by-literal mapping in `HANDOFF.md`.
-
-## Copy voice
-
-Command-console clipped. Uppercase mono for labels, sentence case for the explanation underneath.
-
-- Labels are nouns, abbreviated where a player would: `COIN`, `GARRISON`, `COIN/S`, `ETA`, `RANK`.
-- Actions are verb-first and state the consequence: `FORFEIT MATCH — 3 CAPITALS SURRENDERED`, not "Are you sure?"
-- No exclamation marks. No "Oops".
-- Empty states say what will appear and what triggers it: "No orders issued. Select a province to open its orders."
-
-## Accessibility floor
-
-- Text ≥ 4.5:1 against its own ground. `--sl-text-mute` (5.0:1) is the smallest passing step; `--sl-text-ghost` is disabled/decorative only and must never carry information.
-- Faction identity is never colour alone — holdings are hatched, seat pills carry the seat letter.
-- Focus always visible via `--sl-focus-ring`. Never `outline: none` without a replacement.
-- `prefers-reduced-motion` is handled in `tokens.css`; don't re-implement it per component.
-
-## When something is missing
-
-If you have to invent a value, a component, or a state to finish a screen, that is a gap in the design system. Flag it rather than filling it — it gets designed in the design project and lands in `tokens.css`, not in feature code.
-
-## Process
-
-This file is UI rules only. For branching, PRs, CI, and how a merge to `main` reaches production, see [`CONTRIBUTING.md`](CONTRIBUTING.md).
+- [ ] Read the docs relevant to this change (see "Before writing any code" above) — not skimmed.
+- [ ] `npm run lint` passes with no new errors. (Pre-existing warnings are fine — see `CONTRIBUTING.md`.)
+- [ ] `npm run validate` passes.
+- [ ] If UI changed: checked it line-by-line against `design-system/UI-RULES.md` — no raw hex, no
+      px font-size, no ms literal, no `border-radius`, achromatic, mono numerals, correct frame.
+- [ ] If gameplay or server logic changed: actually ran it. Start `npm run dev` and exercise the
+      changed path yourself — reading the diff back is not verification.
+- [ ] If UI changed and a browser is available: drove the actual change on the local dev server
+      with Claude in Chrome (or a manual browser pass if that tool isn't available) — click through
+      the real flow, don't just confirm the markup looks plausible. If something looked wrong,
+      that's a blocker, not a note for later.
+- [ ] No secrets, tokens, or credentials anywhere in the diff.
+- [ ] D1 schema changes are a new file under `migrations/`, never an edit to one already shipped.
+- [ ] Commit message explains why, not just what.
+- [ ] Change lands via a PR against `main`, per `CONTRIBUTING.md` — never a direct push.

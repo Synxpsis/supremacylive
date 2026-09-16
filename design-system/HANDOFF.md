@@ -12,7 +12,7 @@ Artifacts in this project:
 | `Supremacy DS — Screens.dc.html` | Four reference screens at 1440×900: hub, match HUD, match end, ladder. Chrome only — the board region is a canvas the system does not specify. |
 | `Supremacy DS — Screens II.dc.html` | Eight more at 1440×900: landing, auth, matchmaking, profile, clan, social, settings, notifications. |
 | `Supremacy DS — Icons.dc.html` | 28 icons on a 16px grid, 1.5 stroke, square caps. Construction rules, the set, and in-use examples. |
-| `CLAUDE.md` | The condensed rules, for the repo root. Every Claude Code session loads it automatically. |
+| `UI-RULES.md` | The condensed rules, same folder as this file. `CLAUDE.md` (repo root, auto-loaded every session) points here for UI specifics. |
 
 ---
 

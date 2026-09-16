@@ -53,10 +53,10 @@ gh pr create
 - If you touched D1 schema, add a **new** file under `migrations/` — never edit a migration
   that's already shipped. `npm run db:migrations:local` applies it locally.
 - If you touched anything in `public/` or added a UI surface, it needs to follow the design
-  system: read `CLAUDE.md` (short version) and `design-system/HANDOFF.md` (full spec) first.
-  Tokens only, achromatic, zero radius outside the one spinner exception, mono numerals. If the
-  value/component/state you need doesn't exist in `public/tokens.css`, that's a gap to flag, not
-  something to invent locally.
+  system: read `design-system/UI-RULES.md` (short version) and `design-system/HANDOFF.md` (full
+  spec) first. Tokens only, achromatic, zero radius outside the one spinner exception, mono
+  numerals. If the value/component/state you need doesn't exist in `public/tokens.css`, that's a
+  gap to flag, not something to invent locally.
 
 ## Secrets
 
