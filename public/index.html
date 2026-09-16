@@ -84,13 +84,13 @@
     </div>
   </sc-if>
 
-  <sc-if value="{{ onHub }}" hint-placeholder-val="{{ false }}">
+  <sc-if value="{{ signedIn }}" hint-placeholder-val="{{ false }}">
     <div style="position: absolute; inset: 0; background: var(--sl-ink-100);"></div>
     <div style="position: absolute; inset: 0; display: grid; grid-template-rows: auto 1fr; padding: 24px 30px 30px; gap: 22px; box-sizing: border-box;">
 
       <header style="display: flex; align-items: center; justify-content: space-between; gap: 24px;">
         <div style="display: flex; align-items: center; gap: 18px;">
-          <div style="display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; background: var(--sl-ink-300); border: 1px solid var(--sl-seam-strong); ">
+          <button onClick="{{ goOwnProfile }}" title="View profile" style="display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; background: var(--sl-ink-300); border: 1px solid var(--sl-seam-strong); font-family: inherit; cursor: pointer;" style-hover="border-color: rgba(255,255,255,0.55);">
             <div style="width: 26px; height: 26px; flex: none; background: var(--sl-seam); display: flex; align-items: center; justify-content: center; color: var(--sl-text-dim);">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"></path></svg>
             </div>
@@ -100,13 +100,24 @@
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 21h8M12 17v4M17 4H7v5a5 5 0 0 0 10 0V4Z"></path><path d="M7 6H4a1 1 0 0 0-1 1 5 5 0 0 0 4 4.9M17 6h3a1 1 0 0 1 1 1 5 5 0 0 1-4 4.9"></path></svg>
               {{ trophies }}
             </span>
-          </div>
+          </button>
           <nav style="display: flex; align-items: center; gap: 6px;">
-            <span style="padding: 7px 14px; background: var(--sl-ink-500); border: 1px solid transparent; color: var(--sl-text); font-size: var(--sl-fs-ui-xs);">Home</span>
-            <a href="{{ profileHref }}" style="padding: 7px 14px; background: transparent; border: 1px solid transparent; color: var(--sl-text-dim); font-size: var(--sl-fs-ui-xs);" style-hover="color: var(--sl-text);">Profile</a>
+            <button onClick="{{ goHub }}" style="padding: 7px 14px; background: {{ homeBg }}; border: 1px solid transparent; color: {{ homeColour }}; font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-xs); cursor: pointer;" style-hover="color: var(--sl-text);">Home</button>
+            <button onClick="{{ goOwnProfile }}" style="padding: 7px 14px; background: {{ profileNavBg }}; border: 1px solid transparent; color: {{ profileNavColour }}; font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-xs); cursor: pointer;" style-hover="color: var(--sl-text);">Profile</button>
           </nav>
         </div>
         <div style="display: flex; align-items: center; gap: 16px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="width: {{ searchWidth }}; height: 34px; flex: none; overflow: hidden; background: var(--sl-ink-300); border: 1px solid var(--sl-seam-strong); box-sizing: border-box; transition: width var(--sl-dur-3) var(--sl-ease-mono);">
+              <form onSubmit="{{ submitProfileSearch }}" style="display: flex; align-items: center; gap: 8px; padding: 0 10px; height: 100%; width: 220px; box-sizing: border-box;">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" vector-effect="non-scaling-stroke" aria-hidden="true" style="color: var(--sl-text-mute); flex: none;"><circle cx="7" cy="7" r="4"></circle><path d="M10 10l3.5 3.5"></path></svg>
+                <input value="{{ profileSearchQuery }}" onInput="{{ onProfileSearchInput }}" placeholder="Find a commander" style="flex: 1; min-width: 0; background: transparent; border: none; color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-sm);" />
+              </form>
+            </div>
+            <button onClick="{{ toggleProfileSearch }}" title="Search commanders" aria-label="Search commanders" style="width: 34px; height: 34px; flex: none; display: flex; align-items: center; justify-content: center; background: {{ searchBg }}; border: 1px solid {{ searchBorder }}; color: var(--sl-text-dim); cursor: pointer;" style-hover="border-color: var(--sl-signal-hot); color: var(--sl-text);">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" stroke-linejoin="miter" vector-effect="non-scaling-stroke" aria-hidden="true"><circle cx="7" cy="7" r="4"></circle><path d="M10 10l3.5 3.5"></path></svg>
+            </button>
+          </div>
           <div style="position: relative;">
             <button onClick="{{ toggleSettings }}" title="Settings" style="width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; background: {{ settingsBg }}; border: 1px solid {{ settingsBorder }}; color: var(--sl-text-dim); cursor: pointer;" style-hover="border-color: var(--sl-signal-hot); color: var(--sl-text);">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"></path></svg>
@@ -126,6 +137,7 @@
         </div>
       </header>
 
+      <sc-if value="{{ onHub }}" hint-placeholder-val="{{ false }}">
       <div style="display: grid; grid-template-columns: 1fr 380px; gap: 22px; min-height: 0;">
 
         <div style="position: relative; display: flex; flex-direction: column; justify-content: space-between; padding-top: 48px; padding-left: 44px; padding-right: 44px; padding-bottom: 50px; min-height: 0; box-sizing: border-box;">
@@ -210,6 +222,60 @@
           </div>
         </div>
       </div>
+      </sc-if>
+
+      <sc-if value="{{ onProfile }}" hint-placeholder-val="{{ false }}">
+      <div style="position: relative; max-width: 760px; width: 100%; margin: 0 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding-bottom: 20px; box-sizing: border-box;">
+
+        <sc-if value="{{ profileLoading }}" hint-placeholder-val="{{ false }}">
+          <p style="margin: 0; font-size: var(--sl-fs-ui-sm); color: var(--sl-text-dim);">Loading commander record…</p>
+        </sc-if>
+
+        <sc-if value="{{ profileNotFound }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 11px; padding: 18px; background: var(--sl-ink-100); border: 1px dashed var(--sl-seam-dash);">
+            <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: var(--sl-fs-ui-lg); color: var(--sl-text-mute);">No commander found</span>
+            <p style="margin: 0; font-size: var(--sl-fs-ui-sm); line-height: 1.55; color: var(--sl-text-mute);">No commander named "{{ profileQueryEcho }}". Check the spelling and try again.</p>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ profileInvalid }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 11px; padding: 18px; background: var(--sl-ink-100); border: 1px dashed var(--sl-seam-dash);">
+            <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: var(--sl-fs-ui-lg); color: var(--sl-text-mute);">Not a valid username</span>
+            <p style="margin: 0; font-size: var(--sl-fs-ui-sm); line-height: 1.55; color: var(--sl-text-mute);">Commander names are 3–20 characters: letters, numbers, underscores or hyphens.</p>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ profileErrored }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; flex-direction: column; gap: 11px; padding: 18px; background: var(--sl-ink-100); border: 1px dashed var(--sl-seam-dash);">
+            <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: var(--sl-fs-ui-lg); color: var(--sl-text-mute);">Could not load profile</span>
+            <p style="margin: 0; font-size: var(--sl-fs-ui-sm); line-height: 1.55; color: var(--sl-text-mute);">Could not reach the server. Try again.</p>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ profileLoaded }}" hint-placeholder-val="{{ false }}">
+          <div style="display: flex; align-items: center; gap: 20px;">
+            <div style="width: 72px; height: 72px; flex: none; display: flex; align-items: center; justify-content: center; background: var(--sl-ink-300); border: 1px solid var(--sl-seam-strong); font-family: var(--sl-font-mono); font-weight: var(--sl-fw-display); font-size: var(--sl-fs-d4); color: var(--sl-text);">{{ profileInitials }}</div>
+            <h1 style="margin: 0; font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: var(--sl-fs-d2); line-height: var(--sl-lh-d2);">{{ profileUsernameDisplay }}</h1>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+            <div style="background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+              <span style="font-family: var(--sl-font-mono); font-size: var(--sl-fs-label); font-weight: 500; letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-mute);">Member since</span>
+              <span style="font-family: var(--sl-font-mono); font-size: var(--sl-fs-data-lg); font-weight: var(--sl-fw-mono); color: var(--sl-text);">{{ profileMemberSince }}</span>
+            </div>
+            <div style="background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+              <span style="font-family: var(--sl-font-mono); font-size: var(--sl-fs-label); font-weight: 500; letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-mute);">Last seen</span>
+              <span style="font-family: var(--sl-font-mono); font-size: var(--sl-fs-data-lg); font-weight: var(--sl-fw-mono); color: var(--sl-text);">{{ profileLastSeen }}</span>
+            </div>
+          </div>
+          <div style="position: relative; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); padding: 20px;">
+            <span style="position: absolute; left: 14px; top: -8px; padding: 0 6px; background: var(--sl-ink-200); font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); font-weight: 500; letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-mute);">Match record</span>
+            <p style="margin: 0; font-size: var(--sl-fs-ui-sm); line-height: 1.55; color: var(--sl-text-dim);">Not tracked yet. Wins, losses and head-to-head history will appear here once match results are recorded.</p>
+          </div>
+        </sc-if>
+
+      </div>
+      </sc-if>
+
     </div>
   </sc-if>
   <footer style="position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 30px; display: flex; align-items: center; justify-content: center; font-size: var(--sl-fs-label); color: var(--sl-text-ghost);">© 2026 Supremacy Live</footer>
@@ -218,6 +284,13 @@
 <script type="text/x-dc" data-dc-script data-props="{
   &quot;$preview&quot;: { &quot;width&quot;: 1280, &quot;height&quot;: 800 }
 }">
+const PROFILE_USERNAME_RE = /^[a-z0-9_-]{3,20}$/i;
+function fmtProfileDate(ms) {
+  if (!ms) return null;
+  try { return new Intl.DateTimeFormat('en-US', { year: 'numeric', month: 'short', day: 'numeric' }).format(new Date(ms)); }
+  catch (_) { return null; }
+}
+
 class Component extends DCLogic {
   state = {
     screen: 'landing', mode: 'ai', level: 'Steady',
@@ -233,6 +306,10 @@ class Component extends DCLogic {
     modePickerOpen: false,
     challengeTab: 'daily',
     settingsOpen: false,
+    // Profile screen — viewed in-app (no page navigation), reachable via the
+    // header's profile chip/nav or the search box. status: 'idle' |
+    // 'loading' | 'ok' | 'notfound' | 'invalid' | 'error'.
+    profile: { username: null, status: 'idle', data: null, searchOpen: false, searchQuery: '' },
     // The 3D renderer (board-render-3d.js) is opt-in — this is the one place
     // that choice lives, read once at load and carried into every match link
     // this page builds. localStorage rather than a server field: it's a
@@ -305,7 +382,61 @@ class Component extends DCLogic {
   async logout() {
     try { await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' }); }
     catch (_) {}
-    this.setState({ user: null, screen: 'landing' });
+    this.setState({
+      user: null, screen: 'landing',
+      profile: { username: null, status: 'idle', data: null, searchOpen: false, searchQuery: '' },
+    });
+  }
+
+  goHub() {
+    this.setState({ screen: 'hub' });
+  }
+
+  goOwnProfile() {
+    if (this.state.user) this.openProfile(this.state.user.username);
+  }
+
+  toggleProfileSearch() {
+    this.setState(s => ({ profile: { ...s.profile, searchOpen: !s.profile.searchOpen, searchQuery: '' } }));
+  }
+
+  onProfileSearchInput(e) {
+    const v = e.target.value;
+    this.setState(s => ({ profile: { ...s.profile, searchQuery: v } }));
+  }
+
+  submitProfileSearch(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    const q = (this.state.profile.searchQuery || '').trim();
+    if (!q) return;
+    this.openProfile(q);
+  }
+
+  /** Switches to the profile screen in-place — no page navigation, matching
+   *  every other screen here (landing/auth/hub are all client-side state,
+   *  profile shouldn't be the one screen that's a real link away). */
+  openProfile(username) {
+    if (!PROFILE_USERNAME_RE.test(username)) {
+      this.setState({ screen: 'profile', profile: { username, status: 'invalid', data: null, searchOpen: false, searchQuery: '' } });
+      return;
+    }
+    this.setState({ screen: 'profile', profile: { username, status: 'loading', data: null, searchOpen: false, searchQuery: '' } });
+    this.loadProfile(username);
+  }
+
+  async loadProfile(username) {
+    try {
+      const r = await fetch(`/api/users/${encodeURIComponent(username)}`, { credentials: 'same-origin' });
+      if (r.status === 404) {
+        if (this.state.profile.username === username) this.setState(s => ({ profile: { ...s.profile, status: 'notfound' } }));
+        return;
+      }
+      if (!r.ok) throw new Error('bad status');
+      const j = await r.json();
+      if (this.state.profile.username === username) this.setState(s => ({ profile: { ...s.profile, status: 'ok', data: j.user } }));
+    } catch (_) {
+      if (this.state.profile.username === username) this.setState(s => ({ profile: { ...s.profile, status: 'error' } }));
+    }
   }
 
   setRenderMode(mode) {
@@ -482,17 +613,50 @@ class Component extends DCLogic {
       formError: '',
     });
 
+    const profileStatus = st.profile.status;
+    const profileData = st.profile.data;
+
     return {
       onLanding: st.screen === 'landing',
       onAuth: st.screen === 'auth',
+      signedIn: st.screen === 'hub' || st.screen === 'profile',
       onHub: st.screen === 'hub',
+      onProfile: st.screen === 'profile',
       toHub: () => this.goPlay(),
       toLanding: () => this.setState({ screen: 'landing' }),
       logout: () => this.logout(),
       playLabel: st.user ? 'Enter hub' : 'Play for free',
       commander: st.user ? st.user.username : 'Guest commander',
       trophies: 0,
-      profileHref: st.user ? `profile.html?u=${encodeURIComponent(st.user.username)}` : 'profile.html',
+
+      goHub: () => this.goHub(),
+      goOwnProfile: () => this.goOwnProfile(),
+      homeBg: st.screen === 'hub' ? 'var(--sl-ink-500)' : 'transparent',
+      homeColour: st.screen === 'hub' ? 'var(--sl-text)' : 'var(--sl-text-dim)',
+      profileNavBg: st.screen === 'profile' ? 'var(--sl-ink-500)' : 'transparent',
+      profileNavColour: st.screen === 'profile' ? 'var(--sl-text)' : 'var(--sl-text-dim)',
+
+      // Profile search — an inline-expanding field in the shared header, so
+      // it's reachable from the hub as well as the profile screen itself.
+      toggleProfileSearch: () => this.toggleProfileSearch(),
+      onProfileSearchInput: e => this.onProfileSearchInput(e),
+      submitProfileSearch: e => this.submitProfileSearch(e),
+      profileSearchQuery: st.profile.searchQuery,
+      searchWidth: st.profile.searchOpen ? '220px' : '0px',
+      searchBg: st.profile.searchOpen ? 'var(--sl-signal-wash)' : 'var(--sl-seam)',
+      searchBorder: st.profile.searchOpen ? 'var(--sl-signal)' : 'var(--sl-seam-strong)',
+
+      // Profile screen content
+      profileLoading: profileStatus === 'loading',
+      profileNotFound: profileStatus === 'notfound',
+      profileInvalid: profileStatus === 'invalid',
+      profileErrored: profileStatus === 'error',
+      profileLoaded: profileStatus === 'ok' && !!profileData,
+      profileQueryEcho: st.profile.username || '',
+      profileInitials: profileData ? profileData.username.slice(0, 2).toUpperCase() : '',
+      profileUsernameDisplay: profileData ? profileData.username : '',
+      profileMemberSince: profileData ? (fmtProfileDate(profileData.createdAt) || '—') : '—',
+      profileLastSeen: profileData ? (fmtProfileDate(profileData.lastLogin) || '—') : '—',
 
       // Auth
       authTitle: st.authMode === 'signup' ? 'Create your account' : 'Welcome back',
