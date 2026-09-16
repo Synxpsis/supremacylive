@@ -19,8 +19,8 @@ body:
     id: design-system
     attributes:
       label: Design system
-      description: If this touches UI, does it fit inside Command Console v1.0 (see CLAUDE.md)?
+      description: If this touches UI, does it fit inside Command Console v1.0 (see design-system/UI-RULES.md)?
       options:
-        - label: This is UI-facing and I've checked it against CLAUDE.md / design-system/HANDOFF.md
+        - label: This is UI-facing and I've checked it against design-system/UI-RULES.md / design-system/HANDOFF.md
         - label: This needs a new token/component that doesn't exist yet (flag it, don't invent it locally)
         - label: Not UI-facing

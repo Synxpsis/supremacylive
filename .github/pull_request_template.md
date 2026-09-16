@@ -9,7 +9,7 @@
 ## Checklist
 
 - [ ] `npm run lint` and `npm run validate` pass locally (CI will also check this)
-- [ ] UI changes follow `CLAUDE.md` / `design-system/HANDOFF.md` (tokens only, achromatic, zero radius, mono numerals)
+- [ ] UI changes follow `design-system/UI-RULES.md` / `design-system/HANDOFF.md` (tokens only, achromatic, zero radius, mono numerals)
 - [ ] D1 schema changes ship as a new file in `migrations/`, not an edit to an existing one
 - [ ] No secrets, tokens, or `.dev.vars` content in the diff
 

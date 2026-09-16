@@ -35,13 +35,13 @@ in the repo next time.
 
 ## Judgment calls (reference didn't cover the exact case)
 
-4. **Radius on small circular indicators.** CLAUDE.md says "the only non-zero radius in the system
-   is the loading spinner," but Foundations' own radio-button example draws a filled circular dot.
+4. **Radius on small circular indicators.** `UI-RULES.md` says "the only non-zero radius in the
+   system is the loading spinner," but Foundations' own radio-button example draws a filled circular dot.
    Production keeps `border-radius: 50%` on small (≤11px) decorative dots — the mode-picker bullet,
    the editor's province-list dot — since flattening a "dot" into a square reads as broken, not
-   as a design choice, and the reference contradicts the literal CLAUDE.md line anyway. Everything
+   as a design choice, and the reference contradicts the literal `UI-RULES.md` line anyway. Everything
    bigger (avatar/coin icon badges, previously circular) is now square, matching the Components
-   sheet's square "VK" avatar tag. Worth resolving the CLAUDE.md wording one way or the other.
+   sheet's square "VK" avatar tag. Worth resolving the `UI-RULES.md` wording one way or the other.
 
 5. **Seam alpha continuum collapsed to two steps.** The legacy client used a dozen-plus distinct
    alpha values for what the system now treats as one of two hairline weights
