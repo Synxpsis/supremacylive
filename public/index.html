@@ -143,7 +143,7 @@
 
       <div onPointerDown="{{ screenPointerDown }}" onPointerMove="{{ screenPointerMove }}" onPointerUp="{{ screenPointerUp }}" onPointerCancel="{{ screenPointerUp }}" style="position: relative; overflow: hidden; min-height: 0; touch-action: pan-y;">
       <div style="display: flex; width: 200%; height: 100%; transform: translateX({{ screenTrackTransform }}); transition: {{ screenTrackTransition }};">
-      <div style="width: 50%; flex: none; height: 100%; min-height: 0; overflow: hidden; box-sizing: border-box;">
+      <div style="width: 50%; flex: none; order: 2; height: 100%; min-height: 0; overflow: hidden; box-sizing: border-box;">
       <div style="display: grid; grid-template-columns: 1fr 380px; gap: 22px; min-height: 0; height: 100%;">
 
         <div style="position: relative; display: flex; flex-direction: column; justify-content: space-between; padding-top: 48px; padding-left: 44px; padding-right: 44px; padding-bottom: 50px; min-height: 0; box-sizing: border-box;">
@@ -230,7 +230,7 @@
       </div>
       </div>
 
-      <div style="width: 50%; flex: none; height: 100%; min-height: 0; overflow-y: auto; box-sizing: border-box;">
+      <div style="width: 50%; flex: none; order: 1; height: 100%; min-height: 0; overflow-y: auto; box-sizing: border-box;">
       <div style="position: relative; max-width: 760px; width: 100%; margin: 0 auto; min-height: 0; display: flex; flex-direction: column; gap: 20px; padding-bottom: 20px; box-sizing: border-box;">
 
         <sc-if value="{{ profileLoading }}" hint-placeholder-val="{{ false }}">
@@ -438,10 +438,13 @@ class Component extends DCLogic {
   /** Drag-to-swipe between the hub and profile screens, alongside the
    *  existing click-based nav (commander chip, Home, search). Only the hub
    *  and profile panes exist in this track — landing/auth render before
-   *  `signedIn` is ever true. A drag under 6px never engages (so it can't
-   *  eat an ordinary click on a button inside either pane); past that, the
-   *  pointer is captured and the track follows it 1:1 until release, then
-   *  snaps to whichever screen is past the 50% threshold. */
+   *  `signedIn` is ever true. Profile sits to the LEFT of hub (`order: 1`
+   *  vs. `order: 2` on the two panes below) — so from hub, drag right to
+   *  reveal profile; from profile, drag left to reveal hub. A drag under
+   *  6px never engages (so it can't eat an ordinary click on a button
+   *  inside either pane); past that, the pointer is captured and the track
+   *  follows it 1:1 until release, then snaps to whichever screen is past
+   *  the 50% threshold. */
   screenPointerDown(e) {
     this._swipe = { startX: e.clientX, startScreen: this.state.screen, active: false, lastPx: 0, paneWidth: 0 };
   }
@@ -462,9 +465,12 @@ class Component extends DCLogic {
     // above stops it from starting in most cases; this covers what slips
     // through, e.g. a drag that began over an already-selected run of text).
     if (e.cancelable) e.preventDefault();
+    // Profile sits to the left of hub in the track (order: 1 vs. order: 2
+    // below), so from hub only a rightward drag reveals it, and from
+    // profile only a leftward drag reveals hub back.
     const clamped = s.startScreen === 'hub'
-      ? Math.max(-s.paneWidth, Math.min(0, dx))
-      : Math.max(0, Math.min(s.paneWidth, dx));
+      ? Math.max(0, Math.min(s.paneWidth, dx))
+      : Math.max(-s.paneWidth, Math.min(0, dx));
     s.lastPx = clamped;
     this.setState({ swipeDragging: true, swipeDragPx: clamped });
   }
@@ -724,7 +730,7 @@ class Component extends DCLogic {
       screenPointerDown: e => this.screenPointerDown(e),
       screenPointerMove: e => this.screenPointerMove(e),
       screenPointerUp: e => this.screenPointerUp(e),
-      screenTrackTransform: `calc(${st.screen === 'profile' ? '-50%' : '0%'} + ${st.swipeDragPx}px)`,
+      screenTrackTransform: `calc(${st.screen === 'hub' ? '-50%' : '0%'} + ${st.swipeDragPx}px)`,
       screenTrackTransition: st.swipeDragging ? 'none' : 'transform var(--sl-dur-3) var(--sl-ease-mono)',
 
       // Profile search — an inline-expanding field in the shared header, so
