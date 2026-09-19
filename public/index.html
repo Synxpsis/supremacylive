@@ -17,6 +17,11 @@
   a { color: var(--sl-signal); text-decoration: none; }
   a:hover { color: var(--sl-signal-hot); }
   ::selection { background: var(--sl-signal-glow); }
+  /* Chrome, not document text: nothing here is meant to be selected, and a
+     drag starting on a heading/label would otherwise kick off native text
+     selection instead of (or fighting with) the hub<->profile swipe drag. */
+  * { -webkit-user-select: none; user-select: none; }
+  input, textarea { -webkit-user-select: text; user-select: text; }
 </style>
 </helmet>
 
@@ -451,6 +456,12 @@ class Component extends DCLogic {
       s.paneWidth = e.currentTarget.getBoundingClientRect().width;
       try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
     }
+    // Once a real drag is underway, stop the browser from treating it as a
+    // text-selection/native-drag gesture too — that fight is what was
+    // corrupting the tracked position mid-drag (the CSS user-select rule
+    // above stops it from starting in most cases; this covers what slips
+    // through, e.g. a drag that began over an already-selected run of text).
+    if (e.cancelable) e.preventDefault();
     const clamped = s.startScreen === 'hub'
       ? Math.max(-s.paneWidth, Math.min(0, dx))
       : Math.max(0, Math.min(s.paneWidth, dx));
