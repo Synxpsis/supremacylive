@@ -30,9 +30,9 @@ premise ("real-time, no-turns" in the README tagline).
   system's own rule that a rating band is real data or nothing. Badges and faction are separate,
   wholly unscoped systems, shown as "coming soon". See [KNOWN_ISSUES.md](KNOWN_ISSUES.md). Two front
   ends read it: `index.html`'s hub has an in-app `profile` screen (click the header's commander chip
-  to view your own, the header's search box to look up anyone, or **drag/swipe left from the hub** —
-  a 220ms-eased track shared with the hub screen, snapping past a 50% threshold, matching the design
-  system's motion cap — with no page navigation, matching every other hub screen); `profile.html` is a
+  to view your own, the header's search box to look up anyone, or **drag right from the hub** — profile
+  sits to the hub's left in a shared, 220ms-eased track, snapping past a 50% threshold (matching the
+  design system's motion cap) — with no page navigation, matching every other hub screen; `profile.html` is a
   separate standalone page for a shareable/logged-out-reachable link
   (`profile.html?u=<username>`). Same endpoint, two presentations, kept deliberately duplicated
   rather than sharing markup — see `index.html`'s and `profile.html`'s own scripts.
