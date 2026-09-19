@@ -8,30 +8,26 @@ in the repo next time.
 
 ## Token gaps (had to use a raw value or a nearby substitute)
 
-1. **No `--sl-signal-edge` token.** The faction slots each get a `-wash` and an `-edge` (e.g.
-   `--sl-faction-self-edge: rgba(61,143,212,0.55)`), but `signal` only gets `-wash` and `-glow`.
-   Several hover/selected states need exactly this shape — a brightened *border*, not a filled
-   wash — and the Components sheet itself reaches for a bare `rgba(255,255,255,0.55)` literal in
-   at least two places (the icon-button hover swatch, the filter-chip selected border) rather than
-   a token. Production now does the same (Sign out / Cancel / Menu hover borders, chip borders) —
-   which means a future rename of that literal in the design file won't be caught by find-and-replace
-   the way a real token would be. Recommend adding `--sl-signal-edge: rgba(255,255,255,0.55)` and
-   updating Foundations/Components to use it.
+1. **~~No `--sl-signal-edge` token.~~ Resolved in tokens v1.1.** The token existed already —
+   `--sl-seam-signal` — it was just still gold from the pre-achromatic palette while Foundations
+   drew this edge as white. v1.1 fixes the value (now `rgba(255,255,255,0.55)`, matching the raw
+   literal production had been reaching for) rather than adding a new token. Every raw-literal call
+   site this gap originally flagged (Sign out / Cancel / Menu hover borders, the profile chip
+   border, `editor.html`'s `.btn:hover`) now reads `var(--sl-seam-signal)` instead.
 
-2. **No translucent-ink token.** Several places layer a partly-transparent version of an ink step —
-   canvas label plates, the match-HUD hint bar under `backdrop-filter: blur()`. Production now
-   builds these two ways: `color-mix(in srgb, var(--sl-ink-100) 76%, transparent)` for DOM CSS
-   (works, but `color-mix` is a fairly recent CSS feature — worth confirming it's an acceptable
-   floor), and a hand-rolled `parseInt(hex) → rgba()` cache for canvas (`board-render.js`,
-   `game.html`'s march-label fill), since canvas can't do `color-mix` on a CSS custom property at
-   all. Recommend either an explicit set of ink-at-alpha tokens, or blessing `color-mix()` in the
-   spec so the next screen doesn't reinvent this.
+2. **No translucent-ink token — the token gap itself is closed, consumer migration isn't.**
+   tokens v1.1 adds `--sl-veil-000/100/200` (literal rgba, not `color-mix()`, specifically so the
+   canvas renderer can resolve them via `getComputedStyle` on a custom property). Nothing consuming
+   this shape today has actually been switched over yet, though: `board-render.js`'s hand-rolled
+   `parseInt(hex) → rgba()` cache and `game.html`'s `color-mix()` hint-bar plate are both still
+   doing their own thing. Left alone deliberately — that's a canvas/HUD refactor, not something a
+   docs/token pass should do as a drive-by. Whoever picks this up next: swap both to the new veil
+   steps and this gap closes for real.
 
-3. **Reinforce action has no assigned status colour.** Build barracks and Develop industry both
-   read naturally as "afford = ok, can't = danger" (implemented that way now — see below). Reinforce
-   isn't a purchase, so that mapping doesn't fit; it's shipped as `--sl-info`, which isn't wrong but
-   isn't specified anywhere either. Worth a line in the Components sheet about what "a free action
-   available near the selection" gets styled as.
+3. **~~Reinforce action has no assigned status colour.~~ Resolved in tokens v1.1.** Added
+   `--sl-action-free` (aliased to `--sl-info`, since it's still a system offer rather than a new
+   hue) and `--sl-action-free-wash`. `game.html`'s Reinforce button now reads these instead of
+   `--sl-info`/`--sl-info-wash` directly — same rendered colour, but now it means what it says.
 
 ## Judgment calls (reference didn't cover the exact case)
 
