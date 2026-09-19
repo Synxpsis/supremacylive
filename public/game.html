@@ -66,7 +66,7 @@
     <div style="height: 100vh; display: grid; place-items: center; background: var(--sl-ink-100);">
       <div style="display: flex; flex-direction: column; align-items: center; gap: 18px;">
         <span style="font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-sm); letter-spacing: 0.1em; text-transform: uppercase; color: var(--sl-text-mute);">{{ connectMsg }}</span>
-        <button onClick="{{ cancelConnect }}" style="padding: 10px 22px; background: var(--sl-seam); border: 1px solid var(--sl-seam-strong); color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-sm); cursor: pointer;" style-hover="color: var(--sl-text); border-color: rgba(255,255,255,0.55);">Cancel</button>
+        <button onClick="{{ cancelConnect }}" style="padding: 10px 22px; background: var(--sl-seam); border: 1px solid var(--sl-seam-strong); color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-sm); cursor: pointer;" style-hover="color: var(--sl-text); border-color: var(--sl-seam-signal);">Cancel</button>
       </div>
     </div>
   </sc-if>
@@ -173,7 +173,7 @@
                 </sc-if>
 
                 <sc-if value="{{ canReinforce }}" hint-placeholder-val="{{ false }}">
-                  <button onClick="{{ reinforceHere }}" style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; background: var(--sl-info-wash); border: 1px solid var(--sl-info); color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-sm); text-align: left; cursor: pointer;" style-hover="filter: brightness(1.22);">
+                  <button onClick="{{ reinforceHere }}" style="width: 100%; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 13px; background: var(--sl-action-free-wash); border: 1px solid var(--sl-action-free); color: var(--sl-text); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-sm); text-align: left; cursor: pointer;" style-hover="filter: brightness(1.22);">
                     <span>Reinforce</span>
                     <span style="font-size: var(--sl-fs-ui-xs); letter-spacing: 0.08em; text-transform: uppercase; color: var(--sl-text-dim);">{{ reinforceCount }}</span>
                   </button>
@@ -243,7 +243,7 @@
           <div style="position: absolute; inset: 0; display: grid; place-items: center; background: rgba(8,14,20,0.82); backdrop-filter: blur(3px);">
             <div style="display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 40px 52px; background: var(--sl-ink-200); border: 1px solid {{ overColour }}; ">
               <span style="font-family: var(--sl-font-display); font-weight: var(--sl-fw-display); text-transform: uppercase; letter-spacing: var(--sl-tr-display); font-size: var(--sl-fs-d2); line-height: 1; color: {{ overColour }};">{{ overTitle }}</span>
-              <button onClick="{{ exit }}" style="padding: 12px 22px; background: var(--sl-seam); border: 1px solid var(--sl-seam-strong); color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-md); cursor: pointer;" style-hover="color: var(--sl-text); border-color: rgba(255,255,255,0.55);">Menu</button>
+              <button onClick="{{ exit }}" style="padding: 12px 22px; background: var(--sl-seam); border: 1px solid var(--sl-seam-strong); color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-md); cursor: pointer;" style-hover="color: var(--sl-text); border-color: var(--sl-seam-signal);">Menu</button>
             </div>
           </div>
         </sc-if>

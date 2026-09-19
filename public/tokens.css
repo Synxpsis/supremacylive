@@ -1,5 +1,5 @@
 /* ==========================================================================
-   SUPREMACY LIVE — DESIGN TOKENS  v1.0  "Command Console"
+   SUPREMACY LIVE — DESIGN TOKENS  v1.1  "Command Console"
    --------------------------------------------------------------------------
    Single source of truth for every colour, size, type and timing value in
    the client. Drop this file in `public/tokens.css` and link it once from
@@ -7,8 +7,19 @@
    hex value, px font-size, or transition duration.
 
    Naming:  --sl-<group>-<role>[-<modifier>]
-   Groups:  ink | seam | text | signal | status | faction | font | fs | lh
-            tr | space | ctl | dur | ease | z
+   Groups:  ink | veil | seam | text | signal | status | faction | font | fs
+            lh | tr | space | ctl | dur | ease | z
+
+   v1.1 — resolves the gaps raised by the production migration
+   (design-system/HANDOFF-GAPS.md). Additive except one value fix:
+     · --sl-seam-signal was still gold from the pre-achromatic palette while
+       the Foundations sheet drew it white. It is now white. This is the
+       "signal edge" production was reaching for with a bare
+       rgba(255,255,255,0.55) literal — the token existed, it was just wrong.
+     · NEW  --sl-veil-*        translucent grounds (canvas-safe rgba)
+     · NEW  --sl-radius-dot    the one sanctioned non-zero radius besides
+                               the spinner
+     · NEW  --sl-action-free   a free action offered near the selection
    ========================================================================== */
 
 :root {
@@ -23,11 +34,23 @@
   --sl-ink-400: #1b2328;   /* hover: row and control hover */
   --sl-ink-500: #252f36;   /* pressed: control active, heavy block divider */
 
+  /* ---- VEILS -------------------------------------------------------------
+     Translucent grounds, for the two cases a flat ink step cannot serve: a
+     plate that must sit over the live board, and the modal scrim.
+
+     These are literal rgba, not color-mix(), on purpose: the canvas renderer
+     reads tokens through getComputedStyle and cannot resolve color-mix() on
+     a custom property. One value, both renderers. Do not hand-roll a
+     hex → rgba conversion in feature code; add a veil step here instead. */
+  --sl-veil-000: rgba(6, 8, 10, 0.88);      /* modal scrim over any surface */
+  --sl-veil-100: rgba(10, 13, 16, 0.76);    /* HUD hint bar, backdrop-filter plate */
+  --sl-veil-200: rgba(14, 18, 22, 0.82);    /* canvas label plate: province, march */
+
   /* ---- SEAMS ------------------------------------------------------------
      1px hairlines do all the structural work. Three weights, one dashed. */
   --sl-seam:         rgba(230, 232, 228, 0.09);  /* default divider */
   --sl-seam-strong:  rgba(230, 232, 228, 0.18);  /* panel edge, control edge */
-  --sl-seam-signal:  rgba(224, 167, 46, 0.45);   /* selected / armed edge */
+  --sl-seam-signal:  rgba(255, 255, 255, 0.55);  /* selected / armed / live edge — v1.1: was gold */
   --sl-seam-dash:    rgba(230, 232, 228, 0.14);  /* placeholder, empty, drop-zone */
 
   /* ---- TEXT -------------------------------------------------------------
@@ -67,6 +90,13 @@
   --sl-info:         #4aa8c8;
   --sl-info-wash:    rgba(74, 168, 200, 0.12);
   --sl-info-fill:    #1f5568;
+
+  /* A free action offered against the current selection — reinforce, recall,
+     regroup. Not a purchase, so the afford/can't-afford ok/danger mapping
+     does not apply. Aliased rather than given its own hue: it is a system
+     offer, which is what info already means. */
+  --sl-action-free:  var(--sl-info);
+  --sl-action-free-wash: var(--sl-info-wash);
 
   /* ---- FACTION SLOTS ----------------------------------------------------
      Never hardcode a seat colour. Read these slots; the active palette is
@@ -140,6 +170,12 @@
   /* ---- STRUCTURE --------------------------------------------------------
      Radius is zero. The system's corner language is the bracket tick. */
   --sl-radius: 0px;
+  /* The only sanctioned non-zero radius besides the spinner. Permitted ONLY
+     on a decorative indicator dot of 11px or less that carries no
+     information on its own — mode-picker bullet, province-list dot, radio
+     fill. A squared-off 8px dot reads as a rendering fault, not as a
+     design choice. Anything larger is square: avatars, badges, coin tags. */
+  --sl-radius-dot: 50%;
   --sl-border: 1px;
   --sl-tick-len: 9px;       /* bracket tick arm length */
   --sl-tick-weight: 1px;

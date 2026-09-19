@@ -90,7 +90,7 @@
 
       <header style="display: flex; align-items: center; justify-content: space-between; gap: 24px;">
         <div style="display: flex; align-items: center; gap: 18px;">
-          <button onClick="{{ goOwnProfile }}" title="View profile" style="display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; background: var(--sl-ink-300); border: 1px solid var(--sl-seam-strong); font-family: inherit; cursor: pointer;" style-hover="border-color: rgba(255,255,255,0.55);">
+          <button onClick="{{ goOwnProfile }}" title="View profile" style="display: flex; align-items: center; gap: 10px; padding: 6px 14px 6px 6px; background: var(--sl-ink-300); border: 1px solid var(--sl-seam-strong); font-family: inherit; cursor: pointer;" style-hover="border-color: var(--sl-seam-signal);">
             <div style="width: 26px; height: 26px; flex: none; background: var(--sl-seam); display: flex; align-items: center; justify-content: center; color: var(--sl-text-dim);">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-4.4 0-8 2.2-8 5v2h16v-2c0-2.8-3.6-5-8-5Z"></path></svg>
             </div>
@@ -132,12 +132,14 @@
               </div>
             </sc-if>
           </div>
-          <button onClick="{{ logout }}" style="padding: 7px 13px; background: var(--sl-seam); border: 1px solid var(--sl-seam-strong); color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-xs); cursor: pointer;" style-hover="color: var(--sl-signal-hot); border-color: rgba(255,255,255,0.55);">Sign out</button>
+          <button onClick="{{ logout }}" style="padding: 7px 13px; background: var(--sl-seam); border: 1px solid var(--sl-seam-strong); color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-xs); cursor: pointer;" style-hover="color: var(--sl-signal-hot); border-color: var(--sl-seam-signal);">Sign out</button>
         </div>
       </header>
 
-      <sc-if value="{{ onHub }}" hint-placeholder-val="{{ false }}">
-      <div style="display: grid; grid-template-columns: 1fr 380px; gap: 22px; min-height: 0;">
+      <div onPointerDown="{{ screenPointerDown }}" onPointerMove="{{ screenPointerMove }}" onPointerUp="{{ screenPointerUp }}" onPointerCancel="{{ screenPointerUp }}" style="position: relative; overflow: hidden; min-height: 0; touch-action: pan-y;">
+      <div style="display: flex; width: 200%; height: 100%; transform: translateX({{ screenTrackTransform }}); transition: {{ screenTrackTransition }};">
+      <div style="width: 50%; flex: none; height: 100%; min-height: 0; overflow: hidden; box-sizing: border-box;">
+      <div style="display: grid; grid-template-columns: 1fr 380px; gap: 22px; min-height: 0; height: 100%;">
 
         <div style="position: relative; display: flex; flex-direction: column; justify-content: space-between; padding-top: 48px; padding-left: 44px; padding-right: 44px; padding-bottom: 50px; min-height: 0; box-sizing: border-box;">
           <div style="position: relative; display: flex; flex-direction: column; gap: 14px; max-width: 460px; min-height: 0;">
@@ -221,10 +223,10 @@
           </div>
         </div>
       </div>
-      </sc-if>
+      </div>
 
-      <sc-if value="{{ onProfile }}" hint-placeholder-val="{{ false }}">
-      <div style="position: relative; max-width: 760px; width: 100%; margin: 0 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding-bottom: 20px; box-sizing: border-box;">
+      <div style="width: 50%; flex: none; height: 100%; min-height: 0; overflow-y: auto; box-sizing: border-box;">
+      <div style="position: relative; max-width: 760px; width: 100%; margin: 0 auto; min-height: 0; display: flex; flex-direction: column; gap: 20px; padding-bottom: 20px; box-sizing: border-box;">
 
         <sc-if value="{{ profileLoading }}" hint-placeholder-val="{{ false }}">
           <p style="margin: 0; font-size: var(--sl-fs-ui-sm); color: var(--sl-text-dim);">Loading commander record…</p>
@@ -266,6 +268,32 @@
               <span style="font-family: var(--sl-font-mono); font-size: var(--sl-fs-data-lg); font-weight: var(--sl-fw-mono); color: var(--sl-text);">{{ profileLastSeen }}</span>
             </div>
           </div>
+
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px;">
+            <sc-for list="{{ heroStatLabels }}" as="hs" hint-placeholder-count="3">
+              <div style="background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+                <span style="font-family: var(--sl-font-mono); font-size: var(--sl-fs-label); font-weight: 500; letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-mute);">{{ hs }}</span>
+                <span style="font-family: var(--sl-font-mono); font-size: var(--sl-fs-data-lg); font-weight: var(--sl-fw-mono); color: var(--sl-text-ghost);">—</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="position: relative; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); padding: 20px; min-height: 120px; display: flex; align-items: center; justify-content: center;">
+            <span style="position: absolute; left: 14px; top: -8px; padding: 0 6px; background: var(--sl-ink-200); font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); font-weight: 500; letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-mute);">Rating history</span>
+            <span style="font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-ghost);">Not tracked yet</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px;">
+            <div style="position: relative; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); padding: 20px; min-height: 120px; display: flex; align-items: center; justify-content: center;">
+              <span style="position: absolute; left: 14px; top: -8px; padding: 0 6px; background: var(--sl-ink-200); font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); font-weight: 500; letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-mute);">Badges</span>
+              <span style="font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-ghost);">Coming soon</span>
+            </div>
+            <div style="position: relative; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); padding: 20px; min-height: 120px; display: flex; align-items: center; justify-content: center;">
+              <span style="position: absolute; left: 14px; top: -8px; padding: 0 6px; background: var(--sl-ink-200); font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); font-weight: 500; letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-mute);">Faction</span>
+              <span style="font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-ghost);">Coming soon</span>
+            </div>
+          </div>
+
           <div style="position: relative; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); padding: 20px;">
             <span style="position: absolute; left: 14px; top: -8px; padding: 0 6px; background: var(--sl-ink-200); font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); font-weight: 500; letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-mute);">Match record</span>
             <p style="margin: 0; font-size: var(--sl-fs-ui-sm); line-height: 1.55; color: var(--sl-text-dim);">Not tracked yet. Wins, losses and head-to-head history will appear here once match results are recorded.</p>
@@ -273,7 +301,10 @@
         </sc-if>
 
       </div>
-      </sc-if>
+      </div>
+
+      </div>
+      </div>
 
     </div>
   </sc-if>
@@ -298,6 +329,10 @@ class Component extends DCLogic {
     authMode: 'login',
     f: { username: '', email: '', identifier: '', password: '' },
     fieldErrors: {}, formError: '', busy: false,
+    // Hub <-> profile swipe. swipeDragPx is the live pixel offset on top of
+    // whichever screen is at rest (0 while idle); swipeDragging disables the
+    // CSS transition so the drag tracks the pointer 1:1 instead of easing.
+    swipeDragging: false, swipeDragPx: 0,
     // 1v1 queueing — null once idle, 'connecting'|'searching' while the
     // /queue socket is open, 'error' if the server rejected it.
     queueStatus: null, queueMessage: '',
@@ -393,6 +428,46 @@ class Component extends DCLogic {
 
   goOwnProfile() {
     if (this.state.user) this.openProfile(this.state.user.username);
+  }
+
+  /** Drag-to-swipe between the hub and profile screens, alongside the
+   *  existing click-based nav (commander chip, Home, search). Only the hub
+   *  and profile panes exist in this track — landing/auth render before
+   *  `signedIn` is ever true. A drag under 6px never engages (so it can't
+   *  eat an ordinary click on a button inside either pane); past that, the
+   *  pointer is captured and the track follows it 1:1 until release, then
+   *  snaps to whichever screen is past the 50% threshold. */
+  screenPointerDown(e) {
+    this._swipe = { startX: e.clientX, startScreen: this.state.screen, active: false, lastPx: 0, paneWidth: 0 };
+  }
+
+  screenPointerMove(e) {
+    const s = this._swipe;
+    if (!s || (this.state.screen !== 'hub' && this.state.screen !== 'profile')) return;
+    const dx = e.clientX - s.startX;
+    if (!s.active) {
+      if (Math.abs(dx) < 6) return;
+      s.active = true;
+      s.paneWidth = e.currentTarget.getBoundingClientRect().width;
+      try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {}
+    }
+    const clamped = s.startScreen === 'hub'
+      ? Math.max(-s.paneWidth, Math.min(0, dx))
+      : Math.max(0, Math.min(s.paneWidth, dx));
+    s.lastPx = clamped;
+    this.setState({ swipeDragging: true, swipeDragPx: clamped });
+  }
+
+  screenPointerUp() {
+    const s = this._swipe;
+    this._swipe = null;
+    if (!s || !s.active) return;
+    const crossed = s.paneWidth > 0 && Math.abs(s.lastPx) > s.paneWidth / 2;
+    const target = s.startScreen === 'hub'
+      ? (crossed ? 'profile' : 'hub')
+      : (crossed ? 'hub' : 'profile');
+    this.setState({ swipeDragging: false, swipeDragPx: 0, screen: target });
+    if (target === 'profile' && s.startScreen !== 'profile') this.goOwnProfile();
   }
 
   toggleProfileSearch() {
@@ -619,8 +694,6 @@ class Component extends DCLogic {
       onLanding: st.screen === 'landing',
       onAuth: st.screen === 'auth',
       signedIn: st.screen === 'hub' || st.screen === 'profile',
-      onHub: st.screen === 'hub',
-      onProfile: st.screen === 'profile',
       toHub: () => this.goPlay(),
       toLanding: () => this.setState({ screen: 'landing' }),
       logout: () => this.logout(),
@@ -632,6 +705,16 @@ class Component extends DCLogic {
       goOwnProfile: () => this.goOwnProfile(),
       homeBg: st.screen === 'hub' ? 'var(--sl-ink-500)' : 'transparent',
       homeColour: st.screen === 'hub' ? 'var(--sl-text)' : 'var(--sl-text-dim)',
+
+      // Hub <-> profile swipe track. Rest position is a pure percentage of
+      // the (200%-wide) track, so it needs no width measurement; the live
+      // drag adds a pixel delta on top via calc(), measured once at
+      // pointerdown (see screenPointerMove).
+      screenPointerDown: e => this.screenPointerDown(e),
+      screenPointerMove: e => this.screenPointerMove(e),
+      screenPointerUp: e => this.screenPointerUp(e),
+      screenTrackTransform: `calc(${st.screen === 'profile' ? '-50%' : '0%'} + ${st.swipeDragPx}px)`,
+      screenTrackTransition: st.swipeDragging ? 'none' : 'transform var(--sl-dur-3) var(--sl-ease-mono)',
 
       // Profile search — an inline-expanding field in the shared header, so
       // it's reachable from the hub as well as the profile screen itself.
@@ -654,6 +737,10 @@ class Component extends DCLogic {
       profileUsernameDisplay: profileData ? profileData.username : '',
       profileMemberSince: profileData ? (fmtProfileDate(profileData.createdAt) || '—') : '—',
       profileLastSeen: profileData ? (fmtProfileDate(profileData.lastLogin) || '—') : '—',
+      // Rating/ladder/trophies don't exist yet — match.js never persists an
+      // outcome anywhere. Labels ship now so the layout is real; values stay
+      // an honest em-dash rather than a fabricated number.
+      heroStatLabels: ['Rating', 'Ladder rank', 'Trophies'],
 
       // Auth
       authTitle: st.authMode === 'signup' ? 'Create your account' : 'Welcome back',

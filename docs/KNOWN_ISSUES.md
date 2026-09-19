@@ -34,12 +34,13 @@ deliberate scope decisions during its rollout — full detail in
 [`design-system/HANDOFF-GAPS.md`](../design-system/HANDOFF-GAPS.md) rather than duplicated here. Short
 version of what's still open there:
 
-- No `--sl-signal-edge` token (a brightened-border shape several hover/selected states need); two
-  places fall back to a raw `rgba(255,255,255,0.55)` literal instead.
-- No translucent-ink token; canvas label plates and the match-HUD hint bar each solved this
-  independently (`color-mix()` for DOM, a hand-rolled hex→rgba cache for canvas).
-- `Reinforce`'s button colour (`--sl-info`) isn't actually specified anywhere for "a free action
-  available near the selection" — it's a reasonable guess, not a documented mapping.
+- **Tokens v1.1** (2026-09-19) resolved two of these: `--sl-seam-signal` was gold when Foundations
+  drew it white — fixed, and every raw `rgba(255,255,255,0.55)` hover-border literal in the codebase
+  now reads that token instead. `--sl-action-free` (aliased to `--sl-info`) gives Reinforce's button
+  colour an actual name; `game.html` reads it now instead of `--sl-info` directly.
+- No translucent-ink token — **partially resolved**: v1.1 adds `--sl-veil-000/100/200`, but nothing
+  consuming this shape has been migrated to them yet. Canvas label plates and the match-HUD hint bar
+  still solve it independently (a hand-rolled hex→rgba cache for canvas, `color-mix()` for DOM).
 - The hub's 1v1-queue "live queue" state has no armed-frame treatment, despite Foundations naming it
   as an armed-frame example.
 - `--sl-focus-ring` isn't retrofitted onto every interactive element (nothing violates the
@@ -111,13 +112,19 @@ Kept here for traceability — these were real bugs, now resolved on `main`:
   [CONTENT_INVENTORY.md](CONTENT_INVENTORY.md).
 - **`public/proto3d.html`** is unmigrated scratch code, not a shipped screen — see
   `design-system/HANDOFF-GAPS.md` item 9.
-- **`public/profile.html` (2026-09-16) ships a deliberately reduced version of the design system's
-  `Supremacy DS — Screens II.dc.html` "04 Profile" reference** — that mockup's rating-history chart,
-  meters, "form" strip and rivals/head-to-head list all assume a rating/ranking and match-history
-  system that doesn't exist anywhere in this codebase (`src/match.js` never persists a match outcome
-  to D1; there is no ELO/rating field on `users` at all). Building that reference screen for real
-  today would mean fabricating the numbers it shows, which the design files themselves explicitly
-  rule out ("rating band is real data, never a fake progress bar"). Shipped instead: account info
-  only (username, member-since, last-seen — all real `users` columns), plus an honest "not tracked
-  yet" note in the match-record panel instead of the chart/meters/rivals. Scope choice, not an
-  oversight — revisit once match outcomes are actually persisted somewhere.
+- **The profile screen (`public/profile.html` and `index.html`'s in-app `profile` screen) ships a
+  deliberately reduced version of the `profile-and-lobby-swipe` design handoff / the design system's
+  `Supremacy DS — Screens II.dc.html` "04 Profile" reference** — that concept's rating-history chart,
+  hero stats (rating/ladder rank/trophies), rank title, badges panel and faction panel all assume
+  systems that don't exist anywhere in this codebase (`src/match.js` never persists a match outcome
+  to D1; there is no ELO/rating/rank field on `users` at all; badges and faction are unscoped).
+  Building any of that for real today would mean fabricating the numbers it shows, which the design
+  files themselves explicitly rule out ("rating band is real data, never a fake progress bar"). What
+  actually shipped (2026-09-16, extended 2026-09-19): real account info (username, member-since,
+  last-seen), plus the hero-stats/rating-graph/match-history *layout* with an honest "not tracked
+  yet"/em-dash in place of numbers, and "coming soon" for badges/faction. Rank title was left out
+  entirely rather than given a placeholder — there's no tier list yet to even reference. The
+  lobby↔profile drag/swipe transition from that same handoff did ship for real (see
+  [OVERVIEW.md](OVERVIEW.md)); it needed no new data, unlike the profile content itself. Scope
+  choice, not an oversight — revisit the stats/graph/badges/faction/rank sections once their
+  backing systems exist.

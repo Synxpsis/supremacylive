@@ -23,11 +23,16 @@ premise ("real-time, no-turns" in the README tagline).
   built out (camera behavior, tile depth, water — see [RENDERING.md](RENDERING.md)).
 - **Accounts**: username/email/password signup+login, sessions as HttpOnly cookies, backed by D1.
   A commander profile (`GET /api/users/:username`) shows account info — username, member-since,
-  last-seen — looked up by username, no login required to view. No win/loss or match history yet;
-  see [KNOWN_ISSUES.md](KNOWN_ISSUES.md). Two front ends read it: `index.html`'s hub has an in-app
-  `profile` screen (click the header's commander chip to view your own, or the header's search box
-  to look up anyone — there is no separate "Profile" nav tab) with no page navigation, matching
-  every other hub screen; `profile.html` is a
+  last-seen — looked up by username, no login required to view. The profile layout also reserves
+  space for hero stats (rating/ladder rank/trophies), a rating-history graph, and match history, but
+  none of that data exists yet (`match.js` never persists an outcome anywhere) — every one of those
+  sections renders an honest "not tracked yet" rather than a fabricated number, matching the design
+  system's own rule that a rating band is real data or nothing. Badges and faction are separate,
+  wholly unscoped systems, shown as "coming soon". See [KNOWN_ISSUES.md](KNOWN_ISSUES.md). Two front
+  ends read it: `index.html`'s hub has an in-app `profile` screen (click the header's commander chip
+  to view your own, the header's search box to look up anyone, or **drag/swipe left from the hub** —
+  a 220ms-eased track shared with the hub screen, snapping past a 50% threshold, matching the design
+  system's motion cap — with no page navigation, matching every other hub screen); `profile.html` is a
   separate standalone page for a shareable/logged-out-reachable link
   (`profile.html?u=<username>`). Same endpoint, two presentations, kept deliberately duplicated
   rather than sharing markup — see `index.html`'s and `profile.html`'s own scripts.

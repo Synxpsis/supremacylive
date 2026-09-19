@@ -60,7 +60,7 @@
     color: var(--sl-text-dim); font-family: 'Barlow Semi Condensed', sans-serif; font-size: var(--sl-fs-ui-xs);
     cursor: pointer;
   }
-  .btn:hover { color: var(--sl-signal-hot); border-color: rgba(255,255,255,0.55); }
+  .btn:hover { color: var(--sl-signal-hot); border-color: var(--sl-seam-signal); }
 
   main { max-width: 760px; margin: 0 auto; padding: 40px 24px 64px; display: flex; flex-direction: column; gap: 24px; }
   #result { display: flex; flex-direction: column; gap: 16px; }
@@ -112,6 +112,24 @@
   .stat .v { font-family: var(--sl-font-mono); font-size: var(--sl-fs-data-lg); font-weight: var(--sl-fw-mono); color: var(--sl-text); }
 
   .note { font-size: var(--sl-fs-ui-sm); line-height: 1.55; color: var(--sl-text-dim); }
+
+  .heroStats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .heroStat { background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong); padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .heroStat .k {
+    font-family: var(--sl-font-mono); font-size: var(--sl-fs-label); font-weight: 500;
+    letter-spacing: var(--sl-tr-label); text-transform: uppercase; color: var(--sl-text-mute);
+  }
+  .heroStat .v { font-family: var(--sl-font-mono); font-size: var(--sl-fs-data-lg); font-weight: var(--sl-fw-mono); color: var(--sl-text-ghost); }
+
+  .placeholderPanel {
+    position: relative; background: var(--sl-ink-200); border: 1px solid var(--sl-seam-strong);
+    padding: 20px; min-height: 120px; display: flex; align-items: center; justify-content: center;
+  }
+  .placeholderPanel .flag {
+    font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); letter-spacing: var(--sl-tr-label);
+    text-transform: uppercase; color: var(--sl-text-ghost);
+  }
+  .twoCol { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 
   .empty {
     display: flex; flex-direction: column; gap: 11px; padding: 18px;
@@ -217,6 +235,29 @@
         <div class="stat"><span class="k">Member since</span><span class="v">${esc(since)}</span></div>
         <div class="stat"><span class="k">Last seen</span><span class="v">${esc(seen)}</span></div>
       </div>
+
+      <div class="heroStats">
+        <div class="heroStat"><span class="k">Rating</span><span class="v">—</span></div>
+        <div class="heroStat"><span class="k">Ladder rank</span><span class="v">—</span></div>
+        <div class="heroStat"><span class="k">Trophies</span><span class="v">—</span></div>
+      </div>
+
+      <div class="panel placeholderPanel">
+        <span class="panel-label">Rating history</span>
+        <span class="flag">Not tracked yet</span>
+      </div>
+
+      <div class="twoCol">
+        <div class="panel placeholderPanel">
+          <span class="panel-label">Badges</span>
+          <span class="flag">Coming soon</span>
+        </div>
+        <div class="panel placeholderPanel">
+          <span class="panel-label">Faction</span>
+          <span class="flag">Coming soon</span>
+        </div>
+      </div>
+
       <div class="panel">
         <span class="panel-label">Match record</span>
         <p class="note">Not tracked yet. Wins, losses and head-to-head history will appear here once match results are recorded.</p>
