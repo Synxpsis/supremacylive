@@ -33,6 +33,10 @@
   a { color: var(--sl-signal); text-decoration: none; }
   a:hover { color: var(--sl-signal-hot); }
   ::selection { background: var(--sl-signal-glow); }
+  /* Chrome, not document text — dragging a garrison shouldn't ever be able
+     to start a text-selection drag on sidebar telemetry instead. */
+  * { -webkit-user-select: none; user-select: none; }
+  input, textarea { -webkit-user-select: text; user-select: text; }
   input[type="range"] { accent-color: var(--sl-signal); height: 16px; }
   /* 3D-mode (?render=3d) CSS2DObject labels for garrison/troop counts and the
      march preview — board-render-3d.js only assigns classes, not style, so

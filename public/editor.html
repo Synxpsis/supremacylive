@@ -36,6 +36,10 @@
   input, select, button { font-family: inherit; }
   a { color: var(--sl-signal); }
   ::selection { background: var(--sl-signal-glow); }
+  /* Chrome, not document text — painting/dragging on the board shouldn't be
+     able to kick off a text-selection drag on adjacent panel labels. */
+  * { -webkit-user-select: none; user-select: none; }
+  input, textarea { -webkit-user-select: text; user-select: text; }
 
   #app { display: none; height: 100vh; flex-direction: column; }
   #app.ready { display: flex; }

@@ -17,6 +17,9 @@
     font-family: 'Barlow Semi Condensed', sans-serif;
     font-variant-numeric: tabular-nums;
   }
+  /* Chrome, not document text — nothing here is meant to be selected. */
+  * { -webkit-user-select: none; user-select: none; }
+  input, textarea { -webkit-user-select: text; user-select: text; }
   a { color: var(--sl-signal); text-decoration: none; }
   a:hover { color: var(--sl-signal-hot); }
   ::selection { background: var(--sl-signal-glow); }
