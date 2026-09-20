@@ -19,8 +19,16 @@
 }
 </script>
 <script type="module">
+  import * as THREE from 'three';
+  import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
   import { create } from './board-render-3d.js';
   self.FPRender3D = { create };
+  // Exposed so the classic <script> below can build its own editor-only grow-
+  // handle meshes directly in board-render-3d.js's scene (see syncGrowHandles3D())
+  // without board-render-3d.js itself needing to know about grid-growth UI —
+  // that module is shared with game.html, which has no use for it.
+  self.THREE = THREE;
+  self.CSS2DObject = CSS2DObject;
   self.dispatchEvent(new Event('fp-render-3d-ready'));
 </script>
 <style>
@@ -142,6 +150,13 @@
   .fp3d-gridref {
     font-family: var(--sl-font-mono); font-size: var(--sl-fs-label-sm); color: var(--sl-text-dim);
   }
+  /* The "+" over an editor-only grid-growth handle (see syncGrowHandles3D()) —
+   * sized like a display glyph so it reads from an orbited-out camera, not a
+   * label styled for reading up close the way a garrison count is. */
+  .fp3d-growplus {
+    font-family: var(--sl-font-display); font-weight: var(--sl-fw-display);
+    font-size: var(--sl-fs-d4); color: var(--sl-text-dim);
+  }
 
   #login {
     height: 100vh; display: grid; place-items: center;
@@ -183,7 +198,7 @@
     <div id="canvasWrap">
       <canvas id="cv"></canvas>
       <canvas id="cv3d" style="display: none;"></canvas>
-      <div id="hint">Click any tile to inspect it · Add City / Industry / Barracks, then click a valid tile to place · scroll to zoom · drag to pan / orbit</div>
+      <div id="hint">Click any tile to inspect it · Add City / Industry / Barracks, then click a valid tile to place · click + beside a sector to grow into it · scroll to zoom · drag to pan / orbit</div>
     </div>
     <div id="panel"></div>
   </div>
@@ -230,6 +245,11 @@
   // STRUCTURE_KIT entry in map.js, not a new button wired up here.
   const PLACE_KINDS = [['city', 'Add City'],
     ...F().AUTHORABLE_KINDS.map(k => [k, 'Add ' + F().STRUCTURE_KIT[k].label])];
+
+  // Upper bound on the slot grid in either axis — shared by resizeSlots()
+  // (typed input) and growHandles() (on-canvas + affordance) so the two grow
+  // paths agree on when the board is "full" without duplicating the number.
+  const MAX_SLOTS = 12;
 
   // ── auth ───────────────────────────────────────────────────────────────
   async function me() {
@@ -395,6 +415,101 @@
   }
 
   let cam = null;
+
+  // ── grid-growth handles ──────────────────────────────────────────────────
+  // One phantom "+" per empty slot orthogonally adjacent to an existing
+  // sector — the on-canvas alternative to typing a bigger number into the
+  // Board panel's Sector cols/rows fields (still there, still the only way to
+  // shrink; see resizeSlots()). Growing is per-sector, not per-axis: clicking
+  // a handle places exactly one new sector at that slot (see addTerritory())
+  // and nothing else — expanding right of one sector never implicitly reveals
+  // a slot in some other row the GM didn't ask for. The new sector's own
+  // unoccupied neighbours become handles on the next render, purely because
+  // this is recomputed fresh from S.built.provinces every time — no separate
+  // "which slots have been grown into" state to keep in sync. Can grow in any
+  // of the four directions, including left/up (addTerritory() shifts every
+  // existing province's sc/sr when a slot's coordinate would otherwise go
+  // negative — slot coordinates are always non-negative, see
+  // docs/MAP_SYSTEM.md), unlike the old axis-only version this replaced.
+  function growHandles() {
+    if (!S.built) return [];
+    const cur = S.def.slots || F().DEFAULT_SLOTS;
+    const block = S.built.block;
+    const occupied = new Set(S.built.provinces.map(p => p.sc + ',' + p.sr));
+    const frontier = new Map(); // "sc,sr" -> { sc, sr }
+    const consider = (sc, sr) => {
+      const key = sc + ',' + sr;
+      if (occupied.has(key) || frontier.has(key)) return;
+      // Would this slot still fit under MAX_SLOTS once grown (and, on the
+      // low edge, shifted)? Same arithmetic as addTerritory() itself.
+      const needCols = sc < 0 ? cur.cols - sc : Math.max(cur.cols, sc + 1);
+      const needRows = sr < 0 ? cur.rows - sr : Math.max(cur.rows, sr + 1);
+      if (needCols > MAX_SLOTS || needRows > MAX_SLOTS) return;
+      frontier.set(key, { sc, sr });
+    };
+    if (S.built.provinces.length === 0) {
+      consider(0, 0); // nothing on the board at all — bootstrap a single starting handle
+    } else {
+      for (const p of S.built.provinces) {
+        consider(p.sc - 1, p.sr); consider(p.sc + 1, p.sr);
+        consider(p.sc, p.sr - 1); consider(p.sc, p.sr + 1);
+      }
+    }
+    return [...frontier.values()].map(({ sc, sr }) => ({
+      sc, sr, c0: sc * block.w, r0: sr * block.h, w: block.w, h: block.h,
+    }));
+  }
+
+  // Read once from the design tokens, same caveat/pattern as tokens() above —
+  // board-render.js doesn't export its own tokens(), so a grow handle (drawn
+  // by editor.html itself, not the shared renderer) needs its own small
+  // achromatic read. --sl-ink-500 ("pressed: control active") reads as a
+  // solid, clickable block next to the fainter dashed water placeholder;
+  // --sl-seam-signal ("selected / armed / live edge") is the sanctioned edge
+  // tone for a live, interactive board affordance — neither is invented here.
+  let _growTok = null;
+  function growTokens() {
+    if (_growTok) return _growTok;
+    const read = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    const fill = read('--sl-ink-500'), edge = read('--sl-seam-signal'), plus = read('--sl-text-dim');
+    const t = { fill: fill || '#252f36', edge: edge || 'rgba(255,255,255,0.55)', plus: plus || '#9ba39f' };
+    if (fill && edge && plus) _growTok = t;
+    return t;
+  }
+
+  function drawGrowHandles2D(ctx) {
+    if (!S.built || !cam) return;
+    const gt = growTokens();
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const g of growHandles()) {
+      const a = cam.project(g.c0, g.r0), b = cam.project(g.c0 + g.w, g.r0);
+      const d = cam.project(g.c0 + g.w, g.r0 + g.h), e = cam.project(g.c0, g.r0 + g.h);
+      ctx.beginPath();
+      ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(d[0], d[1]); ctx.lineTo(e[0], e[1]);
+      ctx.closePath();
+      ctx.fillStyle = gt.fill; ctx.fill();
+      ctx.strokeStyle = gt.edge; ctx.lineWidth = 1.4; ctx.stroke();
+      const mid = cam.project(g.c0 + g.w / 2, g.r0 + g.h / 2);
+      ctx.font = `600 ${Math.max(20, 1.6 * cam.scale)}px 'Barlow Condensed', sans-serif`;
+      ctx.fillStyle = gt.plus;
+      ctx.fillText('+', mid[0], mid[1]);
+    }
+  }
+
+  // Screen px -> the { sc, sr } of the grow handle sitting under the point,
+  // or null. Checked before ordinary tile hit-testing (see onClick()) since a
+  // handle can sit outside S.built.gridW/gridH (or even at a negative slot
+  // coordinate, on the low edge), where tileAtAny() already — and correctly,
+  // for every other caller — returns null.
+  function growHandleAt2D(mx, my) {
+    if (!cam || !S.built) return null;
+    const u = cam.unproject(mx, my);
+    for (const g of growHandles()) {
+      if (u.c >= g.c0 && u.c < g.c0 + g.w && u.r >= g.r0 && u.r < g.r0 + g.h) return { sc: g.sc, sr: g.sr };
+    }
+    return null;
+  }
+
   function paint() { S.renderMode === '3d' ? paint3D() : paint2D(); }
 
   function paint2D() {
@@ -408,6 +523,7 @@
     ctx.clearRect(0, 0, W, H);
     cam = buildCam(W, H);
     R().board(ctx, cam, S.built, overlay());
+    drawGrowHandles2D(ctx);
   }
 
   // ── 3D preview / editing surface ─────────────────────────────────────────
@@ -445,12 +561,92 @@
     // navigation while authoring a board. gridLabels: true draws column-
     // letter/row-number axis labels along the board's two edges (A, B, C… /
     // 1, 2, 3…) so a GM can reference a tile by grid coordinate; game.html
-    // doesn't need this during a match. camera restores whatever pose
-    // reset3D() saved off the scene this one's replacing, if any. See
-    // board-render-3d.js's create().
-    _r3d = self.FPRender3D.create(cv3d, S.built, { selectionLock: false, gridLabels: true, camera: _camPose });
+    // doesn't need this during a match. labelOrigin keeps those labels
+    // pointing at the same tile even after a later low-edge grow shifts that
+    // tile's internal position — see addTerritory()'s own comment on why.
+    // camera restores whatever pose reset3D() saved off the scene this one's
+    // replacing, if any. See board-render-3d.js's create().
+    _r3d = self.FPRender3D.create(cv3d, S.built, {
+      selectionLock: false, gridLabels: true, camera: _camPose,
+      labelOrigin: S.def.labelOrigin || { c: 0, r: 0 },
+    });
     _camPose = null;
+    syncGrowHandles3D();
     return _r3d;
+  }
+
+  // ── grid-growth handles (3D) ─────────────────────────────────────────────
+  // Same concept as growHandles()'s 2D draw/hit-test above, built directly
+  // into the live 3D scene (exposed as r3d.scene) instead of piggybacking on
+  // board-render-3d.js — that module is shared with game.html, which has no
+  // use for grid-growth UI, so this stays entirely editor-side. Rebuilt
+  // wherever the scene itself is (ensure3D() on create, reset3D() on
+  // teardown) since a handle's position/eligibility is derived from the same
+  // S.built the rest of the scene is baked from.
+  let _growMeshes = []; // [{ sc, sr, mesh, edges, label }]
+
+  let _growTok3D = null;
+  function growTokens3D() {
+    if (_growTok3D) return _growTok3D;
+    const read = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+    // Same two parse shapes board-render-3d.js's own tokens() already uses
+    // (a bare #rrggbb vs. an rgba() string) — duplicated here in miniature
+    // rather than exporting them from that module for one editor-only use.
+    const toHex = (v, fb) => { const m = /^#([0-9a-f]{6})$/i.exec((v || '').trim()); return m ? parseInt(m[1], 16) : fb; };
+    const toHexRgba = (v, fb) => { const m = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i.exec((v || '').trim()); return m ? (parseInt(m[1], 10) << 16 | parseInt(m[2], 10) << 8 | parseInt(m[3], 10)) : fb; };
+    _growTok3D = {
+      fill: toHex(read('--sl-ink-500'), 0x252f36),
+      edge: toHexRgba(read('--sl-seam-signal'), 0xffffff),
+    };
+    return _growTok3D;
+  }
+
+  function syncGrowHandles3D() {
+    if (!_r3d || !self.THREE) return;
+    const THREE = self.THREE;
+    for (const g of _growMeshes) {
+      _r3d.scene.remove(g.mesh); g.mesh.geometry.dispose(); g.mesh.material.dispose();
+      _r3d.scene.remove(g.edges); g.edges.geometry.dispose(); g.edges.material.dispose();
+      _r3d.scene.remove(g.label);
+    }
+    _growMeshes = [];
+    const gt = growTokens3D();
+    for (const g of growHandles()) {
+      const geo = new THREE.BoxGeometry(g.w, 0.05, g.h);
+      const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: gt.fill, roughness: 0.9 }));
+      mesh.position.set(g.c0 + g.w / 2, 0.025, g.r0 + g.h / 2);
+      _r3d.scene.add(mesh);
+      const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: gt.edge }));
+      edges.position.copy(mesh.position);
+      _r3d.scene.add(edges);
+      const labelEl = document.createElement('div');
+      labelEl.className = 'fp3d-growplus';
+      labelEl.textContent = '+';
+      const label = new self.CSS2DObject(labelEl);
+      label.center.set(0.5, 0.5);
+      label.position.set(g.c0 + g.w / 2, 0.12, g.r0 + g.h / 2);
+      _r3d.scene.add(label);
+      _growMeshes.push({ sc: g.sc, sr: g.sr, mesh, edges, label });
+    }
+  }
+
+  // Screen px (cv3d-relative) -> the { sc, sr } of the grow handle sitting
+  // under the point, or null — a small raycast of its own against just the
+  // handle meshes, checked before r3d.tileAtAny() the same way
+  // growHandleAt2D() is checked before the 2D path's tileAtAny(), since a
+  // handle can sit outside the board bounds r3d.tileAtAny() itself stays
+  // correctly bounded to (or even at a negative slot coordinate).
+  function growHandleAt3D(mx, my) {
+    if (!_r3d || !self.THREE || !_growMeshes.length) return null;
+    const THREE = self.THREE;
+    const rect = cv3d.getBoundingClientRect();
+    const ndc = new THREE.Vector2((mx / rect.width) * 2 - 1, -(my / rect.height) * 2 + 1);
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(ndc, _r3d.camera);
+    const hits = ray.intersectObjects(_growMeshes.map(g => g.mesh));
+    if (!hits.length) return null;
+    const hit = _growMeshes.find(g => g.mesh === hits[0].object);
+    return hit ? { sc: hit.sc, sr: hit.sr } : null;
   }
 
   self.addEventListener('fp-render-3d-ready', () => { if (S.renderMode === '3d') paint3D(); });
@@ -487,6 +683,10 @@
     _camPose = { position: _r3d.camera.position.clone(), target: _r3d.controls.target.clone() };
     _r3d.dispose();
     _r3d = null;
+    // The disposed scene (and everything syncGrowHandles3D() added to it)
+    // goes with it — drop the stale refs so a leftover mesh can't be hit-
+    // tested or double-removed; the next ensure3D() rebuilds these fresh.
+    _growMeshes = [];
   }
 
   function setRenderMode(mode) {
@@ -611,7 +811,14 @@
     }
     select({ kind: 'tile', c: t.c, r: t.r });
   }
-  function onClick(mx, my) { onClickTile(tileAtAny(mx, my)); }
+  // Grow-handle hit-test runs first — a handle's tile-space rect sits just
+  // outside the board bounds tileAtAny() itself is (correctly) bounded to,
+  // so there's no overlap to arbitrate between the two.
+  function onClick(mx, my) {
+    const g = growHandleAt2D(mx, my);
+    if (g) { addTerritory(g.sc, g.sr); return; }
+    onClickTile(tileAtAny(mx, my));
+  }
 
   // 3D canvas: OrbitControls owns drag-to-orbit/pan/zoom on cv3d directly, so
   // the only thing needed here is click-to-select — a genuine click (no
@@ -622,7 +829,10 @@
   cv3d.addEventListener('click', e => {
     if (!_r3d) return;
     const b = cv3d.getBoundingClientRect();
-    onClickTile(_r3d.tileAtAny(e.clientX - b.left, e.clientY - b.top));
+    const mx = e.clientX - b.left, my = e.clientY - b.top;
+    const g = growHandleAt3D(mx, my);
+    if (g) { addTerritory(g.sc, g.sr); return; }
+    onClickTile(_r3d.tileAtAny(mx, my));
   });
 
   // confirmRemove reset on every navigation (including re-selecting the same
@@ -742,22 +952,59 @@
     rebuild();
   }
 
-  /** Place a new sector in an empty slot. Every sector needs a capital to
-   *  actually be fought over and pay income (see docs/MECHANICS.md), so this
-   *  seeds one — flagged capital: true (see map.js's capitalOf(); the flag
-   *  is what makes it the capital, not where it sits) — at the centre tile
-   *  as a sane starting spot, with modest neutral defaults, editable
-   *  afterward exactly like any other city, freely movable without losing
-   *  capital status. Both the sector and its capital are left unnamed (no
-   *  fantasy-name pool) — the GM names their own world; see clearBoard()'s
-   *  own comment for the same reasoning. */
+  /** Place a new sector at slot (sc, sr) — grown into from an empty tile
+   *  click, or from a grow-handle click (see growHandles()), which is why
+   *  this also owns growing (and, on the low edge, shifting) the slot grid
+   *  to fit the target slot rather than assuming it's already in bounds:
+   *  slot coordinates are always non-negative (docs/MAP_SYSTEM.md), so
+   *  growing "left" or "up" means every existing province's sc/sr moves over
+   *  by however far negative the new slot would otherwise be, the same way
+   *  resizeSlots() already grows (without shifting) on the high edge. A
+   *  grow-handle click is always pre-validated by growHandles() itself to
+   *  stay under MAX_SLOTS; clamping here too is just so a direct call (e.g.
+   *  the manual "click open water" tile-inspector path, which only ever
+   *  passes an already-in-bounds slot) can't be talked into exceeding it.
+   *
+   *  Every sector needs a capital to actually be fought over and pay income
+   *  (see docs/MECHANICS.md), so this seeds one — flagged capital: true (see
+   *  map.js's capitalOf(); the flag is what makes it the capital, not where
+   *  it sits) — at the centre tile as a sane starting spot, with modest
+   *  neutral defaults, editable afterward exactly like any other city,
+   *  freely movable without losing capital status. Both the sector and its
+   *  capital are left unnamed (no fantasy-name pool) — the GM names their
+   *  own world; see clearBoard()'s own comment for the same reasoning. */
   function addTerritory(sc, sr) {
-    if (S.built.provinceAtSlot(sc, sr)) return; // already occupied — shouldn't reach here via the UI, but don't clobber it if it does
+    if (S.def.provinces.some(p => p.sc === sc && p.sr === sr)) return; // already occupied
+
+    const block = S.def.block || F().DEFAULT_BLOCK;
+    const cur = S.def.slots || F().DEFAULT_SLOTS;
+    let cols = cur.cols, rows = cur.rows, shiftC = 0, shiftR = 0;
+    if (sc < 0) { shiftC = -sc; cols += shiftC; sc = 0; }
+    else if (sc >= cols) cols = sc + 1;
+    if (sr < 0) { shiftR = -sr; rows += shiftR; sr = 0; }
+    else if (sr >= rows) rows = sr + 1;
+    cols = Math.min(MAX_SLOTS, cols);
+    rows = Math.min(MAX_SLOTS, rows);
+    if (shiftC || shiftR) {
+      for (const p of S.def.provinces) { p.sc += shiftC; p.sr += shiftR; }
+      // The 3D grid-reference labels (docs/RENDERING.md) are meant as a
+      // stable address a GM can write down — "the barracks are at C,4" —
+      // that shouldn't quietly point at a different tile the next time the
+      // board grows from this side. A low-edge grow moves every existing
+      // tile's *internal* position by shiftC/shiftR sectors' worth of
+      // tiles, so labelOrigin absorbs exactly that much, keeping every
+      // already-labelled tile's displayed row/column unchanged — only the
+      // newly-grown tiles pick up the negative-going labels instead. See
+      // syncGrowHandles3D()/ensure3D() for where this gets read back out.
+      const lo = S.def.labelOrigin || { c: 0, r: 0 };
+      S.def.labelOrigin = { c: lo.c + shiftC * block.w, r: lo.r + shiftR * block.h };
+    }
+    S.def.slots = { cols, rows };
+
     const existingIds = S.def.provinces.map(p => p.id);
     const id = F().pickId('sector' + sc + sr, existingIds);
     S.def.provinces.push({ id, name: '', sc, sr });
 
-    const block = S.def.block || F().DEFAULT_BLOCK;
     const clc = (block.w - 1) >> 1, clr = (block.h - 1) >> 1;
     const cIds = S.def.cities.map(c => c.id);
     const cid = F().pickId('capital' + sc + sr, cIds);
@@ -811,8 +1058,8 @@
    *  it first. Clamped to a sane range so a typo can't hand the renderer an
    *  unreasonably huge grid. */
   function resizeSlots(cols, rows) {
-    cols = Math.max(1, Math.min(12, Math.round(cols) || 1));
-    rows = Math.max(1, Math.min(12, Math.round(rows) || 1));
+    cols = Math.max(1, Math.min(MAX_SLOTS, Math.round(cols) || 1));
+    rows = Math.max(1, Math.min(MAX_SLOTS, Math.round(rows) || 1));
     const orphan = S.def.provinces.find(p => p.sc >= cols || p.sr >= rows);
     if (orphan) {
       // Inline, not alert() — a native dialog here is off-style (see the
@@ -908,6 +1155,24 @@
   // Every click resolves here — a city, a structure, open ground inside a
   // territory, or open water all render through this one function, so a tile
   // is inspected the same way no matter what (if anything) is on it.
+  /** The "Remove sector" control, shared across every tileInspector() branch
+   *  that has a province under the clicked tile — a city or structure sitting
+   *  on the sector's land is still part of that sector, so removing it needs
+   *  to be reachable no matter which specific tile inside it is selected, not
+   *  only "open ground." Reuses the same two-click-confirm arming
+   *  (S.confirmRemove) the open-ground case already had; wirePanel()'s
+   *  #removeTerritoryBtn handler already re-derives the province from the
+   *  live selection rather than trusting a closed-over value, so rendering
+   *  this same button id in more branches needed no wiring change at all. */
+  function removeSectorControl(prov) {
+    const armed = S.confirmRemove === prov.id;
+    const n = prov.cities.length;
+    return '<div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--sl-seam);">' +
+      '<button class="btn danger' + (armed ? ' on' : '') + '" id="removeTerritoryBtn" style="width:100%;">' +
+      (armed ? 'Confirm — ' + n + (n === 1 ? ' city' : ' cities') + ' removed' : 'Remove sector') +
+      '</button></div>';
+  }
+
   function tileInspector(c, r) {
     const coord = '<span class="mono">(' + c + ', ' + r + ')</span>';
     const prov = F().territoryAt(S.built, c, r);
@@ -930,7 +1195,7 @@
         '<div style="display:flex; gap:8px; margin-top:6px;">' +
         '<button class="btn" id="mirrorBtn"' + (city.twin ? '' : ' disabled') + '>Mirror to twin</button>' +
         '<button class="btn danger" id="deleteBtn">Clear tile</button>' +
-        '</div></div>';
+        '</div>' + (prov ? removeSectorControl(prov) : '') + '</div>';
     }
 
     if (structure) {
@@ -942,23 +1207,22 @@
         '<div style="display:flex; gap:8px;">' +
         '<button class="btn" id="mirrorStructureBtn"' + (canMirror ? '' : ' disabled') + '>Mirror to twin</button>' +
         '<button class="btn danger" id="deleteStructureBtn">Clear tile</button>' +
-        '</div></div>';
+        '</div>' + (prov ? removeSectorControl(prov) : '') + '</div>';
     }
 
     if (prov) {
-      const armed = S.confirmRemove === prov.id;
-      const n = prov.cities.length;
       return '<div><div class="section-title">Open ground ' + coord + '</div>' +
         '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">Sector: ' + (prov.name ? escapeHtml(prov.name) : '<em>unnamed — set it in the Sectors list</em>') +
         '. No structure here — use Place below, then click this tile. Starting seat is set from the Sectors list above.</div>' +
-        '<button class="btn danger' + (armed ? ' on' : '') + '" id="removeTerritoryBtn" style="width:100%;">' +
-        (armed ? 'Confirm — ' + n + (n === 1 ? ' city' : ' cities') + ' removed' : 'Remove sector') +
-        '</button></div>';
+        removeSectorControl(prov) + '</div>';
     }
 
     return '<div><div class="section-title">Open water ' + coord + '</div>' +
-      '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">Open ground, not part of any sector. Renders as water.</div>' +
-      '<button class="btn primary" id="addTerritoryBtn" style="width:100%;">Add sector here</button></div>';
+      '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">No sector placed here yet — choose what this ground becomes. A land sector starts neutral, with a capital at its centre.</div>' +
+      '<div style="display:flex; gap:8px;">' +
+      '<button class="btn primary" id="addTerritoryBtn" style="flex:1;">Add land sector</button>' +
+      '<button class="btn" id="leaveWaterBtn" style="flex:1;">Leave as water</button>' +
+      '</div></div>';
   }
 
   // ── panel rendering ───────────────────────────────────────────────────
@@ -973,7 +1237,7 @@
       '<div class="field"><label>Sector cols</label><input data-board-field="cols" type="number" min="1" max="12" value="' + escapeAttr(slots.cols) + '"></div>' +
       '<div class="field"><label>Sector rows</label><input data-board-field="rows" type="number" min="1" max="12" value="' + escapeAttr(slots.rows) + '"></div>' +
       '</div>' +
-      '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">How many sectors make up the board. Growing only adds empty (water) slots; shrinking is refused if a sector would fall outside the new grid.</div>' +
+      '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">How many sectors make up the board — or click the + beside any sector on the board to grow into it one sector at a time. Growing here (typed numbers) is the only way to shrink, and is refused if a sector would fall outside the new grid.</div>' +
       '<div class="row2">' +
       '<div class="field"><label>Sector width</label><input data-block-field="w" type="number" min="1" max="15" value="' + escapeAttr(block.w) + '"></div>' +
       '<div class="field"><label>Sector height</label><input data-block-field="h" type="number" min="1" max="15" value="' + escapeAttr(block.h) + '"></div>' +
@@ -1140,6 +1404,13 @@
       const block = S.built.block;
       addTerritory(Math.floor(tile.c / block.w), Math.floor(tile.r / block.h));
     });
+
+    // "Leave as water" is a no-op on the definition — water is just the
+    // absence of a province, never a value to set — so this only dismisses
+    // the inspector back to nothing selected, the same ground state it was
+    // already in.
+    const leaveWaterBtn = document.getElementById('leaveWaterBtn');
+    if (leaveWaterBtn) leaveWaterBtn.addEventListener('click', () => select(null));
 
     if (cityHere) {
       panel.querySelectorAll('[data-city-field]').forEach(inp => {
