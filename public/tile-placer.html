@@ -5,13 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Tile Placer</title>
   <!--
-    Dev-only prop authoring tool, not linked from anywhere in the live
-    product — same carve-out as proto3d.html (see docs/RENDERING.md), so it
-    doesn't follow the Command Console design system (public/tokens.css)
-    the rest of the client does. Board View loads the real `duel` board
-    straight from map.js (FPMap.MAPS.duel) so props preview against actual
-    territory shapes, roads, and capitals instead of a stand-in grid — see
-    public/tile-placer/board.js and public/models/README.md.
+    Prop authoring tool for STRUCTURE_KIT's .glb models — served at
+    render.supremacy.live (see docs/ARCHITECTURE.md's HOSTNAME_ROOT), off
+    the same Worker/assets bundle as editor.supremacy.live, but not linked
+    *from* any in-app navigation — a GM reaches it by URL, not by clicking
+    through the game or the map editor. Unauthenticated (see board.js's own
+    comment on why Board View reads the static board, not the live D1 one)
+    since there's no save endpoint here to gate — everything leaves the
+    page as a local JSON file or clipboard text, same as before this had a
+    real hostname. Still doesn't follow the Command Console design system
+    (public/tokens.css) the rest of the client does — that carve-out
+    originally matched proto3d.html's (see docs/RENDERING.md), a page with
+    no real URL at all; flagged here as worth another look now that this
+    one has one, rather than silently kept or silently changed. Board View
+    loads the real `duel` board straight from map.js (FPMap.MAPS.duel) so
+    props preview against actual territory shapes, roads, and capitals
+    instead of a stand-in grid — see public/tile-placer/board.js and
+    public/models/README.md.
   -->
   <style>
     :root {

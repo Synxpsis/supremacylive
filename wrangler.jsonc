@@ -36,7 +36,8 @@
   "routes": [
     { "pattern": "supremacy.live", "zone_name": "supremacy.live", "custom_domain": true },
     { "pattern": "www.supremacy.live", "zone_name": "supremacy.live", "custom_domain": true },
-    { "pattern": "editor.supremacy.live", "zone_name": "supremacy.live", "custom_domain": true }
+    { "pattern": "editor.supremacy.live", "zone_name": "supremacy.live", "custom_domain": true },
+    { "pattern": "render.supremacy.live", "zone_name": "supremacy.live", "custom_domain": true }
   ],
   "observability": {
     "enabled": true

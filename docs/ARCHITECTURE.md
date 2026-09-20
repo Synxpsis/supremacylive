@@ -26,10 +26,16 @@ plain `<script>` includes, `.js` files loaded both as classic browser globals an
 `assets.run_worker_first: ["/"]` is a deliberate, narrow carve-out: Workers Assets' default behavior
 serves any path matching a static file (which `"/"` always does, as `index.html`) *without* invoking
 the Worker script at all. That would make it impossible to serve different content at `"/"` depending
-on hostname — which is exactly what's needed, since `editor.supremacy.live` and `supremacy.live` share
-one deployment but must show different root pages. Scoping the override to `"/"` only means every
-other static asset (`map.js`, `board-render.js`, `editor.html` itself, …) still serves directly with
-no Worker invocation, on every hostname. See `worker.js`'s handler for the actual hostname check.
+on hostname — which is exactly what's needed, since `editor.supremacy.live`, `render.supremacy.live`,
+and `supremacy.live` share one deployment but must show different root pages. Scoping the override to
+`"/"` only means every other static asset (`map.js`, `board-render.js`, `editor.html` itself, …) still
+serves directly with no Worker invocation, on every hostname. `worker.js`'s `HOSTNAME_ROOT` is the
+actual hostname → extensionless-path table the handler consults; adding a fourth hostname that serves
+its own root page (rather than a subpath of the game client) is a one-line addition there plus a
+matching entry in `wrangler.jsonc`'s `routes` — no other wiring needed, since neither existing page's
+*serving* is access-gated (only `editor.html`'s save endpoint is, via `EDITOR_USERS`) and
+`render.supremacy.live` (the map editor's companion tile-placer tool, `public/tile-placer.html` — see
+`docs/EDITOR_UPGRADE.md`) has no save endpoint of its own to gate.
 
 ## Accounts — D1 + HttpOnly cookies
 
