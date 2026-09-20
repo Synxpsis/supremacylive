@@ -1099,6 +1099,24 @@
   // Every click resolves here — a city, a structure, open ground inside a
   // territory, or open water all render through this one function, so a tile
   // is inspected the same way no matter what (if anything) is on it.
+  /** The "Remove sector" control, shared across every tileInspector() branch
+   *  that has a province under the clicked tile — a city or structure sitting
+   *  on the sector's land is still part of that sector, so removing it needs
+   *  to be reachable no matter which specific tile inside it is selected, not
+   *  only "open ground." Reuses the same two-click-confirm arming
+   *  (S.confirmRemove) the open-ground case already had; wirePanel()'s
+   *  #removeTerritoryBtn handler already re-derives the province from the
+   *  live selection rather than trusting a closed-over value, so rendering
+   *  this same button id in more branches needed no wiring change at all. */
+  function removeSectorControl(prov) {
+    const armed = S.confirmRemove === prov.id;
+    const n = prov.cities.length;
+    return '<div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--sl-seam);">' +
+      '<button class="btn danger' + (armed ? ' on' : '') + '" id="removeTerritoryBtn" style="width:100%;">' +
+      (armed ? 'Confirm — ' + n + (n === 1 ? ' city' : ' cities') + ' removed' : 'Remove sector') +
+      '</button></div>';
+  }
+
   function tileInspector(c, r) {
     const coord = '<span class="mono">(' + c + ', ' + r + ')</span>';
     const prov = F().territoryAt(S.built, c, r);
@@ -1121,7 +1139,7 @@
         '<div style="display:flex; gap:8px; margin-top:6px;">' +
         '<button class="btn" id="mirrorBtn"' + (city.twin ? '' : ' disabled') + '>Mirror to twin</button>' +
         '<button class="btn danger" id="deleteBtn">Clear tile</button>' +
-        '</div></div>';
+        '</div>' + (prov ? removeSectorControl(prov) : '') + '</div>';
     }
 
     if (structure) {
@@ -1133,18 +1151,14 @@
         '<div style="display:flex; gap:8px;">' +
         '<button class="btn" id="mirrorStructureBtn"' + (canMirror ? '' : ' disabled') + '>Mirror to twin</button>' +
         '<button class="btn danger" id="deleteStructureBtn">Clear tile</button>' +
-        '</div></div>';
+        '</div>' + (prov ? removeSectorControl(prov) : '') + '</div>';
     }
 
     if (prov) {
-      const armed = S.confirmRemove === prov.id;
-      const n = prov.cities.length;
       return '<div><div class="section-title">Open ground ' + coord + '</div>' +
         '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">Sector: ' + (prov.name ? escapeHtml(prov.name) : '<em>unnamed — set it in the Sectors list</em>') +
         '. No structure here — use Place below, then click this tile. Starting seat is set from the Sectors list above.</div>' +
-        '<button class="btn danger' + (armed ? ' on' : '') + '" id="removeTerritoryBtn" style="width:100%;">' +
-        (armed ? 'Confirm — ' + n + (n === 1 ? ' city' : ' cities') + ' removed' : 'Remove sector') +
-        '</button></div>';
+        removeSectorControl(prov) + '</div>';
     }
 
     return '<div><div class="section-title">Open water ' + coord + '</div>' +
