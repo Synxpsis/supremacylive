@@ -31,9 +31,10 @@ as of 2026-09-12 (`ba103ce`, `a4c2834`); the rest are still open.
   `game.html`/`index.html`). ✅ **Done, `ba103ce`** — closes gap 5 below.
 - **Grow or shrink the board's slot grid** (`slots.cols`/`slots.rows` only — `block.w`/`h`, a
   territory's own tile footprint, still isn't editable), either by typing into the Board panel's
-  Sector cols/rows fields or by clicking the on-canvas "+" grow handle at the board's right/bottom edge
-  (2026-09-20 — see the dated entry below). Growing only ever adds empty slots; shrinking (typed fields
-  only) is refused with an inline message if it would orphan a territory outside the new bounds.
+  Sector cols/rows fields or by clicking one of the on-canvas "+" grow handles beside any existing
+  sector, growing one sector at a time in whichever direction is clicked (2026-09-20 — see the dated
+  entry below). Growing only ever adds empty slots; shrinking (typed fields only) is refused with an
+  inline message if it would orphan a territory outside the new bounds.
   ✅ **Done, `a4c2834`** — partially closes gap 3 below.
 - **Add or remove a whole territory.** Clicking empty ground (2D or 3D) selects the slot underneath
   and offers "Add territory here" — seeds a new province plus a capital city at its centre tile with
@@ -150,20 +151,28 @@ as of 2026-09-12 (`ba103ce`, `a4c2834`); the rest are still open.
   start blank and be named individually, same as a sector added fresh through the editor already was.
   All three boards' province names are now blank by default; city names (Halbrook, Stenn, ...) are
   unchanged. ✅ **Done, 2026-09-15, `75c9685`.**
-- **On-canvas grow handles, and an explicit water/land choice for a placeable slot.** The slot-grid
-  size (gap 3, above) was only ever reachable by typing numbers into the Board panel's Sector cols/rows
-  fields — no visual sense of "there's more board past this edge." Both renderers now draw one
-  phantom, sector-sized "+" handle just past the board's right edge and one just past its bottom edge
-  (editor-only overlay: `growHandles()`/`drawGrowHandles2D()` in `editor.html` for the 2D canvas,
+- **On-canvas, per-sector grow handles; a "Remove sector" reachable from any tile in that sector; an
+  explicit water/land choice for a placeable slot.** The slot-grid size (gap 3, above) was only ever
+  reachable by typing numbers into the Board panel's Sector cols/rows fields — no visual sense of
+  "there's more board past this edge." Both renderers now draw a sector-sized "+" for every empty slot
+  orthogonally adjacent to an existing sector — not fixed to the board's outer edges, so a sector deep
+  in the middle of a sparse layout gets its own grow handles on whichever of its four sides are still
+  empty (editor-only overlay: `growHandles()`/`drawGrowHandles2D()` in `editor.html` for the 2D canvas,
   `syncGrowHandles3D()` for the 3D scene — built directly against `board-render-3d.js`'s exposed
   `scene`/`camera` rather than added to that shared module, since game.html has no use for grid-growth
-  UI). Clicking one grows that axis by exactly one sector (`growAxis()` → the existing `resizeSlots()`,
-  same clamp/orphan-refusal behaviour as the typed fields, still there for shrinking and jump-to-size).
-  Only ever the high-index edge, matching the one direction the data model supports without
-  reshuffling existing provinces' `sc`/`sr`. Separately, the tile inspector for an empty (water) slot
-  now shows two buttons instead of one — **Add land sector** (the existing `addTerritory()`, unchanged:
-  neutral, capital seeded at centre) and **Leave as water** (a no-op dismiss — water is the absence of
-  a province, never a value to set). ✅ **Done, 2026-09-20.**
+  UI). Clicking one places exactly one new sector at that slot and nothing else — growing right of one
+  sector never implicitly reveals a slot in some other row the GM didn't ask for, the way a whole-axis
+  resize would. `addTerritory()` now owns growing (and, on the low edge, *shifting* — every existing
+  province's `sc`/`sr` moves over by one) the slot grid to fit whatever slot it's asked to place a
+  sector at, so growth works from the left/top edges too, not just high-index right/bottom the way
+  `resizeSlots()` alone ever could. The typed Sector cols/rows fields are unchanged and still the only
+  way to shrink. A GM growing the grid now routinely lands on a slot with no province yet, so the tile
+  inspector for an empty (water) slot shows two buttons instead of one — **Add land sector** (the same
+  seeding as a grow-handle click: neutral, capital at centre) and **Leave as water** (a no-op dismiss —
+  water is the absence of a province, never a value to set). Separately: "Remove sector" used to only
+  appear in the "open ground" tile inspector — a sector's own capital (its centre tile, the single most
+  likely first click) had no path to remove it at all; the same two-click-confirm control now renders
+  in the city and structure inspector branches too. ✅ **Done, 2026-09-20.**
 
 ## What it can't do — the actual gap list
 

@@ -198,7 +198,7 @@
     <div id="canvasWrap">
       <canvas id="cv"></canvas>
       <canvas id="cv3d" style="display: none;"></canvas>
-      <div id="hint">Click any tile to inspect it · Add City / Industry / Barracks, then click a valid tile to place · click + at the board edge to grow the grid · scroll to zoom · drag to pan / orbit</div>
+      <div id="hint">Click any tile to inspect it · Add City / Industry / Barracks, then click a valid tile to place · click + beside a sector to grow into it · scroll to zoom · drag to pan / orbit</div>
     </div>
     <div id="panel"></div>
   </div>
@@ -417,23 +417,47 @@
   let cam = null;
 
   // ── grid-growth handles ──────────────────────────────────────────────────
-  // One phantom sector-sized slot just past the board's right edge and one
-  // just past its bottom edge — the on-canvas alternative to typing a bigger
-  // number into the Board panel's Sector cols/rows fields (still there, still
-  // the only way to shrink; see resizeSlots()). Only ever the high-index
-  // edge, at slot row/col 0, matching the one direction growAxis() supports:
-  // growing an axis always adds a full new column/row spanning every existing
-  // row/col, so a single handle at the near corner is enough to represent
-  // "grow this axis" — the rest of the freshly-added slots immediately render
-  // through the existing dashed "+" placeholder (board-render.js's `o.slots`
-  // pass), no separate handling needed for them.
+  // One phantom "+" per empty slot orthogonally adjacent to an existing
+  // sector — the on-canvas alternative to typing a bigger number into the
+  // Board panel's Sector cols/rows fields (still there, still the only way to
+  // shrink; see resizeSlots()). Growing is per-sector, not per-axis: clicking
+  // a handle places exactly one new sector at that slot (see addTerritory())
+  // and nothing else — expanding right of one sector never implicitly reveals
+  // a slot in some other row the GM didn't ask for. The new sector's own
+  // unoccupied neighbours become handles on the next render, purely because
+  // this is recomputed fresh from S.built.provinces every time — no separate
+  // "which slots have been grown into" state to keep in sync. Can grow in any
+  // of the four directions, including left/up (addTerritory() shifts every
+  // existing province's sc/sr when a slot's coordinate would otherwise go
+  // negative — slot coordinates are always non-negative, see
+  // docs/MAP_SYSTEM.md), unlike the old axis-only version this replaced.
   function growHandles() {
     if (!S.built) return [];
-    const { gridW, gridH, block, slots } = S.built;
-    const list = [];
-    if (slots.cols < MAX_SLOTS) list.push({ axis: 'cols', c0: gridW, r0: 0, w: block.w, h: block.h });
-    if (slots.rows < MAX_SLOTS) list.push({ axis: 'rows', c0: 0, r0: gridH, w: block.w, h: block.h });
-    return list;
+    const cur = S.def.slots || F().DEFAULT_SLOTS;
+    const block = S.built.block;
+    const occupied = new Set(S.built.provinces.map(p => p.sc + ',' + p.sr));
+    const frontier = new Map(); // "sc,sr" -> { sc, sr }
+    const consider = (sc, sr) => {
+      const key = sc + ',' + sr;
+      if (occupied.has(key) || frontier.has(key)) return;
+      // Would this slot still fit under MAX_SLOTS once grown (and, on the
+      // low edge, shifted)? Same arithmetic as addTerritory() itself.
+      const needCols = sc < 0 ? cur.cols - sc : Math.max(cur.cols, sc + 1);
+      const needRows = sr < 0 ? cur.rows - sr : Math.max(cur.rows, sr + 1);
+      if (needCols > MAX_SLOTS || needRows > MAX_SLOTS) return;
+      frontier.set(key, { sc, sr });
+    };
+    if (S.built.provinces.length === 0) {
+      consider(0, 0); // nothing on the board at all — bootstrap a single starting handle
+    } else {
+      for (const p of S.built.provinces) {
+        consider(p.sc - 1, p.sr); consider(p.sc + 1, p.sr);
+        consider(p.sc, p.sr - 1); consider(p.sc, p.sr + 1);
+      }
+    }
+    return [...frontier.values()].map(({ sc, sr }) => ({
+      sc, sr, c0: sc * block.w, r0: sr * block.h, w: block.w, h: block.h,
+    }));
   }
 
   // Read once from the design tokens, same caveat/pattern as tokens() above —
@@ -472,15 +496,16 @@
     }
   }
 
-  // Screen px -> which axis's grow handle sits under the point, or null.
-  // Checked before ordinary tile hit-testing (see onClick()) since a handle's
-  // tile-space rect sits just outside S.built.gridW/gridH, where tileAtAny()
-  // already (and correctly, for every other caller) returns null.
+  // Screen px -> the { sc, sr } of the grow handle sitting under the point,
+  // or null. Checked before ordinary tile hit-testing (see onClick()) since a
+  // handle can sit outside S.built.gridW/gridH (or even at a negative slot
+  // coordinate, on the low edge), where tileAtAny() already — and correctly,
+  // for every other caller — returns null.
   function growHandleAt2D(mx, my) {
     if (!cam || !S.built) return null;
     const u = cam.unproject(mx, my);
     for (const g of growHandles()) {
-      if (u.c >= g.c0 && u.c < g.c0 + g.w && u.r >= g.r0 && u.r < g.r0 + g.h) return g.axis;
+      if (u.c >= g.c0 && u.c < g.c0 + g.w && u.r >= g.r0 && u.r < g.r0 + g.h) return { sc: g.sc, sr: g.sr };
     }
     return null;
   }
@@ -553,7 +578,7 @@
   // wherever the scene itself is (ensure3D() on create, reset3D() on
   // teardown) since a handle's position/eligibility is derived from the same
   // S.built the rest of the scene is baked from.
-  let _growMeshes = []; // [{ axis, mesh, edges, label }]
+  let _growMeshes = []; // [{ sc, sr, mesh, edges, label }]
 
   let _growTok3D = null;
   function growTokens3D() {
@@ -596,15 +621,16 @@
       label.center.set(0.5, 0.5);
       label.position.set(g.c0 + g.w / 2, 0.12, g.r0 + g.h / 2);
       _r3d.scene.add(label);
-      _growMeshes.push({ axis: g.axis, mesh, edges, label });
+      _growMeshes.push({ sc: g.sc, sr: g.sr, mesh, edges, label });
     }
   }
 
-  // Screen px (cv3d-relative) -> which axis's grow handle sits under the
-  // point, or null — a small raycast of its own against just the handle
-  // meshes, checked before r3d.tileAtAny() the same way growHandleAt2D() is
-  // checked before the 2D path's tileAtAny(), since a handle sits just
-  // outside the board bounds r3d.tileAtAny() itself stays correctly bounded to.
+  // Screen px (cv3d-relative) -> the { sc, sr } of the grow handle sitting
+  // under the point, or null — a small raycast of its own against just the
+  // handle meshes, checked before r3d.tileAtAny() the same way
+  // growHandleAt2D() is checked before the 2D path's tileAtAny(), since a
+  // handle can sit outside the board bounds r3d.tileAtAny() itself stays
+  // correctly bounded to (or even at a negative slot coordinate).
   function growHandleAt3D(mx, my) {
     if (!_r3d || !self.THREE || !_growMeshes.length) return null;
     const THREE = self.THREE;
@@ -615,7 +641,7 @@
     const hits = ray.intersectObjects(_growMeshes.map(g => g.mesh));
     if (!hits.length) return null;
     const hit = _growMeshes.find(g => g.mesh === hits[0].object);
-    return hit ? hit.axis : null;
+    return hit ? { sc: hit.sc, sr: hit.sr } : null;
   }
 
   self.addEventListener('fp-render-3d-ready', () => { if (S.renderMode === '3d') paint3D(); });
@@ -785,7 +811,7 @@
   // so there's no overlap to arbitrate between the two.
   function onClick(mx, my) {
     const g = growHandleAt2D(mx, my);
-    if (g) { growAxis(g); return; }
+    if (g) { addTerritory(g.sc, g.sr); return; }
     onClickTile(tileAtAny(mx, my));
   }
 
@@ -800,7 +826,7 @@
     const b = cv3d.getBoundingClientRect();
     const mx = e.clientX - b.left, my = e.clientY - b.top;
     const g = growHandleAt3D(mx, my);
-    if (g) { growAxis(g); return; }
+    if (g) { addTerritory(g.sc, g.sr); return; }
     onClickTile(_r3d.tileAtAny(mx, my));
   });
 
@@ -921,17 +947,41 @@
     rebuild();
   }
 
-  /** Place a new sector in an empty slot. Every sector needs a capital to
-   *  actually be fought over and pay income (see docs/MECHANICS.md), so this
-   *  seeds one — flagged capital: true (see map.js's capitalOf(); the flag
-   *  is what makes it the capital, not where it sits) — at the centre tile
-   *  as a sane starting spot, with modest neutral defaults, editable
-   *  afterward exactly like any other city, freely movable without losing
-   *  capital status. Both the sector and its capital are left unnamed (no
-   *  fantasy-name pool) — the GM names their own world; see clearBoard()'s
-   *  own comment for the same reasoning. */
+  /** Place a new sector at slot (sc, sr) — grown into from an empty tile
+   *  click, or from a grow-handle click (see growHandles()), which is why
+   *  this also owns growing (and, on the low edge, shifting) the slot grid
+   *  to fit the target slot rather than assuming it's already in bounds:
+   *  slot coordinates are always non-negative (docs/MAP_SYSTEM.md), so
+   *  growing "left" or "up" means every existing province's sc/sr moves over
+   *  by however far negative the new slot would otherwise be, the same way
+   *  resizeSlots() already grows (without shifting) on the high edge. A
+   *  grow-handle click is always pre-validated by growHandles() itself to
+   *  stay under MAX_SLOTS; clamping here too is just so a direct call (e.g.
+   *  the manual "click open water" tile-inspector path, which only ever
+   *  passes an already-in-bounds slot) can't be talked into exceeding it.
+   *
+   *  Every sector needs a capital to actually be fought over and pay income
+   *  (see docs/MECHANICS.md), so this seeds one — flagged capital: true (see
+   *  map.js's capitalOf(); the flag is what makes it the capital, not where
+   *  it sits) — at the centre tile as a sane starting spot, with modest
+   *  neutral defaults, editable afterward exactly like any other city,
+   *  freely movable without losing capital status. Both the sector and its
+   *  capital are left unnamed (no fantasy-name pool) — the GM names their
+   *  own world; see clearBoard()'s own comment for the same reasoning. */
   function addTerritory(sc, sr) {
-    if (S.built.provinceAtSlot(sc, sr)) return; // already occupied — shouldn't reach here via the UI, but don't clobber it if it does
+    if (S.def.provinces.some(p => p.sc === sc && p.sr === sr)) return; // already occupied
+
+    const cur = S.def.slots || F().DEFAULT_SLOTS;
+    let cols = cur.cols, rows = cur.rows, shiftC = 0, shiftR = 0;
+    if (sc < 0) { shiftC = -sc; cols += shiftC; sc = 0; }
+    else if (sc >= cols) cols = sc + 1;
+    if (sr < 0) { shiftR = -sr; rows += shiftR; sr = 0; }
+    else if (sr >= rows) rows = sr + 1;
+    cols = Math.min(MAX_SLOTS, cols);
+    rows = Math.min(MAX_SLOTS, rows);
+    if (shiftC || shiftR) for (const p of S.def.provinces) { p.sc += shiftC; p.sr += shiftR; }
+    S.def.slots = { cols, rows };
+
     const existingIds = S.def.provinces.map(p => p.id);
     const id = F().pickId('sector' + sc + sr, existingIds);
     S.def.provinces.push({ id, name: '', sc, sr });
@@ -1009,18 +1059,6 @@
     markDirty();
     reset3D();
     rebuild();
-  }
-
-  /** Grow the slot grid by exactly one sector on the given axis — the action
-   *  behind an on-canvas grow-handle click (see growHandles()). Only ever
-   *  appends at the high-index edge (cols+1 or rows+1), the one direction
-   *  resizeSlots() already supports without reshuffling any existing
-   *  province's sc/sr — there is no equivalent "grow at the low edge" affordance,
-   *  on the board or here, for the same reason. */
-  function growAxis(axis) {
-    const slots = S.def.slots || F().DEFAULT_SLOTS;
-    if (axis === 'cols') resizeSlots(slots.cols + 1, slots.rows);
-    else resizeSlots(slots.cols, slots.rows + 1);
   }
 
   /** Grow or shrink every sector's tile footprint (the board's single global
@@ -1181,7 +1219,7 @@
       '<div class="field"><label>Sector cols</label><input data-board-field="cols" type="number" min="1" max="12" value="' + escapeAttr(slots.cols) + '"></div>' +
       '<div class="field"><label>Sector rows</label><input data-board-field="rows" type="number" min="1" max="12" value="' + escapeAttr(slots.rows) + '"></div>' +
       '</div>' +
-      '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">How many sectors make up the board — or click the + at the board’s right/bottom edge to grow one axis at a time. Growing only adds empty (water) slots; shrinking here is refused if a sector would fall outside the new grid.</div>' +
+      '<div style="font-size:12.5px;color:var(--sl-text-dim); margin-bottom:8px;">How many sectors make up the board — or click the + beside any sector on the board to grow into it one sector at a time. Growing here (typed numbers) is the only way to shrink, and is refused if a sector would fall outside the new grid.</div>' +
       '<div class="row2">' +
       '<div class="field"><label>Sector width</label><input data-block-field="w" type="number" min="1" max="15" value="' + escapeAttr(block.w) + '"></div>' +
       '<div class="field"><label>Sector height</label><input data-block-field="h" type="number" min="1" max="15" value="' + escapeAttr(block.h) + '"></div>' +
