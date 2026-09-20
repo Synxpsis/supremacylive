@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tile Placer</title>
+  <!--
+    Prop authoring tool for STRUCTURE_KIT's .glb models — served at
+    render.supremacy.live (see docs/ARCHITECTURE.md's HOSTNAME_ROOT), off
+    the same Worker/assets bundle as editor.supremacy.live, but not linked
+    *from* any in-app navigation — a GM reaches it by URL, not by clicking
+    through the game or the map editor. Unauthenticated (see board.js's own
+    comment on why Board View reads the static board, not the live D1 one)
+    since there's no save endpoint here to gate — everything leaves the
+    page as a local JSON file or clipboard text, same as before this had a
+    real hostname. Still doesn't follow the Command Console design system
+    (public/tokens.css) the rest of the client does — that carve-out
+    originally matched proto3d.html's (see docs/RENDERING.md), a page with
+    no real URL at all; flagged here as worth another look now that this
+    one has one, rather than silently kept or silently changed. Board View
+    loads the real `duel` board straight from map.js (FPMap.MAPS.duel) so
+    props preview against actual territory shapes, roads, and capitals
+    instead of a stand-in grid — see public/tile-placer/board.js and
+    public/models/README.md.
+  -->
+  <style>
+    :root {
+      --bg: #f6f7f5;
+      --panel: #ffffff;
+      --border: #dcdfd9;
+      --text: #26291f;
+      --muted: #6b6f63;
+      --accent: #4a6b3a;
+      --accent-text: #ffffff;
+    }
+    html, body { margin: 0; height: 100%; font: 13px/1.4 system-ui, sans-serif; color: var(--text); background: var(--bg); }
+
+    #tabbar {
+      height: 42px; flex-shrink: 0; display: flex; align-items: stretch;
+      background: #1a1c18; border-bottom: 1px solid #000;
+    }
+    #tabbar button {
+      appearance: none; border: none; background: none; color: #9aa094;
+      padding: 0 18px; font-size: 13px; font-weight: 600; letter-spacing: 0.02em;
+      cursor: pointer; border-bottom: 2px solid transparent;
+    }
+    #tabbar button.active { color: #fff; border-bottom-color: var(--accent); }
+    #tabbar button:hover { color: #fff; }
+
+    #app { display: flex; flex-direction: column; height: 100vh; width: 100vw; }
+    .tab-pane { flex: 1; min-height: 0; display: none; }
+    .tab-pane.active { display: flex; }
+
+    #viewport, #board-viewport { flex: 1; min-width: 0; position: relative; }
+    #viewport canvas, #board-viewport canvas { display: block; }
+
+    #sidebar, #board-sidebar {
+      width: 280px;
+      flex-shrink: 0;
+      background: var(--panel);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .section { padding: 12px 14px; border-bottom: 1px solid var(--border); }
+    .section h2 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+
+    .btn {
+      display: block; width: 100%; margin-bottom: 6px;
+      padding: 8px 10px; border-radius: 6px; border: 1px solid var(--border);
+      background: #fafbf9; color: var(--text); font-size: 13px; text-align: left; cursor: pointer;
+    }
+    .btn:hover { background: #f0f2ee; }
+    .btn.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); text-align: center; font-weight: 600; }
+    .btn.primary:hover { filter: brightness(1.08); }
+    .btn.danger { color: #a3372c; }
+
+    .mode-row { display: flex; gap: 6px; margin-bottom: 10px; }
+    .mode-row button {
+      flex: 1; padding: 6px 0; border-radius: 6px; border: 1px solid var(--border);
+      background: #fafbf9; cursor: pointer; font-size: 12px;
+    }
+    .mode-row button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    #sel-label, #board-sel-label { font-size: 12px; color: var(--muted); margin-bottom: 8px; word-break: break-word; }
+
+    .field-row { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+    .field-row label { width: 64px; color: var(--muted); font-size: 12px; }
+    .field-row input { flex: 1; padding: 5px 6px; border: 1px solid var(--border); border-radius: 5px; font-size: 12px; width: 0; }
+
+    #panel.disabled, #board-panel.disabled { opacity: 0.4; pointer-events: none; }
+
+    #object-list, #board-object-list { max-height: 140px; overflow-y: auto; }
+    .list-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 6px; border-radius: 5px; cursor: pointer; font-size: 12px;
+    }
+    .list-row:hover { background: #f0f2ee; }
+    .list-row.active { background: #e4ecdf; }
+    .list-del { border: none; background: none; color: var(--muted); cursor: pointer; font-size: 14px; line-height: 1; padding: 0 4px; }
+    .list-del:hover { color: #a3372c; }
+
+    #hint, #board-hint { padding: 10px 14px; font-size: 11px; color: var(--muted); }
+    input[type="file"] { display: none; }
+
+    #board-active-tile { font-size: 12px; font-weight: 600; margin-bottom: 8px; }
+    #board-info { font-size: 12px; color: var(--muted); margin-bottom: 8px; line-height: 1.4; }
+    .swatch-row { display: flex; gap: 6px; margin-bottom: 4px; }
+    .swatch {
+      flex: 1; height: 28px; border-radius: 6px; border: 2px solid transparent;
+      cursor: pointer; position: relative;
+    }
+    .swatch[disabled] { cursor: not-allowed; opacity: 0.5; }
+    .swatch.active { border-color: var(--text); }
+    .swatch-neutral { background: #262924; }
+    .swatch-blue { background: #2f6fb0; }
+    .swatch-red { background: #b0503a; }
+
+    .hint-small { font-size: 11px; color: var(--muted); margin-top: 6px; line-height: 1.35; }
+    .checkbox-row { display: flex; align-items: flex-start; gap: 6px; font-size: 11px; color: var(--muted); margin-top: 8px; cursor: pointer; line-height: 1.3; }
+    .checkbox-row input { margin-top: 2px; flex-shrink: 0; }
+
+    #drop-overlay {
+      position: fixed; inset: 0; z-index: 50;
+      display: none; align-items: center; justify-content: center;
+      background: rgba(20, 24, 18, 0.55);
+      pointer-events: none;
+    }
+    #drop-overlay.show { display: flex; }
+    #drop-overlay .box {
+      border: 2px dashed rgba(255,255,255,0.7); border-radius: 12px;
+      padding: 32px 48px; color: #fff; font-size: 16px; font-weight: 600;
+      background: rgba(74, 107, 58, 0.35);
+    }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 20px; z-index: 60;
+      transform: translate(-50%, 12px); opacity: 0;
+      background: #1a1c18; color: #fff; padding: 10px 16px; border-radius: 8px;
+      font-size: 13px; box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+      transition: opacity 0.22s ease, transform 0.22s ease;
+      pointer-events: none; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    .toast.toast-error { background: #7a2e22; }
+  </style>
+
+  <!-- Real board data, classic script so it's a plain global (self.FPMap) —
+       same pattern editor.html/game.html/board-render-3d.js already use.
+       Always runs before the module scripts below regardless of order. -->
+  <script src="./map.js"></script>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <div id="tabbar">
+      <button data-tab="tile" class="active">Tile View</button>
+      <button data-tab="board">Board View</button>
+    </div>
+
+    <div id="tile-tab" class="tab-pane active">
+      <div id="viewport"></div>
+
+      <div id="sidebar">
+        <div class="section">
+          <h2>Add object</h2>
+          <div id="palette"></div>
+        </div>
+
+        <div class="section">
+          <h2>Gizmo mode</h2>
+          <div class="mode-row">
+            <button data-mode="translate" class="active">Move</button>
+            <button data-mode="rotate">Rotate</button>
+          </div>
+        </div>
+
+        <div class="section" id="panel">
+          <h2>Selected object</h2>
+          <div id="sel-label">Nothing selected</div>
+
+          <div class="field-row"><label>Pos X</label><input id="field-x" type="number" step="0.01" /></div>
+          <div class="field-row"><label>Pos Y</label><input id="field-y" type="number" step="0.01" /></div>
+          <div class="field-row"><label>Pos Z</label><input id="field-z" type="number" step="0.01" /></div>
+          <div class="field-row"><label>Rotation°</label><input id="field-rot" type="number" step="1" /></div>
+          <div class="field-row"><label>Scale</label><input id="field-scale" type="number" step="0.01" min="0.001" /></div>
+
+          <button class="btn danger" id="delete-btn" style="margin-top:6px;">Delete object</button>
+        </div>
+
+        <div class="section">
+          <h2>Placed objects</h2>
+          <div id="object-list"></div>
+        </div>
+
+        <div class="section">
+          <h2>Layout file</h2>
+          <button class="btn primary" id="save-btn">Save JSON</button>
+          <button class="btn" id="load-btn">Load JSON…</button>
+          <input type="file" id="load-input" accept="application/json" />
+          <button class="btn danger" id="clear-btn">Clear all</button>
+        </div>
+
+        <div id="hint">
+          Position/scale are saved as fractions of the tile (a 1×1 square),
+          so they stay correct at any zoom, orbit angle, or in-game tile size.
+          Drag on empty space to orbit · scroll to zoom · click an object to select it.
+          Drop a saved .json layout, or a .glb/.gltf model, anywhere in the window.
+        </div>
+      </div>
+    </div>
+
+    <div id="board-tab" class="tab-pane">
+      <div id="board-viewport"></div>
+
+      <div id="board-sidebar">
+        <div class="section">
+          <h2>Board</h2>
+          <div id="board-info">Loading…</div>
+          <button class="btn" id="board-rebuild">Reset board</button>
+          <div class="hint-small">
+            The real live board (public/map.js → FPMap.MAPS.duel) — territory
+            shapes, roads, and capitals/cities read straight from the game's
+            own data, not a stand-in grid. "Reset board" clears placed
+            objects and any manual tile-colour overrides below.
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Active tile</h2>
+          <div id="board-active-tile">Active tile: none</div>
+          <div class="swatch-row">
+            <button class="swatch swatch-neutral" data-owner="neutral" title="Neutral"></button>
+            <button class="swatch swatch-blue" data-owner="blue" title="Blue"></button>
+            <button class="swatch swatch-red" data-owner="red" title="Red"></button>
+          </div>
+          <label class="checkbox-row">
+            <input type="checkbox" id="board-paint-quadrant" />
+            Color the whole territory instead of just this tile
+          </label>
+          <div class="hint-small">
+            Tiles start coloured by the board's real starting ownership
+            (FPMap.seedOwners) — these swatches are a manual preview
+            override on top of that, not saved as part of the board itself.
+            Water tiles (no territory) can't be recoloured.
+          </div>
+        </div>
+
+        <div class="section">
+          <h2>Add to active tile</h2>
+          <button class="btn primary" id="board-stamp-btn">Place Tile Editor layout</button>
+          <div class="hint-small">Stamps whatever you've built in Tile View — position, rotation, and scale included — onto this tile.</div>
+          <div id="board-palette" style="margin-top:8px;"></div>
+        </div>
+
+        <div class="section">
+          <h2>Gizmo mode</h2>
+          <div class="mode-row">
+            <button data-mode="translate" class="active">Move</button>
+            <button data-mode="rotate">Rotate</button>
+          </div>
+        </div>
+
+        <div class="section" id="board-panel">
+          <h2>Selected object</h2>
+          <div id="board-sel-label">Nothing selected</div>
+
+          <div class="field-row"><label>Pos X</label><input id="board-field-x" type="number" step="0.01" /></div>
+          <div class="field-row"><label>Pos Y</label><input id="board-field-y" type="number" step="0.01" /></div>
+          <div class="field-row"><label>Pos Z</label><input id="board-field-z" type="number" step="0.01" /></div>
+          <div class="field-row"><label>Rotation°</label><input id="board-field-rot" type="number" step="1" /></div>
+          <div class="field-row"><label>Scale</label><input id="board-field-scale" type="number" step="0.01" min="0.001" /></div>
+
+          <button class="btn danger" id="board-delete-btn" style="margin-top:6px;">Delete object</button>
+        </div>
+
+        <div class="section">
+          <h2>Placed objects</h2>
+          <div id="board-object-list"></div>
+        </div>
+
+        <div class="section">
+          <h2>Layout file</h2>
+          <button class="btn primary" id="board-save-btn">Save JSON</button>
+          <button class="btn" id="board-load-btn">Load JSON…</button>
+          <input type="file" id="board-load-input" accept="application/json" />
+          <button class="btn danger" id="board-clear-btn">Clear all</button>
+        </div>
+
+        <div class="section">
+          <h2>Ship it to the game</h2>
+          <button class="btn" id="board-export-kit-btn">Export as STRUCTURE_KIT entry</button>
+          <div class="hint-small">
+            Select a placed .glb prop, then copy the printed
+            <code>model: {...}</code> fragment into that structure kind's
+            entry in STRUCTURE_KIT (public/map.js) — see
+            public/models/README.md. The .glb file itself still needs a
+            manual copy into public/models/.
+          </div>
+        </div>
+
+        <div id="board-hint">
+          Click a tile to make it active (new objects spawn there). Drag
+          empty space to orbit · scroll to zoom · press R to fit the whole
+          board · click an object to edit it. Drop a saved .json layout, or
+          a .glb/.gltf model, anywhere in the window.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="drop-overlay"><div class="box">Drop a .json layout or .glb/.gltf model to load</div></div>
+
+  <!-- tabs.js imports both main.js (Tile View) and board.js (Board View) —
+       one entry point, same as the prototype's original index.html. -->
+  <script type="module" src="./tile-placer/tabs.js"></script>
+</body>
+</html>

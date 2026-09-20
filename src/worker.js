@@ -27,6 +27,19 @@ const PBKDF2_ITERS = 100_000;
 // editor.supremacy.live is otherwise read-only for any signed-in user.
 const EDITOR_USERS = new Set(['Developer']);
 
+// Hostname -> the extensionless static path that hostname's "/" serves
+// instead of the game client (index.html) — see the "/" rewrite below.
+// render.supremacy.live serves the tile placer (public/tile-placer.html,
+// see docs/EDITOR_UPGRADE.md) unauthenticated, same as editor.supremacy.live
+// itself: neither page's *serving* is access-gated, only editor.html's save
+// endpoint is (EDITOR_USERS above) — the tile placer has no save endpoint
+// at all, it only exports local JSON files / clipboard text, so there's
+// nothing here that needs gating.
+const HOSTNAME_ROOT = {
+  'editor.supremacy.live': '/editor',
+  'render.supremacy.live': '/tile-placer',
+};
+
 // ── responses ────────────────────────────────────────────────────────────────
 const json = (body, init = {}) => new Response(JSON.stringify(body), {
   ...init,
@@ -351,24 +364,26 @@ export default {
       return stub.fetch(fwd);
     }
 
-    // editor.supremacy.live serves the map editor instead of the game client,
-    // off the same Worker/assets bundle — no separate deploy, no split DB.
-    // Only the root path is rewritten; editor.html's own script/font requests
-    // (./map.js, ./board-render.js, ./support.js, …) must still resolve to
-    // their real files under public/.
+    // editor.supremacy.live and render.supremacy.live each serve a different
+    // page instead of the game client, off the same Worker/assets bundle —
+    // no separate deploy, no split DB, same pattern for both. Only the root
+    // path is rewritten; each page's own script/font requests (./map.js,
+    // ./board-render.js, ./tile-placer/*.js, …) must still resolve to their
+    // real files under public/.
     //
     // This only runs at all because assets.run_worker_first: ["/"] in
     // wrangler.jsonc forces it to — Workers Assets' default is to serve a
     // path that matches a static file (which "/" always does, as index.html)
     // directly, without invoking the Worker script, for every hostname alike.
-    // Target "/editor" (no extension): requesting "/editor.html" directly
-    // hits Workers Assets' own redirect-to-canonical-URL behavior (307 to
-    // "/editor") instead of the file, since html_handling normalizes the
-    // extensioned path away — asking for the canonical form up front avoids
-    // that hop. no-store keeps this one host-dependent response (unlike every
-    // other shared static asset, which is identical across hosts) uncached.
+    // HOSTNAME_ROOT's targets are extensionless ("/editor", not
+    // "/editor.html"): requesting the .html path directly hits Workers
+    // Assets' own redirect-to-canonical-URL behavior (307, since
+    // html_handling normalizes the extensioned path away) instead of the
+    // file — asking for the canonical form up front avoids that hop.
+    // no-store keeps this one host-dependent response (unlike every other
+    // shared static asset, which is identical across hosts) uncached.
     if (path === '/') {
-      const target = url.hostname === 'editor.supremacy.live' ? '/editor' : path;
+      const target = HOSTNAME_ROOT[url.hostname] || path;
       const rewritten = new URL(request.url);
       rewritten.pathname = target;
       const res = await env.ASSETS.fetch(new Request(rewritten, request));

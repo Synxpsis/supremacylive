@@ -21,6 +21,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
+import { normalizeModel } from './model-normalize.js';
 
 // Shared with board-render.js via FPMap.STRUCTURE_KIT/STRUCTURE_RANK — one
 // source of truth for both renderers, see docs/RENDERING.md. Module-load
@@ -29,6 +32,36 @@ import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer
 // in the document.
 const KIT = self.FPMap.STRUCTURE_KIT;
 const PIECE_RANK = self.FPMap.STRUCTURE_RANK;
+
+// ── real .glb models, opt-in per structure kind (see STRUCTURE_KIT's `model`
+// field in map.js) ───────────────────────────────────────────────────────
+//
+// Loaded once per module (not per create() call) into modelTemplates, keyed
+// by kind — every match/editor scene sharing this module reuses the same
+// parsed template rather than re-fetching. A kind with no `model` entry, or
+// whose load hasn't resolved yet (or failed), simply has no template here;
+// upsertPiece() below falls back to the procedural box in that case, so
+// there is no load-order race with gameplay and no regression for any kind
+// that doesn't have a model yet.
+const gltfLoader = new GLTFLoader();
+const modelTemplates = new Map(); // kind -> normalized THREE.Group
+
+// normalizeModel() (model-normalize.js, shared with the tile-placer tool's
+// glb.js) centers the loaded scene on X/Z and drops it so its lowest point
+// sits at Y=0 — this module's own "y=0 is the land surface" convention (see
+// file header) — matching every other overlay here (pieces, rings, labels),
+// all of which position relative to that plane. A scale tuned in the
+// placer transfers directly to STRUCTURE_KIT's `model.scale` with no
+// re-derivation, since both tools run the identical, shared math.
+for (const [kind, k] of Object.entries(KIT)) {
+  if (!k.model) continue;
+  gltfLoader.load(
+    k.model.file,
+    (gltf) => modelTemplates.set(kind, normalizeModel(gltf.scene).wrapper),
+    undefined,
+    (err) => console.error(`board-render-3d: failed to load model for "${kind}" (${k.model.file})`, err)
+  );
+}
 
 // Same algorithm as board-render.js's own shade() (string-hex there, numeric
 // here — this module caches tokens as ints, see tokens() below), so a piece
@@ -342,28 +375,58 @@ export function create(canvas, M, opts = {}) {
    *  the module-level absolute seat→colour function here instead was a real
    *  bug: seat 0 always rendered as self-blue and seat 1 always as foe-red,
    *  regardless of who was actually looking — a seat-1 player saw their own
-   *  capital in the opponent's colour. Fixed 2026-09-12; see docs/KNOWN_ISSUES.md. */
+   *  capital in the opponent's colour. Fixed 2026-09-12; see docs/KNOWN_ISSUES.md.
+   *
+   *  If `kind` has a `model` entry in STRUCTURE_KIT AND that model has
+   *  finished loading (see modelTemplates above), a clone of the real .glb
+   *  replaces the procedural box. Until then — or for any kind with no
+   *  `model` entry at all — this renders the box exactly as before. The
+   *  `hasModel` check below (not just kind/owner) is what upgrades an
+   *  already-placed box to the real model the moment its load resolves,
+   *  rather than only re-evaluating on the next ownership/kind change. A
+   *  loaded model keeps its own authored materials/textures rather than
+   *  being tinted the seat colour the way a box is — ownership still reads
+   *  from the ground tile beneath it (see the tile-colouring loop above)
+   *  and the selection ring, same as it does for any other piece. */
   function upsertPiece(key, c, r, kind, owner, seatColour) {
     const cur = pieces.get(key);
-    if (cur && cur.kind === kind && cur.owner === owner) return;
-    if (cur) { scene.remove(cur.mesh); cur.mesh.geometry.dispose(); cur.mesh.material.dispose(); }
+    const hasModel = modelTemplates.has(kind);
+    if (cur && cur.kind === kind && cur.owner === owner && cur.isModel === hasModel) return;
+    if (cur) { scene.remove(cur.mesh); if (!cur.isModel) { cur.mesh.geometry.dispose(); cur.mesh.material.dispose(); } }
     const k = KIT[kind];
-    // Brightened the same way board-render.js's own piece() already treats
-    // its roof colour (2026-09-15 — this used to be the raw, unbrightened
-    // faction colour here, unlike 2D, which is what let a piece blend into
-    // ground already filled with a dimmed version of that same hue).
-    const mesh = new THREE.Mesh(pieceGeo[kind], new THREE.MeshStandardMaterial({
-      color: owner === null ? shade(tokens().neutral, 1.3) : shade(seatColour(owner), 1.5), roughness: 0.6,
-    }));
-    mesh.position.set(c + 0.5, k.h / 2, r + 0.5);
-    mesh.castShadow = true; mesh.receiveShadow = true;
+    let mesh;
+    if (hasModel) {
+      // SkeletonUtils.clone(), not the plain Object3D.clone(true) this used
+      // to be — a documented three.js limitation: clone(true) duplicates
+      // the node graph but not skinned-mesh bone/skeleton bindings, so an
+      // animated .glb's clones end up sharing (and fighting over) one
+      // skeleton. No STRUCTURE_KIT entry uses `model` yet, so nothing
+      // exercises this today, but the pipeline is generic for any .glb and
+      // nothing restricts a future one from being rigged — cloning
+      // correctly from the start costs nothing for a static mesh.
+      mesh = cloneSkeleton(modelTemplates.get(kind));
+      mesh.scale.setScalar(k.model.scale ?? 1);
+      mesh.rotation.y = ((k.model.rotationY || 0) * Math.PI) / 180;
+      mesh.position.set(c + 0.5, 0, r + 0.5);
+      mesh.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    } else {
+      // Brightened the same way board-render.js's own piece() already treats
+      // its roof colour (2026-09-15 — this used to be the raw, unbrightened
+      // faction colour here, unlike 2D, which is what let a piece blend into
+      // ground already filled with a dimmed version of that same hue).
+      mesh = new THREE.Mesh(pieceGeo[kind], new THREE.MeshStandardMaterial({
+        color: owner === null ? shade(tokens().neutral, 1.3) : shade(seatColour(owner), 1.5), roughness: 0.6,
+      }));
+      mesh.position.set(c + 0.5, k.h / 2, r + 0.5);
+      mesh.castShadow = true; mesh.receiveShadow = true;
+    }
     scene.add(mesh);
-    pieces.set(key, { mesh, kind, owner });
+    pieces.set(key, { mesh, kind, owner, isModel: hasModel });
   }
   function removePiece(key) {
     const cur = pieces.get(key);
     if (!cur) return;
-    scene.remove(cur.mesh); cur.mesh.material.dispose();
+    scene.remove(cur.mesh); if (!cur.isModel) cur.mesh.material.dispose();
     pieces.delete(key);
   }
 

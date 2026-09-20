@@ -219,7 +219,16 @@
    * renderers: board-render.js's extruded-roof-and-walls paint and
    * board-render-3d.js's box meshes read these same numbers, so a kit change
    * can't drift between the 2D and 3D views the way two independent copies
-   * eventually would. See docs/RENDERING.md. */
+   * eventually would. See docs/RENDERING.md.
+   *
+   * `model` (optional) points a kind at a real checked-in .glb instead of the
+   * procedural box, 3D renderer only — see docs/RENDERING.md → Structures.
+   * `file` is a path under public/models/; `scale` is the uniform multiplier
+   * settled on in public/tile-placer.html (tile-relative — 1.0 ≈ fills a
+   * tile), hand-tuned once and hardcoded here so it never needs recomputing;
+   * `rotationY` (degrees, default 0) is optional. No `model` = today's box,
+   * unchanged — this field is additive and every kind works with or without
+   * one. */
   const STRUCTURE_KIT = {
     barracks: { fp: 0.54, h: 0.40, label: 'Barracks', authorable: true },
     industry: { fp: 0.74, h: 0.42, label: 'Industry', authorable: true },
