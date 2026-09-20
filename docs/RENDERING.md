@@ -287,7 +287,10 @@ render from the exact same code path and cannot silently drift apart.
 
 `public/proto3d.html` is a standalone 3D-engine scratch/test page, not linked from anywhere in the
 live product and not covered by the design-system migration — see `design-system/HANDOFF-GAPS.md`
-item 9 if you're wondering why it still has unmigrated literals.
+item 9 if you're wondering why it still has unmigrated literals. `public/tile-placer.html` (Matt's
+`.glb` prop-authoring tool, see [TILE_PLACER.md](TILE_PLACER.md)) borrowed the same exemption on the
+same reasoning, but now has a real routed hostname (`render.supremacy.live`) that `proto3d.html`
+never did — flagged in that doc as worth another look, not acted on here.
 
 ## Copy voice and accessibility
 
