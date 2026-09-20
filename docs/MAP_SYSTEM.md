@@ -74,6 +74,7 @@ D1 — same shape either way, see [ARCHITECTURE.md](ARCHITECTURE.md)).
 | `provinces` | `[Province]` | yes | One entry per **occupied** slot — see below. Omitted slots are gaps (future water) |
 | `cities` | `[City]` | yes | One entry per city, referencing a province by id |
 | `structures` | `[Structure]` | no | Pre-placed starting industry/barracks — see below |
+| `labelOrigin` | `{ c, r }` | no (default `{0,0}`) | Tile-space offset for the editor's 3D grid-reference labels only (`gridLabels`, see [RENDERING.md](RENDERING.md)) — never read by `build()` itself, never affects tile addressing, ownership, or anything gameplay-relevant. `editor.html` accumulates this whenever growing the slot grid from the low (west/north) edge shifts every existing province's `sc`/`sr` over to make room, so an already-referenced tile ("the barracks are at C,4") keeps the same displayed row/column instead of relabelling on every later grow from that side; the newly-grown tiles get negative-going labels ("-A", "-1", ...) instead. Absent on every board authored before this field existed — treated identically to `{0,0}`. |
 
 ### `Province` (an entry in `provinces`)
 

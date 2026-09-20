@@ -185,6 +185,19 @@ addition `editor.html` defined none of them at all: garrison counts there were r
 font/colour/background, relying on the page's dark `color-scheme` making default black text readable by
 accident rather than actually matching `game.html`'s `.fp3d-label` look. Both pages' CSS now agree.
 
+**`opts.labelOrigin` (2026-09-20)** — `{ c, r }`, default `{0,0}`, subtracted from a label's own index
+before it's named (so `colName(c - labelOrigin.c)` / `r - labelOrigin.r + 1`, never from its *position*,
+which stays anchored to the board's actual edge either way). Exists because growing the editor's slot
+grid from the low edge (west/north — see `docs/EDITOR_UPGRADE.md`) shifts every existing tile's internal
+position over to make room for the new sector, and without this a tile's grid reference would silently
+change every time the board grew that direction — a GM's own note ("the barracks are at C,4") going
+stale the next time they extended the map west. `editor.html` accumulates `def.labelOrigin` (see
+`docs/MAP_SYSTEM.md`) by exactly the tile-space distance each such shift moves everything, and passes it
+straight through here, so an already-labelled tile keeps its label and the newly-grown tiles get
+negative-going ones instead ("-A", "-1", …) — `colName()`'s letter scheme mirrors below zero the same
+way integers already do naturally. `game.html` never passes `gridLabels` at all, so this option is moot
+for it regardless.
+
 ### Hit-testing
 
 A plain ray/ground-plane intersection (`tileAt(mx, my)`), correct at any camera angle — simpler than

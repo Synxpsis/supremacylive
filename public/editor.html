@@ -561,10 +561,15 @@
     // navigation while authoring a board. gridLabels: true draws column-
     // letter/row-number axis labels along the board's two edges (A, B, C… /
     // 1, 2, 3…) so a GM can reference a tile by grid coordinate; game.html
-    // doesn't need this during a match. camera restores whatever pose
-    // reset3D() saved off the scene this one's replacing, if any. See
-    // board-render-3d.js's create().
-    _r3d = self.FPRender3D.create(cv3d, S.built, { selectionLock: false, gridLabels: true, camera: _camPose });
+    // doesn't need this during a match. labelOrigin keeps those labels
+    // pointing at the same tile even after a later low-edge grow shifts that
+    // tile's internal position — see addTerritory()'s own comment on why.
+    // camera restores whatever pose reset3D() saved off the scene this one's
+    // replacing, if any. See board-render-3d.js's create().
+    _r3d = self.FPRender3D.create(cv3d, S.built, {
+      selectionLock: false, gridLabels: true, camera: _camPose,
+      labelOrigin: S.def.labelOrigin || { c: 0, r: 0 },
+    });
     _camPose = null;
     syncGrowHandles3D();
     return _r3d;
@@ -971,6 +976,7 @@
   function addTerritory(sc, sr) {
     if (S.def.provinces.some(p => p.sc === sc && p.sr === sr)) return; // already occupied
 
+    const block = S.def.block || F().DEFAULT_BLOCK;
     const cur = S.def.slots || F().DEFAULT_SLOTS;
     let cols = cur.cols, rows = cur.rows, shiftC = 0, shiftR = 0;
     if (sc < 0) { shiftC = -sc; cols += shiftC; sc = 0; }
@@ -979,14 +985,26 @@
     else if (sr >= rows) rows = sr + 1;
     cols = Math.min(MAX_SLOTS, cols);
     rows = Math.min(MAX_SLOTS, rows);
-    if (shiftC || shiftR) for (const p of S.def.provinces) { p.sc += shiftC; p.sr += shiftR; }
+    if (shiftC || shiftR) {
+      for (const p of S.def.provinces) { p.sc += shiftC; p.sr += shiftR; }
+      // The 3D grid-reference labels (docs/RENDERING.md) are meant as a
+      // stable address a GM can write down — "the barracks are at C,4" —
+      // that shouldn't quietly point at a different tile the next time the
+      // board grows from this side. A low-edge grow moves every existing
+      // tile's *internal* position by shiftC/shiftR sectors' worth of
+      // tiles, so labelOrigin absorbs exactly that much, keeping every
+      // already-labelled tile's displayed row/column unchanged — only the
+      // newly-grown tiles pick up the negative-going labels instead. See
+      // syncGrowHandles3D()/ensure3D() for where this gets read back out.
+      const lo = S.def.labelOrigin || { c: 0, r: 0 };
+      S.def.labelOrigin = { c: lo.c + shiftC * block.w, r: lo.r + shiftR * block.h };
+    }
     S.def.slots = { cols, rows };
 
     const existingIds = S.def.provinces.map(p => p.id);
     const id = F().pickId('sector' + sc + sr, existingIds);
     S.def.provinces.push({ id, name: '', sc, sr });
 
-    const block = S.def.block || F().DEFAULT_BLOCK;
     const clc = (block.w - 1) >> 1, clr = (block.h - 1) >> 1;
     const cIds = S.def.cities.map(c => c.id);
     const cid = F().pickId('capital' + sc + sr, cIds);

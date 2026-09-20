@@ -172,7 +172,16 @@ as of 2026-09-12 (`ba103ce`, `a4c2834`); the rest are still open.
   water is the absence of a province, never a value to set). Separately: "Remove sector" used to only
   appear in the "open ground" tile inspector — a sector's own capital (its centre tile, the single most
   likely first click) had no path to remove it at all; the same two-click-confirm control now renders
-  in the city and structure inspector branches too. ✅ **Done, 2026-09-20.**
+  in the city and structure inspector branches too. Finally, growing from the low (west/north) edge
+  shifts every existing tile's *internal* position to make room for the new sector — without more, the
+  3D view's grid-reference labels (`gridLabels`, see [RENDERING.md](RENDERING.md)) would silently
+  relabel every existing tile each time, so a GM's own note ("the barracks are at C,4") could point at
+  the wrong tile after a later grow. A new `labelOrigin` field on the board definition (see
+  [MAP_SYSTEM.md](MAP_SYSTEM.md)) absorbs exactly that shift, so an already-labelled tile keeps its
+  label forever regardless of which direction the board grows afterward, and the newly-grown tiles pick
+  up negative-going labels instead ("-A", "-1", …) rather than the whole board relabelling. Purely a
+  display concern — `labelOrigin` is never read by `build()` and never affects tile addressing,
+  ownership, or anything gameplay-relevant. ✅ **Done, 2026-09-20.**
 
 ## What it can't do — the actual gap list
 
