@@ -69,7 +69,7 @@ D1 — same shape either way, see [ARCHITECTURE.md](ARCHITECTURE.md)).
 | `note` | string | no | Free-text design note, never read by code |
 | `win` | `{ territories: int }` | no | Territories needed to win outright. Omitted = "every territory on the board" (today's `duel`/`solo` default) |
 | `slots` | `{ cols, rows }` | no (default `{2,2}`) | The territory grid dimensions |
-| `block` | `{ w, h }` | no (default `{7,7}`) | One territory's tile footprint |
+| `block` | `{ w, h }` | no (default `{5,5}` — `DEFAULT_BLOCK`, the map editor's standard for newly-authored content; `duel`/`solo` set their own explicit `{7,7}` instead, sized to their hand-placed cities, and don't read this default) | One territory's tile footprint |
 | `starts` | `[{ seat, territory }]` | no | Which territory each seat's tiles are seeded from at match start (`seedOwners()`) |
 | `provinces` | `[Province]` | yes | One entry per **occupied** slot — see below. Omitted slots are gaps (future water) |
 | `cities` | `[City]` | yes | One entry per city, referencing a province by id |
