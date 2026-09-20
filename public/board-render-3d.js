@@ -157,6 +157,15 @@ function labelDiv(text, cls) {
  *    coordinate, e.g. "the tile at C, 4"). Built once here, not in update():
  *    like the province grid lines/borders just above, the coordinate grid
  *    itself never changes without a full scene rebuild (reset3D()).
+ *  @param opts.labelOrigin  { c, r } tile-space offset subtracted from a
+ *    label's own position before it's drawn (default { c: 0, r: 0 }, i.e. no
+ *    offset — labels count up from the board's actual edge, same as before
+ *    this option existed). editor.html tracks this across a low-edge grow
+ *    (growing "north"/"west" shifts every existing tile's internal position
+ *    over to make room — see its addTerritory()) so an already-labelled
+ *    tile keeps the same displayed row/column instead of relabelling every
+ *    time the board grows that direction; the newly-grown tiles pick up
+ *    negative-going labels instead. Ignored unless gridLabels is also true.
  *  @param opts.camera  { position, target } to seed the camera/orbit-target
  *    with instead of the default overview angle — editor.html reads its old
  *    camera/controls back out before disposing a scene (see reset3D()) and
@@ -166,6 +175,8 @@ function labelDiv(text, cls) {
 export function create(canvas, M, opts = {}) {
   const selectionLock = opts.selectionLock !== false;
   const gridLabels = !!opts.gridLabels;
+  const labelOriginC = (opts.labelOrigin && opts.labelOrigin.c) || 0;
+  const labelOriginR = (opts.labelOrigin && opts.labelOrigin.r) || 0;
   const F = self.FPMap;
   const gridW = M.gridW, gridH = M.gridH;
   const boardCenter = new THREE.Vector3(gridW / 2, 0, gridH / 2);
@@ -329,21 +340,28 @@ export function create(canvas, M, opts = {}) {
 
   // ── grid-reference axis labels (A, B, C… along one edge; 1, 2, 3… along
   // the other) — spreadsheet-style column naming so a board wider than 26
-  // tiles still gets unambiguous, ever-increasing labels (Z, AA, AB…). ────
+  // tiles still gets unambiguous, ever-increasing labels (Z, AA, AB…). A
+  // *negative* index (once labelOriginC/R is subtracted — see this side of
+  // a low-edge grow the caller made, opts.labelOrigin's own doc comment
+  // above) mirrors the same scheme below the origin: "-A", "-B"… for
+  // columns, plain negative integers (0, -1, -2…) for rows, since those
+  // already read fine without a letter scheme to invert. ────────────────
   if (gridLabels) {
     const colName = i => {
+      const neg = i < 0;
+      let n = neg ? -i - 1 : i;
       let s = '';
-      for (i++; i > 0; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + (i - 1) % 26) + s;
-      return s;
+      for (n++; n > 0; n = Math.floor((n - 1) / 26)) s = String.fromCharCode(65 + (n - 1) % 26) + s;
+      return neg ? '-' + s : s;
     };
     for (let c = 0; c < gridW; c++) {
-      const lbl = new CSS2DObject(labelDiv(colName(c), 'fp3d-gridref'));
+      const lbl = new CSS2DObject(labelDiv(colName(c - labelOriginC), 'fp3d-gridref'));
       lbl.center.set(0.5, 0.5);
       lbl.position.set(c + 0.5, 0.02, -0.6);
       scene.add(lbl);
     }
     for (let r = 0; r < gridH; r++) {
-      const lbl = new CSS2DObject(labelDiv(String(r + 1), 'fp3d-gridref'));
+      const lbl = new CSS2DObject(labelDiv(String(r - labelOriginR + 1), 'fp3d-gridref'));
       lbl.center.set(0.5, 0.5);
       lbl.position.set(-0.6, 0.02, r + 0.5);
       scene.add(lbl);

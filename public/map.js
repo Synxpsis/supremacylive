@@ -205,7 +205,13 @@
     raidEvery: 15, raidMin: 32, raidFraction: 0.45,
   };
 
-  const DEFAULT_BLOCK = { w: 7, h: 7 };
+  // The fallback sector footprint for a board definition that omits `block`
+  // entirely — none of the three shipped boards below actually rely on this
+  // (duel/solo/grand all set their own explicit block, sized to their own
+  // hand-placed cities), so this only matters to the map editor when
+  // authoring content that hasn't set a size yet. The one place to change
+  // the standard going forward — see docs/EDITOR_UPGRADE.md.
+  const DEFAULT_BLOCK = { w: 5, h: 5 };
   const DEFAULT_SLOTS = { cols: 2, rows: 2 };
 
   /* The structure kit — footprint (share of a tile's width) and height (world
