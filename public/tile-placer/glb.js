@@ -8,9 +8,9 @@
 // needing the original .glb file again — see main.js/board.js's
 // exportLayout()/loadTileData()/loadBoardData().
 
-import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OBJECT_TYPES, registerObjectType } from './objects.js';
+import { normalizeModel as normalize } from '../model-normalize.js';
 
 const loader = new GLTFLoader();
 let nextGlbId = 1;
@@ -36,26 +36,6 @@ function parseGLTF(arrayBuffer) {
   return new Promise((resolve, reject) => {
     loader.parse(arrayBuffer, '', (gltf) => resolve(gltf), (err) => reject(err));
   });
-}
-
-// Re-centers X/Z on the model's own bounding box and drops it so its
-// lowest point sits at Y=0 — matching every built-in prop's convention
-// (feet/base at the origin), so gizmo moves and tile-relative save data
-// behave the same regardless of object type.
-function normalize(rawScene) {
-  const box = new THREE.Box3().setFromObject(rawScene);
-  const size = new THREE.Vector3();
-  const center = new THREE.Vector3();
-  box.getSize(size);
-  box.getCenter(center);
-
-  rawScene.position.x -= center.x;
-  rawScene.position.z -= center.z;
-  rawScene.position.y -= box.min.y;
-
-  const wrapper = new THREE.Group();
-  wrapper.add(rawScene);
-  return { wrapper, size };
 }
 
 // Builds a registry entry ({ label, create, defaultScale, isGLB,
@@ -114,10 +94,23 @@ export function exportCustomTypes(placedEntries) {
 
 // For loadTileData()/loadBoardData(): re-registers any GLB types a
 // saved layout embedded, skipping ones already present (e.g. reloading
-// the same file twice in one session).
+// the same file twice in one session). Parses every not-yet-registered
+// type concurrently rather than one at a time — GLTFLoader.parse() has
+// no shared mutable state across calls (unlike load(), it works directly
+// off an in-memory buffer), so this is safe, and a layout with several
+// distinct GLB-backed types no longer pays the sum of every parse, just
+// the slowest one. `seen` guards the (unlikely, since exportCustomTypes()
+// already dedupes by key) case of two entries sharing a key within the
+// same batch — first one wins, matching the original loop's skip-if-
+// already-registered behaviour, rather than a race deciding it.
 export async function importCustomTypes(customTypes = []) {
-  for (const c of customTypes) {
-    if (OBJECT_TYPES[c.key]) continue;
+  const seen = new Set();
+  const toLoad = customTypes.filter((c) => {
+    if (OBJECT_TYPES[c.key] || seen.has(c.key)) return false;
+    seen.add(c.key);
+    return true;
+  });
+  await Promise.all(toLoad.map(async (c) => {
     const buffer = base64ToArrayBuffer(c.glbBase64);
     const gltf = await parseGLTF(buffer.slice(0));
     const { wrapper: template } = normalize(gltf.scene);
@@ -128,5 +121,5 @@ export async function importCustomTypes(customTypes = []) {
       defaultScale: c.defaultScale,
       create: () => template.clone(true),
     });
-  }
+  }));
 }

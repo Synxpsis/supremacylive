@@ -110,6 +110,14 @@ async function handleJSONDrop(file) {
     showToast(`Couldn't parse "${file.name}" — not valid JSON`, { error: true });
     return;
   }
+  // JSON.parse('null') succeeds (data === null), so a valid-JSON-but-wrong-
+  // shape file wouldn't otherwise be caught until the property reads below
+  // throw — same toast as the parse failure above, since from the user's
+  // perspective it's the same "this file isn't a layout" outcome.
+  if (!data || typeof data !== 'object') {
+    showToast(`Couldn't parse "${file.name}" — not valid JSON`, { error: true });
+    return;
+  }
 
   const isBoardLayout = Array.isArray(data.objects)
     ? data.objects.some((o) => 'tileX' in o) || !!data.board || !!data.tiles

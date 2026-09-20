@@ -22,6 +22,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { clone as cloneSkeleton } from 'three/addons/utils/SkeletonUtils.js';
+import { normalizeModel } from './model-normalize.js';
 
 // Shared with board-render.js via FPMap.STRUCTURE_KIT/STRUCTURE_RANK — one
 // source of truth for both renderers, see docs/RENDERING.md. Module-load
@@ -44,29 +46,18 @@ const PIECE_RANK = self.FPMap.STRUCTURE_RANK;
 const gltfLoader = new GLTFLoader();
 const modelTemplates = new Map(); // kind -> normalized THREE.Group
 
-// Centers the loaded scene on X/Z and drops it so its lowest point sits at
-// Y=0 — this module's own "y=0 is the land surface" convention (see file
-// header) — matching every other overlay here (pieces, rings, labels), all
-// of which position relative to that plane. Same normalization the
-// tile-placer tool's glb.js applies, so a scale tuned there transfers
-// directly to STRUCTURE_KIT's `model.scale` with no re-derivation.
-function normalizeModel(rawScene) {
-  const box = new THREE.Box3().setFromObject(rawScene);
-  const center = new THREE.Vector3();
-  box.getCenter(center);
-  rawScene.position.x -= center.x;
-  rawScene.position.z -= center.z;
-  rawScene.position.y -= box.min.y;
-  const wrapper = new THREE.Group();
-  wrapper.add(rawScene);
-  return wrapper;
-}
-
+// normalizeModel() (model-normalize.js, shared with the tile-placer tool's
+// glb.js) centers the loaded scene on X/Z and drops it so its lowest point
+// sits at Y=0 — this module's own "y=0 is the land surface" convention (see
+// file header) — matching every other overlay here (pieces, rings, labels),
+// all of which position relative to that plane. A scale tuned in the
+// placer transfers directly to STRUCTURE_KIT's `model.scale` with no
+// re-derivation, since both tools run the identical, shared math.
 for (const [kind, k] of Object.entries(KIT)) {
   if (!k.model) continue;
   gltfLoader.load(
     k.model.file,
-    (gltf) => modelTemplates.set(kind, normalizeModel(gltf.scene)),
+    (gltf) => modelTemplates.set(kind, normalizeModel(gltf.scene).wrapper),
     undefined,
     (err) => console.error(`board-render-3d: failed to load model for "${kind}" (${k.model.file})`, err)
   );
@@ -405,7 +396,15 @@ export function create(canvas, M, opts = {}) {
     const k = KIT[kind];
     let mesh;
     if (hasModel) {
-      mesh = modelTemplates.get(kind).clone(true);
+      // SkeletonUtils.clone(), not the plain Object3D.clone(true) this used
+      // to be — a documented three.js limitation: clone(true) duplicates
+      // the node graph but not skinned-mesh bone/skeleton bindings, so an
+      // animated .glb's clones end up sharing (and fighting over) one
+      // skeleton. No STRUCTURE_KIT entry uses `model` yet, so nothing
+      // exercises this today, but the pipeline is generic for any .glb and
+      // nothing restricts a future one from being rigged — cloning
+      // correctly from the start costs nothing for a static mesh.
+      mesh = cloneSkeleton(modelTemplates.get(kind));
       mesh.scale.setScalar(k.model.scale ?? 1);
       mesh.rotation.y = ((k.model.rotationY || 0) * Math.PI) / 180;
       mesh.position.set(c + 0.5, 0, r + 0.5);

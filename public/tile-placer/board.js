@@ -15,12 +15,13 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { OBJECT_TYPES, onObjectTypeRegistered } from './objects.js';
 import { makeGridTexture } from './gridTexture.js';
 import { getLayoutObjects } from './main.js';
 import { exportCustomTypes, importCustomTypes } from './glb.js';
+import { createGizmo, makeRemover, trackClicks, computeNDC } from './selection.js';
+import { disposeSubtree, disposeGeometryOnly } from './dispose.js';
 
 // Set by the classic <script src="../map.js"> tag in tile-placer.html —
 // same self.FPMap access pattern board-render-3d.js already uses, and safe
@@ -171,6 +172,9 @@ const territoryLines = new THREE.Group();
 scene.add(territoryLines);
 
 function buildTerritoryLines() {
+  // Geometry only — territoryLineMat is one material shared by every
+  // segment, module-level, not owned by any single rebuild.
+  disposeGeometryOnly(territoryLines);
   territoryLines.clear();
   const y = 0.004;
   for (const p of M.provinces) {
@@ -191,6 +195,11 @@ function buildTerritoryLines() {
 // city's own starting seat. Not part of `placed`: these describe the
 // board itself, not something you can select/move/delete here.
 function buildLandmarks() {
+  // Full dispose, not geometry-only — unlike the tile/territory-line
+  // materials, each landmark's MeshStandardMaterial is built fresh per
+  // city on every call (colour depends on that city's own starting seat),
+  // not shared with anything still in the scene.
+  disposeSubtree(landmarksGroup);
   landmarksGroup.clear();
   for (const city of M.cities) {
     const p = M.province(city.prov);
@@ -216,6 +225,12 @@ function buildLandmarks() {
 let startOwners = {}; // tileKey -> seat, from FPMap.seedOwners(M) — recomputed on buildBoard()
 
 function buildBoard() {
+  // Geometry only — every tile shares one of a handful of cached
+  // tileMaterials/waterMaterial (see above); those live for the whole
+  // session and aren't owned by any single build. Each tile's own
+  // PlaneGeometry is fresh per call, though, and would otherwise leak on
+  // every "Reset board" click.
+  disposeGeometryOnly(boardGroup);
   boardGroup.clear();
   tiles.clear();
   startOwners = F.seedOwners(M);
@@ -326,29 +341,11 @@ function spawn(type, tile, state = null) {
   return entry;
 }
 
-function removeEntry(entry) {
-  if (selected === entry) selectObject(null);
-  objectsLayer.remove(entry.root);
-  const i = placed.indexOf(entry);
-  if (i >= 0) placed.splice(i, 1);
-  refreshObjectList();
-}
-
-function clearObjects() {
-  for (const entry of [...placed]) removeEntry(entry);
-}
-
 // ---------------------------------------------------------------------
 // Selection + gizmo
 // ---------------------------------------------------------------------
 
-const gizmo = new TransformControls(camera, renderer.domElement);
-gizmo.setMode('translate');
-gizmo.addEventListener('dragging-changed', (e) => {
-  orbit.enabled = !e.value;
-});
-gizmo.addEventListener('objectChange', () => updatePanelFromSelection());
-scene.add(gizmo.getHelper ? gizmo.getHelper() : gizmo);
+const gizmo = createGizmo(camera, renderer.domElement, scene, orbit, () => updatePanelFromSelection());
 
 function selectObject(entry) {
   selected = entry;
@@ -361,25 +358,16 @@ function selectObject(entry) {
   refreshObjectList();
 }
 
-const raycaster = new THREE.Raycaster();
-const pointerNDC = new THREE.Vector2();
-let downPos = null;
-
-renderer.domElement.addEventListener('pointerdown', (e) => {
-  downPos = { x: e.clientX, y: e.clientY };
+const { removeEntry, clearAll: clearObjects } = makeRemover({
+  placed, objectsLayer, getSelected: () => selected, selectObject, refreshObjectList,
 });
 
-renderer.domElement.addEventListener('pointerup', (e) => {
-  if (!downPos) return;
-  const moved = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
-  downPos = null;
-  if (moved > 4) return; // was a drag/orbit, not a click
-  if (gizmo.dragging) return;
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
 
-  const rect = renderer.domElement.getBoundingClientRect();
-  pointerNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-  pointerNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-  raycaster.setFromCamera(pointerNDC, camera);
+trackClicks(renderer.domElement, gizmo, (e) => {
+  computeNDC(e, renderer.domElement, ndc);
+  raycaster.setFromCamera(ndc, camera);
 
   // objects take priority over tiles
   const meshes = [];
@@ -703,6 +691,13 @@ document.getElementById('board-load-input').addEventListener('change', async (e)
   try {
     data = JSON.parse(text);
   } catch {
+    alert('That file is not valid JSON.');
+    return;
+  }
+  // Same guard as tabs.js's handleJSONDrop() — JSON.parse('null') succeeds
+  // (data === null), so a valid-JSON-but-wrong-shape file wouldn't
+  // otherwise be caught until loadBoardData() reads data.customTypes below.
+  if (!data || typeof data !== 'object') {
     alert('That file is not valid JSON.');
     return;
   }

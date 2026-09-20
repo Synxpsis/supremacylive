@@ -45,11 +45,11 @@
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { TransformControls } from 'three/addons/controls/TransformControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { OBJECT_TYPES, onObjectTypeRegistered } from './objects.js';
 import { makeGridTexture } from './gridTexture.js';
 import { exportCustomTypes, importCustomTypes } from './glb.js';
+import { createGizmo, makeRemover, trackClicks, computeNDC } from './selection.js';
 
 // ---------------------------------------------------------------------
 // Scene / renderer / camera
@@ -161,29 +161,11 @@ function spawn(type, state = null) {
   return entry;
 }
 
-function removeEntry(entry) {
-  if (selected === entry) selectObject(null);
-  objectsLayer.remove(entry.root);
-  const i = placed.indexOf(entry);
-  if (i >= 0) placed.splice(i, 1);
-  refreshObjectList();
-}
-
-function clearAll() {
-  for (const entry of [...placed]) removeEntry(entry);
-}
-
 // ---------------------------------------------------------------------
 // Selection + gizmo
 // ---------------------------------------------------------------------
 
-const gizmo = new TransformControls(camera, renderer.domElement);
-gizmo.setMode('translate');
-gizmo.addEventListener('dragging-changed', (e) => {
-  orbit.enabled = !e.value;
-});
-gizmo.addEventListener('objectChange', () => updatePanelFromSelection());
-scene.add(gizmo.getHelper ? gizmo.getHelper() : gizmo);
+const gizmo = createGizmo(camera, renderer.domElement, scene, orbit, () => updatePanelFromSelection());
 
 function selectObject(entry) {
   selected = entry;
@@ -196,25 +178,16 @@ function selectObject(entry) {
   refreshObjectList();
 }
 
-const raycaster = new THREE.Raycaster();
-const pointerNDC = new THREE.Vector2();
-let downPos = null;
-
-renderer.domElement.addEventListener('pointerdown', (e) => {
-  downPos = { x: e.clientX, y: e.clientY };
+const { removeEntry, clearAll } = makeRemover({
+  placed, objectsLayer, getSelected: () => selected, selectObject, refreshObjectList,
 });
 
-renderer.domElement.addEventListener('pointerup', (e) => {
-  if (!downPos) return;
-  const moved = Math.hypot(e.clientX - downPos.x, e.clientY - downPos.y);
-  downPos = null;
-  if (moved > 4) return; // was a drag/orbit, not a click
-  if (gizmo.dragging) return;
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
 
-  const rect = renderer.domElement.getBoundingClientRect();
-  pointerNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-  pointerNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-  raycaster.setFromCamera(pointerNDC, camera);
+trackClicks(renderer.domElement, gizmo, (e) => {
+  computeNDC(e, renderer.domElement, ndc);
+  raycaster.setFromCamera(ndc, camera);
 
   const meshes = [];
   for (const entry of placed) {
@@ -417,6 +390,13 @@ document.getElementById('load-input').addEventListener('change', async (e) => {
   try {
     data = JSON.parse(text);
   } catch {
+    alert('That file is not valid JSON.');
+    return;
+  }
+  // Same guard as tabs.js's handleJSONDrop() — JSON.parse('null') succeeds
+  // (data === null), so a valid-JSON-but-wrong-shape file wouldn't
+  // otherwise be caught until loadTileData() reads data.customTypes below.
+  if (!data || typeof data !== 'object') {
     alert('That file is not valid JSON.');
     return;
   }
