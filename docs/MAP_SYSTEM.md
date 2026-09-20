@@ -134,6 +134,23 @@ A city at the province's exact centre tile (`lc, lr === centreTile`'s local equi
 territory's **capital** — this isn't a separate field, it's positional (`capitalOf()` finds the city
 at `centreTile(map, p)`).
 
+### `STRUCTURE_KIT`'s optional `model` field — real .glb structures
+
+`STRUCTURE_KIT` (`public/map.js`) is per-kind, not per-board — it's the shared table both renderers
+read for footprint/height (`fp`, `h`), independent of any specific board definition above. A kind may
+additionally carry a `model` field pointing the **3D renderer only** at a real checked-in `.glb`
+instead of its procedural box:
+
+| Field | Type | Required | Meaning |
+|---|---|---|---|
+| `file` | string | yes | Path under `public/models/` (see that directory's own `README.md`) |
+| `scale` | number | yes | Uniform tile-relative multiplier (1.0 ≈ fills a tile), hand-tuned once in `public/tile-placer.html` and hardcoded here — this is what makes a model's size permanent: versioned in git, never recomputed at runtime |
+| `rotationY` | number | no (default 0) | Yaw in degrees, for a model authored facing the wrong way |
+
+No `model` field = the kind keeps rendering as the procedural box, unchanged — this is additive, not
+a replacement, and every kind works with or without one. See [RENDERING.md](RENDERING.md) →
+Structures for how `board-render-3d.js` loads and falls back on this field.
+
 ### What `build()` derives (present on the returned object, never authored)
 
 | Field | Meaning |

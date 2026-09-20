@@ -22,7 +22,7 @@ export default [
   },
   {
     // ES module client code loaded via <script type="module">
-    files: ["public/board-render-3d.js"],
+    files: ["public/board-render-3d.js", "public/tile-placer/*.js"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "module",
@@ -32,7 +32,7 @@ export default [
   {
     // Classic <script> client code, no bundler/module system
     files: ["public/**/*.js"],
-    ignores: ["public/board-render-3d.js"],
+    ignores: ["public/board-render-3d.js", "public/tile-placer/*.js"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "script",

@@ -98,6 +98,21 @@ change can't drift between the two views. (This used to be two independently har
 `capital`/`city` as *not* placeable via the board's `structures` array (they come from `cities`
 instead); the renderers themselves only ever read `fp`/`h`.
 
+**A kind with a `model` entry renders a real `.glb` instead of the box — 3D only.** See
+[MAP_SYSTEM.md](MAP_SYSTEM.md) → `STRUCTURE_KIT`'s optional `model` field for the schema
+(`file`/`scale`/`rotationY`) and `public/models/README.md` for the authoring workflow
+(`public/tile-placer.html` → tune → commit the `.glb` → paste the entry). `board-render-3d.js` loads
+every kind's model once at module scope (not per `create()` call, so every match/editor scene sharing
+the module reuses the same parsed template) and normalizes it the same way the placer tool does:
+centred on X/Z, dropped so its lowest point sits at the `y = 0` land surface. `upsertPiece()` prefers
+a loaded template over the box the moment one exists for that kind — checking model-availability
+alongside kind/owner in its early-return guard is what upgrades an already-placed box the instant a
+load resolves, not just on the next ownership change. Until a model loads (or for any kind with none
+at all), the box renders exactly as before — no regression, no load-order race with gameplay. A loaded
+model keeps its own authored materials/textures rather than being tinted the seat colour the way a box
+is; ownership still reads from the ground tile beneath it (see Ground above) and the selection ring,
+same as any other piece.
+
 Piece colour is the owning seat's faction colour, or `tokens().neutral` for an unowned city — brightened
 via a local `shade()` (2026-09-15, `owner === null ? shade(neutral, 1.3) : shade(seatColour(owner), 1.5)`),
 the identical algorithm and factors `board-render.js`'s own `piece()` already uses for its roof colour,
