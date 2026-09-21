@@ -33,6 +33,15 @@ import { normalizeModel } from './model-normalize.js';
 const KIT = self.FPMap.STRUCTURE_KIT;
 const PIECE_RANK = self.FPMap.STRUCTURE_RANK;
 
+// Ground depth constants (see create()'s ground-mesh block, docs/RENDERING.md
+// → Ground) — module scope and exported rather than function-local, since
+// editor.html's grow-handle mesh (syncGrowHandles3D()) needs the exact same
+// total depth to read as "the same block a placed sector would be," not a
+// hand-maintained duplicate that can drift out of sync with this module's own
+// geometry.
+export const LAND_CAP_DEPTH = 0.05, LAND_WALL_DEPTH = 0.30, WATER_SINK = 0.14;
+export const LAND_DEPTH = LAND_CAP_DEPTH + LAND_WALL_DEPTH; // total, cap top (y=0) to wall bottom
+
 // ── real .glb models, opt-in per structure kind (see STRUCTURE_KIT's `model`
 // field in map.js) ───────────────────────────────────────────────────────
 //
@@ -113,10 +122,14 @@ function tokens() {
     // which is what made unclaimed ground unreadable as "there" rather than
     // empty (2026-09-15).
     seam: toHexRgba(g('--sl-seam-strong'), 0xe6e8e4),
-    // Water is the one deliberate exception to the board's achromatic
-    // palette — it borrows the existing --sl-info token (status blue)
-    // rather than inventing a new hue, so there's no new gap to flag.
+    // Water is one deliberate exception to the board's achromatic palette —
+    // it borrows the existing --sl-info token (status blue) rather than
+    // inventing a new hue. Sand is the other: a genuinely new terrain-only
+    // token (--sl-terrain-sand, see tokens.css) for the exposed cliff wall
+    // beneath a sector's top face (see the ground mesh split below) — no
+    // existing achromatic or status token reads as "coastline."
     water: toHex(g('--sl-info'), 0x4aa8c8),
+    sand: toHex(g('--sl-terrain-sand'), 0xc9b183),
   };
   return _tok;
 }
@@ -219,19 +232,27 @@ export function create(canvas, M, opts = {}) {
   scene.add(sun);
 
   // ── ground: one instance per tile, so cost stays flat as boards grow ────
-  // (196 tiles for duel, 625 for grand — two draw calls either way, one per
-  // mesh below.) Land is an extruded slab, not a flat sheet — the box's top
-  // face still sits at
-  // y=0 (every overlay above this — pieces, rings, labels, march paths —
-  // anchors to that plane), so it reads as ground raised out of the world
-  // rather than a floating sheet, and every existing y-offset stays correct.
-  // Gap tiles (outside any province — none exist on today's maps, but the
-  // map editor will introduce them) get a second, thinner instanced mesh
-  // recessed below land level instead of being hidden, so the world can be
-  // filled with water once boards have irregular coastlines.
+  // (196 tiles for duel, 625 for grand — three draw calls either way, one per
+  // mesh below.) Land is two stacked slabs, not one box: a thin coloured
+  // "cap" (ownership reads from its top face, sitting at y=0 same as always
+  // — every overlay above this still anchors to that plane) over a deeper,
+  // uncoloured "wall" in the fixed terrain-sand tone (2026-09-20 — previously
+  // one box, instance-coloured on every face including the sides, so a
+  // sector's exposed edge read as a flat-coloured slab in the owner's faction
+  // hue rather than a coastline; see docs/RENDERING.md). The wall is a
+  // *separate* InstancedMesh rather than a second material group on the same
+  // mesh because instanceColor applies to every face group of an instance
+  // uniformly in Three.js — there's no per-group opt-out, so the only way to
+  // keep the wall off the instance-colour tint is to give it its own mesh
+  // that never calls setColorAt() at all (its material's own flat `color`
+  // then applies untouched). Gap tiles (outside any province) get a third,
+  // deeper instanced mesh recessed below land level, sized so its bottom
+  // meets the wall's bottom exactly — no gap between the two at a coastline
+  // (see WATER_DEPTH below).
   const TILE_COUNT = gridW * gridH;
-  const LAND_DEPTH = 0.26, WATER_DEPTH = 0.05, WATER_SINK = 0.14;
-  const tileGeo = new THREE.BoxGeometry(1, LAND_DEPTH, 1);
+  const WATER_DEPTH = LAND_DEPTH - WATER_SINK; // water bottom == wall bottom, see above
+  const tileGeo = new THREE.BoxGeometry(1, LAND_CAP_DEPTH, 1);
+  const wallGeo = new THREE.BoxGeometry(1, LAND_WALL_DEPTH, 1);
   const waterGeo = new THREE.BoxGeometry(1, WATER_DEPTH, 1);
   // No `vertexColors: true` here — that flag reads a per-vertex `color`
   // BufferAttribute, which these box geometries don't have; WebGL fills the
@@ -242,6 +263,12 @@ export function create(canvas, M, opts = {}) {
   const tileMesh = new THREE.InstancedMesh(tileGeo, new THREE.MeshStandardMaterial({ roughness: 0.95 }), TILE_COUNT);
   tileMesh.receiveShadow = true;
   tileMesh.castShadow = true; // land now has real volume, so it can shadow the water it rises out of
+  // Flat terrain-sand colour, set once on the material itself (never
+  // setColorAt()) — see the header comment above for why this has to be a
+  // separate mesh rather than a face-group material on tileMesh.
+  const wallMesh = new THREE.InstancedMesh(wallGeo, new THREE.MeshStandardMaterial({ roughness: 0.95, color: tokens().sand }), TILE_COUNT);
+  wallMesh.receiveShadow = true;
+  wallMesh.castShadow = true;
   const waterMesh = new THREE.InstancedMesh(waterGeo, new THREE.MeshStandardMaterial({ roughness: 0.3, metalness: 0.05 }), TILE_COUNT);
   waterMesh.receiveShadow = true;
   // InstancedMesh's bounding sphere is derived from the base (untransformed)
@@ -250,19 +277,32 @@ export function create(canvas, M, opts = {}) {
   // occupies a sliver near world origin and culls it once the camera is
   // positioned to see the real, much larger board.
   tileMesh.frustumCulled = false;
+  wallMesh.frustumCulled = false;
   waterMesh.frustumCulled = false;
   const dummy = new THREE.Object3D();
   const tileColor = new THREE.Color();
   const LAND_COLOR = new THREE.Color(tokens().land);
   const WATER_COLOR = new THREE.Color(tokens().water);
   const tileIndex = (c, r) => r * gridW + c;
+  // Shared by the seeding loop below and setWaterMask() (see the returned
+  // API surface at the bottom of create()) — both need the exact same
+  // position/scale math per water tile, so it's hoisted here rather than
+  // duplicated.
+  const layWaterInstance = (c, r, visible) => {
+    dummy.position.set(c + 0.5, -WATER_SINK - WATER_DEPTH / 2, r + 0.5);
+    dummy.scale.setScalar(visible ? 1 : 0);
+    dummy.updateMatrix();
+    waterMesh.setMatrixAt(tileIndex(c, r), dummy.matrix);
+  };
   for (let r = 0; r < gridH; r++) for (let c = 0; c < gridW; c++) {
     const i = tileIndex(c, r);
     const onLand = !!F.territoryAt(M, c, r);
 
-    // Land, and gap tiles hidden (scaled to zero) rather than coloured —
-    // see the water block below for the inverse.
-    dummy.position.set(c + 0.5, -LAND_DEPTH / 2, r + 0.5);
+    // Land cap (coloured top) and wall (flat sand, sides), and gap tiles
+    // hidden (scaled to zero) rather than coloured — see the water block
+    // below for the inverse. Wall sits flush under the cap: cap spans
+    // y=0..-LAND_CAP_DEPTH, wall spans -LAND_CAP_DEPTH..-LAND_DEPTH.
+    dummy.position.set(c + 0.5, -LAND_CAP_DEPTH / 2, r + 0.5);
     dummy.scale.setScalar(onLand ? 1 : 0);
     dummy.updateMatrix();
     tileMesh.setMatrixAt(i, dummy.matrix);
@@ -275,19 +315,27 @@ export function create(canvas, M, opts = {}) {
     // fixes a shader that was never compiled to read it.
     tileMesh.setColorAt(i, LAND_COLOR);
 
-    // Water fills exactly the gap tiles, recessed below land level so a
-    // coastline reads as a cliff edge rather than two coplanar sheets. It
-    // never changes at runtime (territory shape is fixed for a match), so
-    // this seeding is the only place its instanceColor is ever set.
-    dummy.position.set(c + 0.5, -WATER_SINK - WATER_DEPTH / 2, r + 0.5);
-    dummy.scale.setScalar(onLand ? 0 : 1);
+    dummy.position.set(c + 0.5, -LAND_CAP_DEPTH - LAND_WALL_DEPTH / 2, r + 0.5);
+    dummy.scale.setScalar(onLand ? 1 : 0);
     dummy.updateMatrix();
-    waterMesh.setMatrixAt(i, dummy.matrix);
+    wallMesh.setMatrixAt(i, dummy.matrix);
+    // No setColorAt() call — wallMesh never gets an instanceColor attribute,
+    // so every instance renders the material's own flat sand colour.
+
+    // Water fills exactly the gap tiles, recessed below land level so a
+    // coastline reads as a cliff edge rather than two coplanar sheets, sized
+    // (WATER_DEPTH above) so its bottom face lines up with the wall's bottom
+    // face exactly — no floating gap at the seam. It never changes at
+    // runtime except via setWaterMask() (editor-only, see below), so this
+    // seeding is the only place its instanceColor is ever set.
+    layWaterInstance(c, r, !onLand);
     waterMesh.setColorAt(i, WATER_COLOR);
   }
   dummy.scale.setScalar(1);
   tileMesh.instanceMatrix.needsUpdate = true;
   scene.add(tileMesh);
+  wallMesh.instanceMatrix.needsUpdate = true;
+  scene.add(wallMesh);
   waterMesh.instanceMatrix.needsUpdate = true;
   scene.add(waterMesh);
 
@@ -654,9 +702,36 @@ export function create(canvas, M, opts = {}) {
 
   function dispose() {
     controls.dispose();
+    // Ground meshes are never templated/shared the way structure .glb models
+    // are (see modelTemplates above — those are deliberately skipped by the
+    // per-piece dispose in upsertPiece()'s removal path, since a clone can
+    // still reference the shared template's underlying geometry). These
+    // three are wholly owned by this create() call, so disposing them here
+    // is always safe. Grid-line/border-line geometry and CSS2D label DOM
+    // nodes are a pre-existing, separate gap — not touched here.
+    for (const m of [tileMesh, wallMesh, waterMesh]) { m.geometry.dispose(); m.material.dispose(); }
     cssRenderer.domElement.remove();
     renderer.dispose();
   }
 
-  return { scene, camera, controls, renderer, cssRenderer, update, tileAt, tileAtAny, resize, dispose };
+  /** Editor-only (see editor.html's syncGrowHandles3D()): hide the water
+   *  mesh under an explicit list of gap tiles — a grow handle covers a whole
+   *  candidate sector's worth of water tiles with its own opaque mesh, and
+   *  without this the water rendered underneath showed through/around it,
+   *  reading as "there's already water here" for a slot that's really just
+   *  an empty, growable one. `cells` is `[{c, r}, ...]`; every tile *not*
+   *  listed is restored to its normal onLand-derived visibility, so this is
+   *  safe to call fresh each time the handle set changes rather than needing
+   *  matching show/hide calls. game.html never calls this — a live match's
+   *  land/water layout is fixed, so there's nothing to mask. */
+  function setWaterMask(cells) {
+    const hidden = new Set((cells || []).map(({ c, r }) => c + ',' + r));
+    for (let r = 0; r < gridH; r++) for (let c = 0; c < gridW; c++) {
+      const onLand = !!F.territoryAt(M, c, r);
+      layWaterInstance(c, r, !onLand && !hidden.has(c + ',' + r));
+    }
+    waterMesh.instanceMatrix.needsUpdate = true;
+  }
+
+  return { scene, camera, controls, renderer, cssRenderer, update, tileAt, tileAtAny, resize, dispose, setWaterMask };
 }

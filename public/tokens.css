@@ -7,8 +7,8 @@
    hex value, px font-size, or transition duration.
 
    Naming:  --sl-<group>-<role>[-<modifier>]
-   Groups:  ink | veil | seam | text | signal | status | faction | font | fs
-            lh | tr | space | ctl | dur | ease | z
+   Groups:  ink | veil | seam | text | signal | status | faction | terrain | font
+            fs | lh | tr | space | ctl | dur | ease | z
 
    v1.1 — resolves the gaps raised by the production migration
    (design-system/HANDOFF-GAPS.md). Additive except one value fix:
@@ -20,6 +20,10 @@
      · NEW  --sl-radius-dot    the one sanctioned non-zero radius besides
                                the spinner
      · NEW  --sl-action-free   a free action offered near the selection
+     · NEW  --sl-terrain-sand  the board's coastline/cliff-wall colour (3D
+                               renderer only — see design-system/UI-RULES.md
+                               and docs/RENDERING.md, "the board is out of
+                               scope" for chrome but still owns colour)
    ========================================================================== */
 
 :root {
@@ -111,6 +115,13 @@
   --sl-faction-fourth:      #d9a441;
   --sl-faction-neutral:     #7d8683;
   --sl-faction-neutral-wash:rgba(125, 134, 131, 0.12);
+
+  /* ---- TERRAIN ------------------------------------------------------------
+     Board-only, 3D renderer only (see docs/RENDERING.md). Land's top face and
+     water stay achromatic/status-borrowed (--sl-ink-300, --sl-info) — this is
+     the one new hue the board needed: a coastline/cliff-wall colour so every
+     sector's exposed edge reads as "island," independent of who controls it. */
+  --sl-terrain-sand:        #c9b183;
 
   /* ---- TYPE -------------------------------------------------------------
      Three faces, one job each. Display is always uppercase.

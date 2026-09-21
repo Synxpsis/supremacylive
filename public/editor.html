@@ -21,12 +21,15 @@
 <script type="module">
   import * as THREE from 'three';
   import { CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
-  import { create } from './board-render-3d.js';
-  self.FPRender3D = { create };
+  import { create, LAND_DEPTH } from './board-render-3d.js';
+  self.FPRender3D = { create, LAND_DEPTH };
   // Exposed so the classic <script> below can build its own editor-only grow-
   // handle meshes directly in board-render-3d.js's scene (see syncGrowHandles3D())
   // without board-render-3d.js itself needing to know about grid-growth UI —
-  // that module is shared with game.html, which has no use for it.
+  // that module is shared with game.html, which has no use for it. LAND_DEPTH
+  // is exposed the same way so a grow handle's own depth stays exactly in
+  // sync with a real sector's (see syncGrowHandles3D()) rather than a
+  // hand-maintained duplicate number.
   self.THREE = THREE;
   self.CSS2DObject = CSS2DObject;
   self.dispatchEvent(new Event('fp-render-3d-ready'));
@@ -611,10 +614,16 @@
     }
     _growMeshes = [];
     const gt = growTokens3D();
+    // Full sector depth (self.FPRender3D.LAND_DEPTH — see the import comment
+    // above), not a thin floating plate: previously a fixed 0.05-tall box
+    // sitting just above y=0, so a handle read as a flat marker hovering over
+    // a Z-axis gap instead of the same solid block a placed sector would be.
+    const depth = self.FPRender3D.LAND_DEPTH;
+    const hiddenWaterCells = [];
     for (const g of growHandles()) {
-      const geo = new THREE.BoxGeometry(g.w, 0.05, g.h);
+      const geo = new THREE.BoxGeometry(g.w, depth, g.h);
       const mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: gt.fill, roughness: 0.9 }));
-      mesh.position.set(g.c0 + g.w / 2, 0.025, g.r0 + g.h / 2);
+      mesh.position.set(g.c0 + g.w / 2, -depth / 2, g.r0 + g.h / 2);
       _r3d.scene.add(mesh);
       const edges = new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: gt.edge }));
       edges.position.copy(mesh.position);
@@ -627,7 +636,20 @@
       label.position.set(g.c0 + g.w / 2, 0.12, g.r0 + g.h / 2);
       _r3d.scene.add(label);
       _growMeshes.push({ sc: g.sc, sr: g.sr, mesh, edges, label });
+      // A grow handle's own opaque box already covers this slot's whole
+      // footprint — the water mesh underneath (this slot has no province
+      // yet, so it's a gap tile — see docs/MAP_SYSTEM.md → Sparse boards)
+      // showed through/around it, reading as "there's already water here"
+      // for a slot that's really just an empty, growable one.
+      for (let dr = 0; dr < g.h; dr++) for (let dc = 0; dc < g.w; dc++) {
+        hiddenWaterCells.push({ c: g.c0 + dc, r: g.r0 + dr });
+      }
     }
+    // Out-of-bounds cells (a low-edge handle's c0/r0 can be negative — see
+    // growHandles()) are harmless here: setWaterMask() only ever looks up
+    // tiles inside the current gridW×gridH, so anything outside it is simply
+    // never matched against.
+    _r3d.setWaterMask(hiddenWaterCells);
   }
 
   // Screen px (cv3d-relative) -> the { sc, sr } of the grow handle sitting

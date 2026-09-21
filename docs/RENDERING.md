@@ -33,26 +33,42 @@ pixel offset. **`y = 0` is the land surface** — every overlay (pieces, rings, 
 positions itself relative to that plane, not to any per-tile geometry, which is what let tile depth
 get added later with zero changes to anything drawn above ground level.
 
-### Ground: two `InstancedMesh`es, land and water
+### Ground: three `InstancedMesh`es — land cap, land wall, water
 
 One draw call each, regardless of board size (196 tiles for `duel`, 625 for `grand`) — cost stays flat
 as boards grow.
 
-| | Land | Water |
-|---|---|---|
-| Geometry | `BoxGeometry(1, LAND_DEPTH, 1)` | `BoxGeometry(1, WATER_DEPTH, 1)` |
-| Depth constant | `LAND_DEPTH = 0.26` | `WATER_DEPTH = 0.05` |
-| Top-face world `y` | `0` (box centred at `y = -LAND_DEPTH/2`) | `-WATER_SINK` = `-0.14` (box centred at `y = -WATER_SINK - WATER_DEPTH/2`) |
-| Populated where | `FPMap.territoryAt(M, c, r)` is truthy | `FPMap.territoryAt(M, c, r)` is falsy (a gap tile — see [MAP_SYSTEM.md](MAP_SYSTEM.md) → Sparse boards) |
-| Colour | Per-instance `instanceColor`: `tokens().land` (unclaimed) or the owning seat's faction colour, dimmed while contested (`×0.62`) vs. fully held (`×0.82`) — recomputed every `update()` call from `owners` | Static `tokens().water` (`--sl-info`), seeded once at `create()` time and never touched by `update()` — water never changes ownership |
+**Land is two stacked slabs, not one box (2026-09-20; previously one).** A thin, per-instance-coloured
+"cap" (ownership reads from its top face, still at `y = 0`, unchanged — every overlay above this still
+anchors to that plane) sits over a deeper, flat-coloured "wall." Before this, land was a single
+instance-coloured box, so a sector's exposed side faces — its coastline, the only part of a land tile's
+depth a player/GM actually sees from most camera angles — read as a flat slab in the owner's faction
+hue instead of a coastline; `--sl-ink-300`/the faction colours painted straight down the cliff face. The
+wall is a genuinely separate `InstancedMesh`, not a second material group on the same mesh: Three.js
+applies an `instanceColor` attribute to every face-group of an instance uniformly, with no per-group
+opt-out, so the only way to keep the wall off the instance-colour tint is a mesh that never calls
+`setColorAt()` at all — its material's flat `color` then applies untouched.
 
-Both meshes are sized `gridW × gridH` and populated for **every** cell on the grid — a cell is either
-land or water, decided purely by whether `territoryAt()` resolves it to a province. There is currently
-no third state (no "void"/unrendered cell beyond the two) — a board's `slots × block` rectangle is
-always fully tiled by land-or-water.
+| | Land cap | Land wall | Water |
+|---|---|---|---|
+| Geometry | `BoxGeometry(1, LAND_CAP_DEPTH, 1)` | `BoxGeometry(1, LAND_WALL_DEPTH, 1)` | `BoxGeometry(1, WATER_DEPTH, 1)` |
+| Depth constant | `LAND_CAP_DEPTH = 0.05` | `LAND_WALL_DEPTH = 0.30` | `WATER_DEPTH = LAND_DEPTH - WATER_SINK` (`LAND_DEPTH = LAND_CAP_DEPTH + LAND_WALL_DEPTH = 0.35`) |
+| Top-face world `y` | `0` (box centred at `y = -LAND_CAP_DEPTH/2`) | `-LAND_CAP_DEPTH` (box centred at `y = -LAND_CAP_DEPTH - LAND_WALL_DEPTH/2`) | `-WATER_SINK` = `-0.14` (box centred at `y = -WATER_SINK - WATER_DEPTH/2`) |
+| Bottom-face world `y` | `-LAND_CAP_DEPTH` (flush with the wall's top) | `-LAND_DEPTH` | `-LAND_DEPTH` — **identical to the wall's bottom by construction** (`WATER_DEPTH`'s formula above), so a coastline's water meets the sand wall at its deepest point with no floating gap between them |
+| Populated where | `FPMap.territoryAt(M, c, r)` is truthy | same as cap | `FPMap.territoryAt(M, c, r)` is falsy (a gap tile — see [MAP_SYSTEM.md](MAP_SYSTEM.md) → Sparse boards) |
+| Colour | Per-instance `instanceColor`: `tokens().land` (unclaimed) or the owning seat's faction colour, dimmed while contested (`×0.62`) vs. fully held (`×0.82`) — recomputed every `update()` call from `owners` | Static `tokens().sand` (`--sl-terrain-sand`) — every instance, uncoloured, never touched by `update()` | Static `tokens().water` (`--sl-info`), seeded once at `create()` time and never touched by `update()` — water never changes ownership |
 
-Cells not on land are hidden via a zero instance scale on the land mesh (and vice versa for water) —
-see the seeding loop in `create()` for the exact pattern if extending this.
+All three meshes are sized `gridW × gridH` and populated for **every** cell on the grid — a cell is
+either land or water, decided purely by whether `territoryAt()` resolves it to a province. There is
+currently no third state (no "void"/unrendered cell beyond the two) — a board's `slots × block`
+rectangle is always fully tiled by land-or-water.
+
+Cells not on land are hidden via a zero instance scale on both land meshes (and vice versa for water) —
+see the seeding loop in `create()` for the exact pattern if extending this. **`setWaterMask(cells)`**
+(2026-09-20, part of the returned API surface below) additionally hides water at an explicit
+`[{c, r}, ...]` list regardless of land/water status, recomputing every other tile's visibility from
+`territoryAt()` fresh on every call — editor-only (see [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md) → grow
+handles); `game.html` never calls it.
 
 **Grid lines are drawn per *slot*, land or water alike (2026-09-14; previously land-only).** Each of
 the board's `slots.cols × slots.rows` cells gets its own tile-grid `LineSegments` regardless of whether
@@ -240,7 +256,8 @@ drives):
 | `update(o)` | function | Diffs scene state against the latest sim snapshot — `o` shape below |
 | `tileAt(mx, my)` | function | Screen px (canvas-relative) → `{c, r}` or `null` |
 | `resize()` | function | Recompute renderer/camera sizing after a canvas resize |
-| `dispose()` | function | Tears down controls, the CSS2D DOM layer, and the WebGL context |
+| `dispose()` | function | Tears down controls, the CSS2D DOM layer, the WebGL context, and the three ground meshes' geometry/material (see Ground above) |
+| `setWaterMask(cells)` | function | Editor-only — hide water at an explicit `[{c, r}, ...]` list (see Ground above) |
 
 `update(o)`'s input shape (same fields `game.html`'s `paint3D()` assembles every frame):
 `owners`, `garrisons`, `barracks`, `industry`, `stacks`, `stackAt(st)`, `seatColour(seat)`, `sel`,
