@@ -35,7 +35,7 @@ get added later with zero changes to anything drawn above ground level.
 
 ### Ground: three `InstancedMesh`es — land cap, land wall, water
 
-One draw call each, regardless of board size (196 tiles for `duel`, 625 for `grand`) — cost stays flat
+One draw call each, regardless of board size (100 tiles for `duel`, 625 for `grand`) — cost stays flat
 as boards grow.
 
 **Land is two stacked slabs, not one box (2026-09-20; previously one).** A thin, per-instance-coloured

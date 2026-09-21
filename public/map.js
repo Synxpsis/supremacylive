@@ -38,8 +38,12 @@
 
   /** World bounds of a board's whole slot grid, including plateau thickness. */
   function worldBounds(map) {
-    const gw = map && map.gridW ? map.gridW : 14;
-    const gh = map && map.gridH ? map.gridH : 14;
+    // 10 = DEFAULT_SLOTS (2×2) × DEFAULT_BLOCK (5×5) — the map-not-loaded-yet
+    // fallback tracks the editor's own current default board size, not any
+    // one specific board (duel/solo were 7×7-blocked, hence 14, until
+    // 2026-09-20 — see docs/MAP_SYSTEM.md).
+    const gw = map && map.gridW ? map.gridW : 10;
+    const gh = map && map.gridH ? map.gridH : 10;
     return {
       x0: -gh * (ISO.tw / 2), x1: gw * (ISO.tw / 2),
       y0: 0, y1: (gw + gh) * (ISO.th / 2) + ISO.thick,
@@ -99,7 +103,7 @@
 
   /** Projected extent of a board at scale 1, including plateau thickness. */
   function boardExtent(map, yaw, pitch) {
-    const gw = (map && map.gridW) || 14, gh = (map && map.gridH) || 14;
+    const gw = (map && map.gridW) || 10, gh = (map && map.gridH) || 10; // see worldBounds()'s comment
     const cam = camera({ yaw, pitch, scale: 1 });
     const pts = [[0, 0], [gw, 0], [gw, gh], [0, gh]].map(([c, r]) => cam.project(c, r));
     const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]);
@@ -184,7 +188,7 @@
     const ins = insetsOf(o);
     const cx = ins.left + (W - ins.left - ins.right) / 2;
     const cy = ins.top + (H - ins.top - ins.bottom) / 2;
-    const mid = camera({ yaw, pitch, scale: S }).project((map.gridW || 14) / 2, (map.gridH || 14) / 2);
+    const mid = camera({ yaw, pitch, scale: S }).project((map.gridW || 10) / 2, (map.gridH || 10) / 2); // see worldBounds()'s comment
     const cam = camera({
       yaw, pitch, scale: S,
       ox: cx + (o.panX || 0) - mid[0],
@@ -267,7 +271,7 @@
     duel: {
       id: 'duel', name: 'Duel', seats: 2,
       note: 'Symmetric 1v1. Homes diagonally opposite, two neutral provinces contested.',
-      slots: { cols: 2, rows: 2 }, block: { w: 7, h: 7 },
+      slots: { cols: 2, rows: 2 }, block: { w: 5, h: 5 },
       starts: [{ seat: 0, territory: 'verrand' }, { seat: 1, territory: 'dunmar' }],
       // Province `name` is blank by default (2026-09-14) — same as a
       // sector the editor creates fresh — so a GM names their own world
@@ -285,15 +289,26 @@
       // map.js's capitalOf()) — assigned in mirrored pairs (Halbrook/
       // Coilhaven, Ravensfeld/Fauconde) so symmetry() sees a match on both
       // sides, same as wealth/garrison/seat already had to.
+      //
+      // lc/lr rescaled 2026-09-20 when block shrank from 7×7 to 5×5 (every
+      // original value — 1, 2, 4, 5 — was a "near center" (1/2) or "near far
+      // edge" (4/5) offset in a 0-6 local grid; a 0-4 grid only has room for
+      // one such ring, so every city lands on the inner corner nearest its
+      // old position: 1,2 -> 1; 4,5 -> 3). Chosen over clearing the board and
+      // re-placing by hand since every mirrored pair still lands on an exact
+      // mirrorLocal() match (verified: symmetry() still passes) — a GM can
+      // freely drag any city to a different tile in the editor afterward,
+      // this just keeps the shipped board playable without that being a
+      // required first step. See docs/MAP_SYSTEM.md.
       cities: [
-        { id: 'halbrook', name: 'Halbrook', prov: 'verrand', lc: 1, lr: 2, wealth: 3.0, seat: 0, capital: true },
-        { id: 'stenn', name: 'Stenn', prov: 'verrand', lc: 4, lr: 5, wealth: 2.2, seat: 0 },
-        { id: 'ravensfeld', name: 'Ravensfeld', prov: 'kolstig', lc: 2, lr: 1, wealth: 3.6, garrison: 60, capital: true },
-        { id: 'ott', name: 'Ott', prov: 'kolstig', lc: 5, lr: 4, wealth: 2.4, garrison: 34 },
-        { id: 'lisiel', name: 'Lisiel', prov: 'aumere', lc: 1, lr: 2, wealth: 2.4, garrison: 34 },
-        { id: 'fauconde', name: 'Fauconde', prov: 'aumere', lc: 4, lr: 5, wealth: 3.6, garrison: 60, capital: true },
-        { id: 'brackwater', name: 'Brackwater', prov: 'dunmar', lc: 2, lr: 1, wealth: 2.2, seat: 1 },
-        { id: 'coilhaven', name: 'Coilhaven', prov: 'dunmar', lc: 5, lr: 4, wealth: 3.0, seat: 1, capital: true },
+        { id: 'halbrook', name: 'Halbrook', prov: 'verrand', lc: 1, lr: 1, wealth: 3.0, seat: 0, capital: true },
+        { id: 'stenn', name: 'Stenn', prov: 'verrand', lc: 3, lr: 3, wealth: 2.2, seat: 0 },
+        { id: 'ravensfeld', name: 'Ravensfeld', prov: 'kolstig', lc: 1, lr: 1, wealth: 3.6, garrison: 60, capital: true },
+        { id: 'ott', name: 'Ott', prov: 'kolstig', lc: 3, lr: 3, wealth: 2.4, garrison: 34 },
+        { id: 'lisiel', name: 'Lisiel', prov: 'aumere', lc: 1, lr: 1, wealth: 2.4, garrison: 34 },
+        { id: 'fauconde', name: 'Fauconde', prov: 'aumere', lc: 3, lr: 3, wealth: 3.6, garrison: 60, capital: true },
+        { id: 'brackwater', name: 'Brackwater', prov: 'dunmar', lc: 1, lr: 1, wealth: 2.2, seat: 1 },
+        { id: 'coilhaven', name: 'Coilhaven', prov: 'dunmar', lc: 3, lr: 3, wealth: 3.0, seat: 1, capital: true },
       ],
     },
 
@@ -304,7 +319,7 @@
     solo: {
       id: 'solo', name: 'Solo', seats: 1,
       note: 'Original campaign board. Asymmetric by design — Dunmar is the endgame.',
-      slots: { cols: 2, rows: 2 }, block: { w: 7, h: 7 },
+      slots: { cols: 2, rows: 2 }, block: { w: 5, h: 5 },
       starts: [{ seat: 0, territory: 'verrand' }],
       // See duel's own comment above — same reasoning, applied here too.
       provinces: [
@@ -315,15 +330,20 @@
       ],
       // No symmetry constraint here (solo isn't symmetric by design) — each
       // province's higher-wealth city is picked as its capital.
+      //
+      // lc/lr rescaled 2026-09-20 alongside duel's — see its own comment
+      // above for the 1,2->1 / 4,5->3 rule; no mirror constraint to preserve
+      // here since solo was never symmetric, but the same rule keeps every
+      // city's relative "near this corner vs. that one" position intact.
       cities: [
-        { id: 'halbrook', name: 'Halbrook', prov: 'verrand', lc: 1, lr: 2, wealth: 3.0, seat: 0, capital: true },
-        { id: 'stenn', name: 'Stenn', prov: 'verrand', lc: 4, lr: 5, wealth: 2.2, seat: 0 },
-        { id: 'ott', name: 'Ott', prov: 'kolstig', lc: 5, lr: 4, wealth: 2.4, garrison: 34 },
-        { id: 'ravensfeld', name: 'Ravensfeld', prov: 'kolstig', lc: 2, lr: 1, wealth: 3.6, garrison: 60, capital: true },
-        { id: 'lisiel', name: 'Lisiel', prov: 'aumere', lc: 4, lr: 1, wealth: 2.8, garrison: 42 },
-        { id: 'fauconde', name: 'Fauconde', prov: 'aumere', lc: 1, lr: 4, wealth: 3.2, garrison: 52, capital: true },
-        { id: 'brackwater', name: 'Brackwater', prov: 'dunmar', lc: 2, lr: 2, wealth: 2.6, garrison: 55 },
-        { id: 'coilhaven', name: 'Coilhaven', prov: 'dunmar', lc: 5, lr: 5, wealth: 4.0, garrison: 88, capital: true },
+        { id: 'halbrook', name: 'Halbrook', prov: 'verrand', lc: 1, lr: 1, wealth: 3.0, seat: 0, capital: true },
+        { id: 'stenn', name: 'Stenn', prov: 'verrand', lc: 3, lr: 3, wealth: 2.2, seat: 0 },
+        { id: 'ott', name: 'Ott', prov: 'kolstig', lc: 3, lr: 3, wealth: 2.4, garrison: 34 },
+        { id: 'ravensfeld', name: 'Ravensfeld', prov: 'kolstig', lc: 1, lr: 1, wealth: 3.6, garrison: 60, capital: true },
+        { id: 'lisiel', name: 'Lisiel', prov: 'aumere', lc: 3, lr: 1, wealth: 2.8, garrison: 42 },
+        { id: 'fauconde', name: 'Fauconde', prov: 'aumere', lc: 1, lr: 3, wealth: 3.2, garrison: 52, capital: true },
+        { id: 'brackwater', name: 'Brackwater', prov: 'dunmar', lc: 1, lr: 1, wealth: 2.6, garrison: 55 },
+        { id: 'coilhaven', name: 'Coilhaven', prov: 'dunmar', lc: 3, lr: 3, wealth: 4.0, garrison: 88, capital: true },
       ],
     },
   };

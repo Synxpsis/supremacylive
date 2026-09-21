@@ -39,8 +39,8 @@ allow.
 
 | Key | Territories | Tiles | Status |
 |---|---|---|---|
-| `duel` | 4 | 196 | **Live** — the only board used by ranked 1v1 and the AI test match. Live-editable via `editor.supremacy.live`, backed by D1. |
-| `solo` | 4 | 196 | Single-player campaign board, asymmetric by design. Not routed to by any live UI entry point; reachable via `?board=solo` if the AI test-match link is edited, or direct URL. Serves as the AI's tuning reference. |
+| `duel` | 4 | 100 | **Live** — the only board used by ranked 1v1 and the AI test match. Live-editable via `editor.supremacy.live`, backed by D1. |
+| `solo` | 4 | 100 | Single-player campaign board, asymmetric by design. Not routed to by any live UI entry point; reachable via `?board=solo` if the AI test-match link is edited, or direct URL. Serves as the AI's tuning reference. |
 | `grand` | 25 | 625 | **Shelved as of 2026-09-12** — fully defined and playable via explicit `?board=grand`, but no default anywhere points at it anymore. See [KNOWN_ISSUES.md](KNOWN_ISSUES.md). |
 
 Board authoring format, symmetry rules, and the live-editor pipeline are in
