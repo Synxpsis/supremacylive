@@ -182,6 +182,15 @@ as of 2026-09-12 (`ba103ce`, `a4c2834`); the rest are still open.
   up negative-going labels instead ("-A", "-1", …) rather than the whole board relabelling. Purely a
   display concern — `labelOrigin` is never read by `build()` and never affects tile addressing,
   ownership, or anything gameplay-relevant. ✅ **Done, 2026-09-20.**
+- **Fix: the 3D grow handle was a thin floating plate, and water rendered underneath it.** Found
+  alongside the live-match coastline pass below (see [RENDERING.md](RENDERING.md) → Ground). The
+  handle's box was a fixed `0.05` tall sitting just above `y = 0` — nowhere near a real sector's total
+  depth — so it read as a flat marker hovering over open space rather than the same solid block a
+  placed sector would be, and the gap tile's water mesh underneath it (a grow handle only ever sits on
+  an empty/water slot) showed through and around it. `board-render-3d.js` now exports its `LAND_DEPTH`
+  constant so `syncGrowHandles3D()`'s box always matches a real sector's depth exactly rather than a
+  hand-maintained duplicate number, and the module's new `setWaterMask()` hides water under every tile
+  a grow handle covers. ✅ **Done, 2026-09-20.**
 
 ## What it can't do — the actual gap list
 
