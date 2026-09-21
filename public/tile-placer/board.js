@@ -1,8 +1,13 @@
-// board.js — Board View, rebuilt against the REAL `duel` board (see
+// board.js — Board View, rendered against the REAL `duel` board (see
 // docs/MAP_SYSTEM.md) instead of a generic hand-painted grid, so a prop's
-// placement previews against the actual territory shapes, roads, and
-// capitals/cities board-render-3d.js draws in a real match — not an
-// approximation of them.
+// placement previews against the actual territory shapes and capitals/
+// cities board-render-3d.js draws in a real match — not an approximation
+// of them. Deliberately no visual distinction for road tiles: the real
+// renderer doesn't draw one either (roads are pathfinding-only data, see
+// docs/MECHANICS.md), and this tool's whole point is matching what a real
+// match actually looks like. The active-tile label below still says
+// "road" when relevant (real data, just not rendered) since knowing that
+// while placing a prop is still useful.
 //
 // Static `FPMap.MAPS.duel` only, not the live D1-backed copy — this is a
 // local dev-only page with no session, so it can't call the authenticated
@@ -12,16 +17,31 @@
 // fractions of it, same convention as Tile View — this view just adds
 // *which* absolute board tile (tileX/tileZ = the real board's own c/r) each
 // object sits on. See exportLayout() below for the exact JSON shape.
+//
+// 2026-09-21: the ground/territory/city rendering below is built directly
+// against board-render-3d.js's exposed scene/camera/controls (the same
+// pattern editor.html's own grow handles already use — see
+// docs/RENDERING.md and docs/EDITOR_UPGRADE.md) instead of a second,
+// hand-rolled copy of land/water/territory-line/city-marker drawing. This
+// module owns nothing in board-render-3d.js itself and changes no behaviour
+// for its other two callers (editor.html, game.html). What's genuinely kept
+// local to this tool rather than shared: the PBR lighting (board-render-
+// 3d.js uses flat, minimal gameplay lighting; this tool's whole job is
+// judging how a .glb's real materials look, which needs richer lighting
+// than in-match flatness provides), the manual per-tile colour override (a
+// debug aid with no equivalent in the real game — see setTileOwner()'s own
+// comment for the one real behaviour difference this causes), and
+// everything below "Placed objects" (object placement, gizmo, save/load,
+// export) — this tool's actual reason to exist, orthogonal to how the
+// ground under it gets drawn.
 
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { create } from '../board-render-3d.js';
 import { OBJECT_TYPES, onObjectTypeRegistered } from './objects.js';
-import { makeGridTexture } from './gridTexture.js';
 import { getLayoutObjects } from './main.js';
 import { exportCustomTypes, importCustomTypes } from './glb.js';
 import { createGizmo, makeRemover, trackClicks, computeNDC } from './selection.js';
-import { disposeSubtree, disposeGeometryOnly } from './dispose.js';
 
 // Set by the classic <script src="../map.js"> tag in tile-placer.html —
 // same self.FPMap access pattern board-render-3d.js already uses, and safe
@@ -31,241 +51,209 @@ const F = self.FPMap;
 const M = F.build(F.MAPS.duel);
 const { gridW, gridH } = M;
 
-// ---------------------------------------------------------------------
-// Scene / renderer / camera — dark, to match the in-game board look.
-// ---------------------------------------------------------------------
-
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x0b0c0a);
-scene.fog = new THREE.Fog(0x0b0c0a, 20, 90);
-
-const camera = new THREE.PerspectiveCamera(42, 1, 0.05, 150);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-renderer.outputColorSpace = THREE.SRGBColorSpace;
-renderer.toneMapping = THREE.ACESFilmicToneMapping;
-renderer.toneMappingExposure = 1.0;
-document.getElementById('board-viewport').appendChild(renderer.domElement);
-
-const pmrem = new THREE.PMREMGenerator(renderer);
-scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-
-const orbit = new OrbitControls(camera, renderer.domElement);
-orbit.enableDamping = true;
-orbit.minDistance = 1;
-orbit.maxDistance = 70;
-orbit.maxPolarAngle = Math.PI * 0.49;
-
-scene.add(new THREE.HemisphereLight(0x9fb2c8, 0x1a1a16, 0.55));
-const key = new THREE.DirectionalLight(0xffffff, 2.0);
-key.position.set(6, 9, 5);
-key.castShadow = true;
-key.shadow.mapSize.set(2048, 2048);
-key.shadow.bias = -0.0015;
-const shadowSpan = Math.max(gridW, gridH) / 2 + 2;
-key.shadow.camera.left = -shadowSpan;
-key.shadow.camera.right = shadowSpan;
-key.shadow.camera.top = shadowSpan;
-key.shadow.camera.bottom = -shadowSpan;
-key.shadow.camera.far = 60;
-key.shadow.camera.updateProjectionMatrix();
-scene.add(key);
-const fill = new THREE.DirectionalLight(0x7fa0c0, 0.5);
-fill.position.set(-6, 4, -4);
-scene.add(fill);
+// board-render-3d.js's own tile-space convention: tile (c, r)'s centre
+// sits at world (c + 0.5, 0, r + 0.5), y = 0 is the land surface — replaces
+// this file's old centred-on-origin convention everywhere below. Every
+// object position this tool saves is relative to a tile's origin (see
+// exportLayout()), so switching conventions doesn't change the saved JSON
+// shape at all, only where "relative to" actually points in world space.
+function tileWorldX(c) { return c + 0.5; }
+function tileWorldZ(r) { return r + 0.5; }
 
 // ---------------------------------------------------------------------
-// Tile materials — one per owner (seat 0/1/neutral) and a lightened "road"
-// variant of each, plus a separate water treatment for any gap tile (see
-// docs/MAP_SYSTEM.md → Sparse boards and water). Real seats are 0/1/null;
-// this tool keeps the existing blue/red/neutral vocabulary its swatches
-// already use — 0 → blue, 1 → red, null → neutral — same mapping
-// board-render-3d.js makes via seatColour().
+// The shared 3D renderer, and everything built directly against its scene
+// — deferred until this tab is first shown (see ensure3D() below), not
+// built at module load. #board-tab starts `display: none` (see
+// tile-placer.html), so a canvas created here would read a 0×0
+// clientWidth/Height at create() time; editor.html's own ensure3D() exists
+// for the same reason (S.built not ready yet there; a hidden tab here).
 // ---------------------------------------------------------------------
 
-const SEAT_KEY = { 0: 'blue', 1: 'red' };
-const TILE_COLORS = { neutral: '#141614', blue: '#2f6fb0', red: '#b0503a' };
-const WATER_COLOR = '#0d1b22';
+let r3d = null;
+let highlight = null;
+let objectsLayer = null;
+let gizmo = null;
+let raycaster = null;
+let ndc = null;
+let removeEntry = null;
+let clearObjects = null;
 
-function lighten(hex, amt) {
-  const h = hex.replace('#', '');
-  const n = parseInt(h, 16);
-  const c = [n >> 16 & 255, n >> 8 & 255, n & 255].map((v) => Math.min(255, Math.round(v + (255 - v) * amt)));
-  return '#' + c.map((v) => v.toString(16).padStart(2, '0')).join('');
+function ensure3D() {
+  if (r3d) return;
+
+  const viewportEl = document.getElementById('board-viewport');
+  const canvas = document.createElement('canvas');
+  // board-render-3d.js's own resize() calls renderer.setSize(w, h, false) —
+  // the trailing `false` skips setting the canvas's CSS size, since its
+  // other two callers (editor.html/game.html) already size their <canvas>
+  // via CSS. This one is created at runtime with no such rule, so it's set
+  // directly.
+  canvas.style.width = '100%';
+  canvas.style.height = '100%';
+  viewportEl.appendChild(canvas);
+
+  // selectionLock: false — this tool never calls update() with a truthy
+  // `sel`/`armed` (it has no concept of "the currently selected game
+  // piece," only its own placed props, selected via a separate raycast
+  // below), so the lock would never actually engage either way; passed
+  // explicitly to match editor.html/game.html's own reasoning rather than
+  // relying on the default.
+  r3d = create(canvas, M, { selectionLock: false });
+
+  // Strip the shared renderer's flat gameplay lighting (a plain ambient
+  // light plus one directional "sun," matching what a player sees
+  // mid-match — see board-render-3d.js's own lighting comment) and replace
+  // it with PBR image-based lighting instead — see this file's header
+  // comment for why that stays this tool's own rather than shared.
+  for (const child of [...r3d.scene.children]) {
+    if (child.isLight) r3d.scene.remove(child);
+  }
+  r3d.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  r3d.renderer.outputColorSpace = THREE.SRGBColorSpace;
+  r3d.renderer.toneMappingExposure = 1.0;
+  const pmrem = new THREE.PMREMGenerator(r3d.renderer);
+  r3d.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  r3d.scene.add(new THREE.HemisphereLight(0x9fb2c8, 0x1a1a16, 0.55));
+  const sunKey = new THREE.DirectionalLight(0xffffff, 2.0);
+  sunKey.position.set(gridW * 0.4, Math.max(gridW, gridH) * 0.9, -gridH * 0.3);
+  sunKey.castShadow = true;
+  sunKey.shadow.mapSize.set(2048, 2048);
+  sunKey.shadow.bias = -0.0015;
+  const shadowSpan = Math.max(gridW, gridH) / 2 + 2;
+  sunKey.shadow.camera.left = -shadowSpan;
+  sunKey.shadow.camera.right = shadowSpan;
+  sunKey.shadow.camera.top = shadowSpan;
+  sunKey.shadow.camera.bottom = -shadowSpan;
+  sunKey.shadow.camera.far = 60;
+  sunKey.shadow.camera.updateProjectionMatrix();
+  r3d.scene.add(sunKey);
+  const fill = new THREE.DirectionalLight(0x7fa0c0, 0.5);
+  fill.position.set(-6, 4, -4);
+  r3d.scene.add(fill);
+
+  const highlightMat = new THREE.LineBasicMaterial({ color: 0xffffff });
+  highlight = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, 1)), highlightMat);
+  highlight.rotation.x = -Math.PI / 2;
+  highlight.position.y = 0.006;
+  highlight.visible = false;
+  r3d.scene.add(highlight);
+
+  objectsLayer = new THREE.Group();
+  r3d.scene.add(objectsLayer);
+
+  // Built lazily too (not at module scope) — objectsLayer doesn't exist
+  // until just above, and makeRemover() closes over whatever value it's
+  // handed at call time, not a live reference to the outer variable.
+  ({ removeEntry, clearAll: clearObjects } = makeRemover({
+    placed, objectsLayer, getSelected: () => selected, selectObject, refreshObjectList,
+  }));
+
+  gizmo = createGizmo(r3d.camera, r3d.renderer.domElement, r3d.scene, r3d.controls, () => updatePanelFromSelection());
+
+  raycaster = new THREE.Raycaster();
+  ndc = new THREE.Vector2();
+
+  trackClicks(r3d.renderer.domElement, gizmo, (e) => {
+    computeNDC(e, r3d.renderer.domElement, ndc);
+    raycaster.setFromCamera(ndc, r3d.camera);
+
+    // objects take priority over tiles
+    const meshes = [];
+    for (const entry of placed) {
+      entry.root.traverse((o) => {
+        if (o.isMesh) meshes.push(o);
+      });
+    }
+    const objectHits = raycaster.intersectObjects(meshes, false);
+    if (objectHits.length > 0) {
+      let obj = objectHits[0].object;
+      while (obj && !obj.userData.placeable) obj = obj.parent;
+      const entry = placed.find((p) => p.root === obj);
+      selectObject(entry || null);
+      return;
+    }
+
+    const rect = r3d.renderer.domElement.getBoundingClientRect();
+    const t = r3d.tileAtAny(e.clientX - rect.left, e.clientY - rect.top);
+    if (t) {
+      selectObject(null);
+      setActiveTile({ x: t.c, z: t.r, isWater: !F.territoryAt(M, t.c, t.r) });
+      return;
+    }
+
+    selectObject(null);
+  });
+
+  buildBoard();
 }
 
-const tileMaterials = {}; // ownerKey -> { flat, road }
-for (const [ownerKey, hex] of Object.entries(TILE_COLORS)) {
-  tileMaterials[ownerKey] = {
-    flat: new THREE.MeshStandardMaterial({
-      map: makeGridTexture(hex, { borderAlpha: 0.4, divisions: 1, crosshair: false }),
-      roughness: 0.92,
-    }),
-    // Roads read as a lighter strip in the live 3D renderer; this tool has
-    // no per-tile road overlay geometry, so the road tiles' own base tile
-    // gets lightened instead — enough to tell "this runs along a road"
-    // apart from plain open ground while placing a prop near one.
-    road: new THREE.MeshStandardMaterial({
-      map: makeGridTexture(lighten(hex, 0.22), { borderAlpha: 0.4, divisions: 1, crosshair: false }),
-      roughness: 0.92,
-    }),
-  };
-}
-const waterMaterial = new THREE.MeshStandardMaterial({
-  map: makeGridTexture(WATER_COLOR, { borderAlpha: 0.4, divisions: 1, crosshair: false }),
-  roughness: 0.4,
-  metalness: 0.1,
-});
-
-const highlightMat = new THREE.LineBasicMaterial({ color: 0xffffff });
-
 // ---------------------------------------------------------------------
-// Board — one 1x1 tile per cell of the real board's gridW x gridH, coloured
-// by real territory/road/water/starting-ownership data instead of painted
-// by hand.
+// Ownership — merges the board's real starting owners (seedOwners(), same
+// as a real match's kickoff) with this tool's own manual per-tile colour
+// overrides, then hands the result to r3d.update() so land colour, the
+// territory-border colour, and city/capital piece colour all read from one
+// source of truth instead of a second hand-maintained copy.
+//
+// One real behaviour difference from the old hand-rolled renderer: an
+// override on a single tile *inside an already-owned territory* (verrand/
+// dunmar) won't visibly change anything, because board-render-3d.js colours
+// a whole territory from its centre tile's owner once that territory is
+// owned at all (territoryOwner() — see docs/GLOSSARY.md), the same as a
+// real match. Overriding the centre tile itself (or checking "paint whole
+// territory" below, which does exactly that) still recolours the whole
+// territory; a single non-centre override only shows on a currently-
+// neutral territory (kolstig/aumere). Arguably more correct for a tool
+// whose job is previewing against *real* geometry, not an idealized one —
+// flagged here since it's a visible change from before.
 // ---------------------------------------------------------------------
 
-const tiles = new Map(); // "x_z" -> { x, z, mesh, isWater, ownerOverride }
-const boardGroup = new THREE.Group();
-scene.add(boardGroup);
-const landmarksGroup = new THREE.Group(); // capital/city reference markers
-scene.add(landmarksGroup);
+const OWNER_TO_SEAT = { blue: 0, red: 1, neutral: null };
+const SEAT_TO_OWNER = { 0: 'blue', 1: 'red' };
 
-let activeTile = null; // { x, z, ... } — where new objects spawn
-const highlight = new THREE.LineSegments(
-  new THREE.EdgesGeometry(new THREE.PlaneGeometry(1, 1)),
-  highlightMat
-);
-highlight.rotation.x = -Math.PI / 2;
-highlight.position.y = 0.006;
-highlight.visible = false;
-scene.add(highlight);
-
-function tileWorldX(x) {
-  return x - (gridW - 1) / 2;
-}
-function tileWorldZ(z) {
-  return z - (gridH - 1) / 2;
-}
+let startOwners = {}; // tileKey -> seat, from FPMap.seedOwners(M)
+const overrides = {}; // tileKey -> ownerKey ('blue'/'red'/'neutral'), only for explicitly painted tiles
 
 function tileOwnerKey(tile) {
-  if (tile.ownerOverride !== null) return tile.ownerOverride;
-  const seat = startOwners[F.tileKey(tile.x, tile.z)];
-  return seat === undefined || seat === null ? 'neutral' : SEAT_KEY[seat];
+  const tk = F.tileKey(tile.x, tile.z);
+  if (tk in overrides) return overrides[tk];
+  const seat = startOwners[tk];
+  return seat === undefined || seat === null ? 'neutral' : SEAT_TO_OWNER[seat];
 }
 
-function materialFor(tile) {
-  if (tile.isWater) return waterMaterial;
-  const mats = tileMaterials[tileOwnerKey(tile)];
-  return F.isRoad(M, tile.x, tile.z) ? mats.road : mats.flat;
+function refreshBoardVisual() {
+  const owners = { ...startOwners };
+  for (const [tk, ownerKey] of Object.entries(overrides)) owners[tk] = OWNER_TO_SEAT[ownerKey];
+  r3d.update({ owners, cities: M.cities });
 }
 
-// Real territory outlines (one rectangle per province, from the actual
-// board definition) in place of the old fixed-7-tile "quadrant" grid lines
-// — generalizes correctly even if a future board's territories aren't all
-// the same size.
-const territoryLineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 });
-const territoryLines = new THREE.Group();
-scene.add(territoryLines);
-
-function buildTerritoryLines() {
-  // Geometry only — territoryLineMat is one material shared by every
-  // segment, module-level, not owned by any single rebuild.
-  disposeGeometryOnly(territoryLines);
-  territoryLines.clear();
-  const y = 0.004;
-  for (const p of M.provinces) {
-    const x0 = tileWorldX(p.c0) - 0.5, x1 = tileWorldX(p.c0 + p.w - 1) + 0.5;
-    const z0 = tileWorldZ(p.r0) - 0.5, z1 = tileWorldZ(p.r0 + p.h - 1) + 0.5;
-    const pts = [
-      new THREE.Vector3(x0, y, z0), new THREE.Vector3(x1, y, z0),
-      new THREE.Vector3(x1, y, z0), new THREE.Vector3(x1, y, z1),
-      new THREE.Vector3(x1, y, z1), new THREE.Vector3(x0, y, z1),
-      new THREE.Vector3(x0, y, z1), new THREE.Vector3(x0, y, z0),
-    ];
-    territoryLines.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), territoryLineMat));
-  }
+function setTileOwner(tile, ownerKey) {
+  overrides[F.tileKey(tile.x, tile.z)] = ownerKey;
+  refreshBoardVisual();
+  updateColorButtons();
 }
 
-// Small reference markers at every city tile — a taller cone for a
-// territory's capital, a shorter box for a plain city — coloured by that
-// city's own starting seat. Not part of `placed`: these describe the
-// board itself, not something you can select/move/delete here.
-function buildLandmarks() {
-  // Full dispose, not geometry-only — unlike the tile/territory-line
-  // materials, each landmark's MeshStandardMaterial is built fresh per
-  // city on every call (colour depends on that city's own starting seat),
-  // not shared with anything still in the scene.
-  disposeSubtree(landmarksGroup);
-  landmarksGroup.clear();
-  for (const city of M.cities) {
-    const p = M.province(city.prov);
-    if (!p) continue;
-    const c = p.c0 + city.lc, r = p.r0 + city.lr;
-    const ownerKey = city.seat === null || city.seat === undefined ? 'neutral' : SEAT_KEY[city.seat];
-    const color = new THREE.Color(TILE_COLORS[ownerKey]);
-    let mesh;
-    if (city.capital) {
-      mesh = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.5, 12), new THREE.MeshStandardMaterial({ color, roughness: 0.5 }));
-      mesh.position.y = 0.27;
-    } else {
-      mesh = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.22, 0.28), new THREE.MeshStandardMaterial({ color, roughness: 0.6 }));
-      mesh.position.y = 0.13;
-    }
-    mesh.position.x = tileWorldX(c);
-    mesh.position.z = tileWorldZ(r);
-    mesh.castShadow = true;
-    landmarksGroup.add(mesh);
-  }
+// ---------------------------------------------------------------------
+// Camera framing — board-render-3d.js's own default (a fixed relative
+// offset from the board's centre) is reasonable but tuned for a live
+// match's HUD, not this tool's bare viewport; kept close to this file's
+// previous framing instead, just re-centred on the new tile-space origin.
+// ---------------------------------------------------------------------
+
+function fitCameraToBoard() {
+  const span = Math.max(gridW, gridH);
+  const dist = span * 2.3 + 1.5;
+  const cx = gridW / 2, cz = gridH / 2;
+  r3d.camera.position.set(cx + dist * 0.62, dist * 0.6, cz + dist * 0.72);
+  r3d.controls.target.set(cx, 0.15, cz);
+  r3d.controls.update();
 }
 
-let startOwners = {}; // tileKey -> seat, from FPMap.seedOwners(M) — recomputed on buildBoard()
-
-function buildBoard() {
-  // Geometry only — every tile shares one of a handful of cached
-  // tileMaterials/waterMaterial (see above); those live for the whole
-  // session and aren't owned by any single build. Each tile's own
-  // PlaneGeometry is fresh per call, though, and would otherwise leak on
-  // every "Reset board" click.
-  disposeGeometryOnly(boardGroup);
-  boardGroup.clear();
-  tiles.clear();
-  startOwners = F.seedOwners(M);
-
-  for (let r = 0; r < gridH; r++) {
-    for (let c = 0; c < gridW; c++) {
-      const isWater = !F.territoryAt(M, c, r);
-      const tile = { x: c, z: r, mesh: null, isWater, ownerOverride: null };
-      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), materialFor(tile));
-      mesh.rotation.x = -Math.PI / 2;
-      mesh.position.set(tileWorldX(c), 0, tileWorldZ(r));
-      mesh.receiveShadow = true;
-      mesh.userData.isTile = true;
-      mesh.userData.tileX = c;
-      mesh.userData.tileZ = r;
-      tile.mesh = mesh;
-      boardGroup.add(mesh);
-      tiles.set(`${c}_${r}`, tile);
-    }
-  }
-
-  buildTerritoryLines();
-  buildLandmarks();
-
-  const boardInfo = document.getElementById('board-info');
-  boardInfo.textContent = `${F.MAPS.duel.name || 'duel'} — ${gridW}×${gridH} tiles, ${M.provinces.length} territories, ${M.cities.length} cities`;
-
-  setActiveTile(tiles.get(`${Math.floor(gridW / 2)}_${Math.floor(gridH / 2)}`) || null);
-  fitCameraToBoard();
-}
+let activeTile = null; // { x, z, isWater } — where new objects spawn
 
 function setActiveTile(tile) {
   activeTile = tile;
   if (tile) {
-    highlight.position.set(tile.mesh.position.x, 0.006, tile.mesh.position.z);
+    highlight.position.set(tileWorldX(tile.x), 0.006, tileWorldZ(tile.z));
     highlight.visible = true;
     const kind = tile.isWater ? 'water' : `land, ${tileOwnerKey(tile)}${F.isRoad(M, tile.x, tile.z) ? ', road' : ''}`;
     activeTileLabel.textContent = `Active tile: (${tile.x}, ${tile.z}) — ${kind}`;
@@ -276,18 +264,17 @@ function setActiveTile(tile) {
   updateColorButtons();
 }
 
-function setTileOwner(tile, ownerKey) {
-  tile.ownerOverride = ownerKey;
-  tile.mesh.material = materialFor(tile);
-  updateColorButtons();
-}
+function buildBoard() {
+  startOwners = F.seedOwners(M);
+  for (const k of Object.keys(overrides)) delete overrides[k];
+  refreshBoardVisual();
 
-function fitCameraToBoard() {
-  const span = Math.max(gridW, gridH);
-  const dist = span * 2.3 + 1.5;
-  camera.position.set(dist * 0.62, dist * 0.6, dist * 0.72);
-  orbit.target.set(0, 0.15, 0);
-  orbit.update();
+  const boardInfo = document.getElementById('board-info');
+  boardInfo.textContent = `${F.MAPS.duel.name || 'duel'} — ${gridW}×${gridH} tiles, ${M.provinces.length} territories, ${M.cities.length} cities`;
+
+  const cx = Math.floor(gridW / 2), cz = Math.floor(gridH / 2);
+  setActiveTile({ x: cx, z: cz, isWater: !F.territoryAt(M, cx, cz) });
+  fitCameraToBoard();
 }
 
 // ---------------------------------------------------------------------
@@ -297,9 +284,6 @@ function fitCameraToBoard() {
 const placed = []; // { id, type, root, tileX, tileZ }
 let nextId = 1;
 let selected = null;
-
-const objectsLayer = new THREE.Group();
-scene.add(objectsLayer);
 
 function spawn(type, tile, state = null) {
   const def = OBJECT_TYPES[type];
@@ -345,8 +329,6 @@ function spawn(type, tile, state = null) {
 // Selection + gizmo
 // ---------------------------------------------------------------------
 
-const gizmo = createGizmo(camera, renderer.domElement, scene, orbit, () => updatePanelFromSelection());
-
 function selectObject(entry) {
   selected = entry;
   if (entry) {
@@ -357,44 +339,6 @@ function selectObject(entry) {
   updatePanelFromSelection();
   refreshObjectList();
 }
-
-const { removeEntry, clearAll: clearObjects } = makeRemover({
-  placed, objectsLayer, getSelected: () => selected, selectObject, refreshObjectList,
-});
-
-const raycaster = new THREE.Raycaster();
-const ndc = new THREE.Vector2();
-
-trackClicks(renderer.domElement, gizmo, (e) => {
-  computeNDC(e, renderer.domElement, ndc);
-  raycaster.setFromCamera(ndc, camera);
-
-  // objects take priority over tiles
-  const meshes = [];
-  for (const entry of placed) {
-    entry.root.traverse((o) => {
-      if (o.isMesh) meshes.push(o);
-    });
-  }
-  const objectHits = raycaster.intersectObjects(meshes, false);
-  if (objectHits.length > 0) {
-    let obj = objectHits[0].object;
-    while (obj && !obj.userData.placeable) obj = obj.parent;
-    const entry = placed.find((p) => p.root === obj);
-    selectObject(entry || null);
-    return;
-  }
-
-  const tileHits = raycaster.intersectObjects(boardGroup.children, false);
-  if (tileHits.length > 0) {
-    const t = tileHits[0].object.userData;
-    selectObject(null);
-    setActiveTile(tiles.get(`${t.tileX}_${t.tileZ}`));
-    return;
-  }
-
-  selectObject(null);
-});
 
 // ---------------------------------------------------------------------
 // "R" to fit the whole board in view (matches the in-game hint) — but
@@ -468,7 +412,7 @@ colorButtons.forEach((btn) => {
     if (!activeTile || activeTile.isWater) return;
     if (paintTerritoryCheckbox.checked) {
       const p = F.territoryAt(M, activeTile.x, activeTile.z);
-      for (const [c, r] of F.tilesOf(M, p)) setTileOwner(tiles.get(`${c}_${r}`), btn.dataset.owner);
+      for (const [c, r] of F.tilesOf(M, p)) setTileOwner({ x: c, z: r }, btn.dataset.owner);
     } else {
       setTileOwner(activeTile, btn.dataset.owner);
     }
@@ -586,9 +530,10 @@ function exportLayout() {
     customTypes: exportCustomTypes(placed),
     // Manual tile-colour overrides only — the real starting ownership
     // (seedOwners()) is derived fresh from map.js on every load, not saved.
-    tiles: [...tiles.values()]
-      .filter((t) => t.ownerOverride !== null)
-      .map((t) => ({ x: t.x, z: t.z, owner: t.ownerOverride })),
+    tiles: Object.entries(overrides).map(([tk, owner]) => {
+      const [x, z] = tk.split(',').map(Number);
+      return { x, z, owner };
+    }),
     objects: placed.map((entry) => {
       const originX = tileWorldX(entry.tileX);
       const originZ = tileWorldZ(entry.tileZ);
@@ -666,20 +611,22 @@ document.getElementById('board-load-btn').addEventListener('click', () => {
 // Shared by the file-picker input below and by the app-wide drag-and-drop
 // handler in tabs.js, so both paths load a layout the same way. Async
 // because embedded GLB types need to be re-parsed before anything that
-// references them can spawn.
+// references them can spawn. tabs.js always shows this tab (activating
+// this module, via ensure3D()) before calling this, so r3d is guaranteed
+// to exist by the time this runs.
 export async function loadBoardData(data) {
+  ensure3D();
   clearObjects();
   buildBoard();
   await importCustomTypes(data.customTypes);
 
   for (const t of data.tiles || []) {
-    const tile = tiles.get(`${t.x}_${t.z}`);
-    if (tile && !tile.isWater && tileMaterials[t.owner]) setTileOwner(tile, t.owner);
+    const tile = { x: t.x, z: t.z, isWater: !F.territoryAt(M, t.x, t.z) };
+    if (!tile.isWater && OWNER_TO_SEAT[t.owner] !== undefined) setTileOwner(tile, t.owner);
   }
   for (const obj of data.objects || []) {
-    const tile = tiles.get(`${obj.tileX}_${obj.tileZ}`);
-    if (!tile || !OBJECT_TYPES[obj.type]) continue;
-    spawn(obj.type, tile, obj);
+    if (!OBJECT_TYPES[obj.type]) continue;
+    spawn(obj.type, { x: obj.tileX, z: obj.tileZ }, obj);
   }
 }
 
@@ -714,33 +661,25 @@ document.getElementById('board-clear-btn').addEventListener('click', () => {
 // Resize + render loop
 // ---------------------------------------------------------------------
 
-function resize() {
-  const el = document.getElementById('board-viewport');
-  const w = el.clientWidth,
-    h = el.clientHeight;
-  if (!w || !h) return;
-  camera.aspect = w / h;
-  camera.updateProjectionMatrix();
-  renderer.setSize(w, h);
-}
-window.addEventListener('resize', resize);
+window.addEventListener('resize', () => { if (isRunning && r3d) r3d.resize(); });
 
 let isRunning = false; // starts hidden until tabs.js activates this tab
 function animate() {
   if (!isRunning) return;
   requestAnimationFrame(animate);
-  orbit.update();
-  renderer.render(scene, camera);
+  r3d.controls.update();
+  r3d.renderer.render(r3d.scene, r3d.camera);
+  r3d.cssRenderer.render(r3d.scene, r3d.camera);
 }
 
 export function setActive(active) {
   const wasRunning = isRunning;
   isRunning = active;
   if (active) {
-    resize();
+    ensure3D();
+    r3d.resize();
     if (!wasRunning) animate();
   }
 }
 
-buildBoard();
 updatePanelFromSelection();

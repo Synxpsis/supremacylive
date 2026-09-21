@@ -31,12 +31,30 @@ recomputed. See [MAP_SYSTEM.md](MAP_SYSTEM.md) → `STRUCTURE_KIT`'s optional `m
   Position and scale are saved as *fractions of the tile*, not world units, so the same numbers are
   correct regardless of the tile's real in-game size or the camera's zoom/angle.
 - **Board View** — the same authoring flow, but against the real `duel` board: actual territory
-  shapes, roads, starting ownership colouring, and capital/city landmark markers, read straight from
-  `FPMap.MAPS.duel` (`public/map.js`) via [`tile-placer/board.js`](../public/tile-placer/board.js).
-  Click a tile to make it active, then place props on it the same way as Tile View, or use "Place Tile
-  Editor layout" to stamp whatever's currently built in Tile View onto the active tile at the same
-  tile-relative transforms. Useful for checking a prop against a real coastline, road junction, or
-  next to an actual capital, not just an idealized bare square.
+  shapes, starting-ownership colouring, and real capital/city pieces, read straight from
+  `FPMap.MAPS.duel` (`public/map.js`). Click a tile to make it active, then place props on it the same
+  way as Tile View, or use "Place Tile Editor layout" to stamp whatever's currently built in Tile View
+  onto the active tile at the same tile-relative transforms. Useful for checking a prop against a real
+  coastline or next to an actual capital, not just an idealized bare square.
+
+  **As of 2026-09-21, the ground/territory/city rendering is `board-render-3d.js` itself** — the same
+  module `editor.html`/`game.html` use — rather than a second, hand-rolled copy
+  ([`tile-placer/board.js`](../public/tile-placer/board.js) builds directly against its exposed
+  `scene`/`camera`/`controls`, the same pattern `editor.html`'s own grow handles already use; see
+  [RENDERING.md](RENDERING.md)). This is a real fidelity upgrade — city/capital pieces are now the
+  actual game pieces, not a stand-in cone/box — but it also means Board View shows exactly what the
+  real renderer shows and nothing more: it deliberately has **no visual distinction for road tiles**,
+  since `board-render-3d.js` doesn't draw one either (roads are pathfinding-only data, see
+  [MECHANICS.md](MECHANICS.md)) — an earlier pass added a road-tint overlay here and it was removed the
+  same day, reported directly ("the roads are still visible on that board... they shouldn't be"). The
+  active-tile label still says "road" when relevant, since that's still real, useful data for placing a
+  prop — it just isn't painted onto the board itself. Three things stay this tool's own rather than
+  shared, on purpose: PBR image-based lighting (`board-render-3d.js` uses flat gameplay lighting; this
+  tool's whole job is judging how a `.glb`'s real materials look, which needs richer lighting than
+  in-match flatness), the manual per-tile colour override described below (a debug aid with no
+  equivalent in the real game — see `board.js`'s own `setTileOwner()` comment for the one real behaviour
+  difference this causes, an override on a single tile inside an already-owned territory), and
+  everything about placing/selecting/saving props, which was never going to move either way.
 
 Both views support saving/loading a layout as local `.json` (drag-and-drop anywhere in the window, or
 the Save/Load buttons), and a dropped `.glb`'s bytes get embedded in the saved JSON (base64) so
