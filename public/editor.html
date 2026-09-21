@@ -201,7 +201,7 @@
     <div id="canvasWrap">
       <canvas id="cv"></canvas>
       <canvas id="cv3d" style="display: none;"></canvas>
-      <div id="hint">Click any tile to inspect it · Add City / Industry / Barracks, then click a valid tile to place · click + beside a sector to grow into it · scroll to zoom · drag to pan / orbit</div>
+      <div id="hint">Click any tile to inspect it · Add City / Industry / Barracks, then click a valid tile to place · click + to grow a sector there, shift+click + to leave it as water · scroll to zoom · drag to pan / orbit</div>
     </div>
     <div id="panel"></div>
   </div>
@@ -785,7 +785,7 @@
     if (!downAt) return;
     if (!panning) {
       const b = cv.getBoundingClientRect();
-      onClick(e.clientX - b.left, e.clientY - b.top);
+      onClick(e.clientX - b.left, e.clientY - b.top, e.shiftKey);
     }
     downAt = null; panning = false;
   });
@@ -836,9 +836,9 @@
   // Grow-handle hit-test runs first — a handle's tile-space rect sits just
   // outside the board bounds tileAtAny() itself is (correctly) bounded to,
   // so there's no overlap to arbitrate between the two.
-  function onClick(mx, my) {
+  function onClick(mx, my, shiftKey) {
     const g = growHandleAt2D(mx, my);
-    if (g) { growSlotsOnly(g.sc, g.sr); return; }
+    if (g) { (shiftKey ? growSlotsOnly : addTerritory)(g.sc, g.sr); return; }
     onClickTile(tileAtAny(mx, my));
   }
 
@@ -853,7 +853,7 @@
     const b = cv3d.getBoundingClientRect();
     const mx = e.clientX - b.left, my = e.clientY - b.top;
     const g = growHandleAt3D(mx, my);
-    if (g) { growSlotsOnly(g.sc, g.sr); return; }
+    if (g) { (e.shiftKey ? growSlotsOnly : addTerritory)(g.sc, g.sr); return; }
     onClickTile(_r3d.tileAtAny(mx, my));
   });
 
@@ -1017,22 +1017,35 @@
     return { sc, sr, block };
   }
 
-  /** Grow the grid to fit slot (sc, sr) and stop — leaves it as open water,
-   *  then selects a tile inside it so the existing "Open water" tile
-   *  inspector (Add land sector / Leave as water) takes over. This is what a
-   *  grow-handle click now does (see growHandles()): previously it called
-   *  addTerritory() directly, forcing land immediately with no way to grow
-   *  the board into water on purpose — "which sectors are water should be
-   *  entirely up to me," reported directly. addTerritory() itself (below)
-   *  still exists for the tile inspector's own "Add land sector" button,
-   *  which already knows the slot it's placing into. */
+  /** Grow the grid to fit slot (sc, sr) and stop — commits it as open water,
+   *  decisively, with no follow-up prompt. This is the Shift+click grow-
+   *  handle path (see onClick()/the cv3d 'click' listener below): a plain
+   *  click on "+" places land immediately (addTerritory(), unchanged, the
+   *  fast/expected one-click action); Shift+click is the deliberate
+   *  alternate for "this slot should be water" — reported directly ("which
+   *  sectors can be water should be entirely up to me, and each sector added
+   *  should have a land/water toggle").
+   *
+   *  This used to run on every grow-handle click and open the "Open water"
+   *  tile inspector (Add land sector / Leave as water) instead of choosing
+   *  outright — found not to work in practice: a plain "+" click stopped
+   *  placing land at all, so growing the board now required a second,
+   *  easy-to-miss step in the side panel, and repeatedly clicking different
+   *  "+" handles (expecting the old one-click-places-land behaviour) just
+   *  grew a scatter of empty water slots instead of the sectors intended.
+   *  Direct commit — no inspector, no second click — fixes both: the fast
+   *  path is fast again, and water is only ever created by the one gesture
+   *  that means it on purpose. The tile inspector's own Add land sector /
+   *  Leave as water pair is unchanged for its original case: clicking
+   *  directly on an already-in-bounds empty tile (e.g. one revealed by
+   *  typing bigger Sector cols/rows numbers). */
   function growSlotsOnly(sc, sr) {
     if (S.def.provinces.some(p => p.sc === sc && p.sr === sr)) return; // already occupied
-    const { sc: rsc, sr: rsr, block } = growSlotsTo(sc, sr);
+    growSlotsTo(sc, sr);
     markDirty();
     reset3D(); // growing the grid changes which tiles are land vs. water — see addTerritory()'s own comment
     rebuild();
-    select({ kind: 'tile', c: rsc * block.w + ((block.w - 1) >> 1), r: rsr * block.h + ((block.h - 1) >> 1) });
+    select(null);
   }
 
   /** Place a new sector at slot (sc, sr) — from the "Open water" tile
