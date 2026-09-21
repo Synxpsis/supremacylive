@@ -19,6 +19,7 @@ expands on this content — see the note at the bottom of this file.
 | [AI.md](AI.md) | The opponent bot: difficulty levels, its per-tick decision passes |
 | [RENDERING.md](RENDERING.md) | The 3D Three.js rendering contract (the standard going forward) and the 2D isometric canvas renderer, and how each reads the design system |
 | [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md) | Gap list and sequencing plan for bringing the map editor up to the 3D/map standard |
+| [TILE_PLACER.md](TILE_PLACER.md) | The `.glb` prop-authoring tool at `render.supremacy.live` — a different tool from the map editor above, built and maintained by Matt |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Cloudflare Worker, Durable Objects, D1, the lockstep netcode model, deploy pipeline |
 | [API.md](API.md) | Every HTTP route and WebSocket message shape, client and server side |
 | [CONTENT_INVENTORY.md](CONTENT_INVENTORY.md) | Units, currencies, structures, maps, factions/cosmetics — what exists today, and what doesn't yet |

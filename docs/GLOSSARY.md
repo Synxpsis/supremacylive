@@ -92,6 +92,13 @@ Used interchangeably in code and these docs for one of the entries in `MAPS` (`d
 list, march-distance matrix, etc.). "Map" is also the name of the standalone in-browser editor
 (`editor.html`, at `editor.supremacy.live`) for authoring these.
 
+**Not to be confused with the Tile Placer** (`tile-placer.html`, at `render.supremacy.live`, see
+[TILE_PLACER.md](TILE_PLACER.md)) — a completely different tool, built and maintained by Matt, for
+tuning a `.glb` model's scale/rotation against a tile before wiring it into `STRUCTURE_KIT`. The map
+editor authors board *content* (territories, cities, starting ownership); the tile placer authors
+*structure appearance*. Both are reachable only by their own subdomain, both call themselves "editor"-
+adjacent things in casual conversation, and that's exactly how the two get mixed up.
+
 ## Tick
 
 One fixed simulation step, 1/20th of a second (`RULES.tickHz = 20`). All game state advances in whole

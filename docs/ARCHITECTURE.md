@@ -34,8 +34,9 @@ actual hostname → extensionless-path table the handler consults; adding a four
 its own root page (rather than a subpath of the game client) is a one-line addition there plus a
 matching entry in `wrangler.jsonc`'s `routes` — no other wiring needed, since neither existing page's
 *serving* is access-gated (only `editor.html`'s save endpoint is, via `EDITOR_USERS`) and
-`render.supremacy.live` (the map editor's companion tile-placer tool, `public/tile-placer.html` — see
-`docs/EDITOR_UPGRADE.md`) has no save endpoint of its own to gate.
+`render.supremacy.live` (the `.glb` prop-authoring tile placer, `public/tile-placer.html`, built and
+maintained by Matt — a separate tool from the map editor above despite the naming similarity, see
+[TILE_PLACER.md](TILE_PLACER.md)) has no save endpoint of its own to gate.
 
 ## Accounts — D1 + HttpOnly cookies
 
