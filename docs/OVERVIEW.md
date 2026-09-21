@@ -12,7 +12,7 @@ premise ("real-time, no-turns" in the README tagline).
 ## What's actually live today
 
 - **1v1 online**, matched via a FIFO queue, played on the **`duel`** board (2 seats, 4 territories,
-  14×14 tiles). This is the only board ranked/queued matches ever use.
+  10×10 tiles). This is the only board ranked/queued matches ever use.
 - **AI test match** — the same `duel` board, one human seat vs. one of three AI difficulty levels
   (`Passive` / `Steady` / `Ruthless`), or no AI at all for solo poking-around. Runs entirely
   client-side, no Durable Object involved.

@@ -6,14 +6,15 @@ project (the author has confused themselves in-session over it more than once).
 
 ## Territory vs. province vs. tile — the important one
 
-The board is a grid of unit cells. Cells are grouped into square blocks (7×7 for the `duel` board).
-Three different words apply to two different things, depending on whether you're reading code or
-reading the screen:
+The board is a grid of unit cells. Cells are grouped into square blocks (5×5 for the `duel` board,
+`block.w`/`block.h` — see [MAP_SYSTEM.md](MAP_SYSTEM.md); not fixed across every board, `grand` uses
+5×5 too but a different `slots` grid, and a board can set any size). Three different words apply to
+two different things, depending on whether you're reading code or reading the screen:
 
 | Concept | Code calls it | Player-facing UI calls it |
 |---|---|---|
 | One unit grid cell (`(c, r)`, keyed `"c,r"`) | **tile** (`tileKey`, `S.owners[key]`, `S.garrisons[key]`) | **Province** (sidebar field `Province: Open ground` / `Territory capital`) |
-| A 7×7 block of tiles with one capital at its centre | **province** (the `M.provinces` array, `{ id: 'verrand', ... }`) | **Territory** (sidebar field `Territory held by`) |
+| A `block`-sized block of tiles with one capital at its centre | **province** (the `M.provinces` array, `{ id: 'verrand', ... }`) | **Territory** (sidebar field `Territory held by`) |
 
 So `map.js`'s `territoryOwner(map, owners, p)` — despite the name — answers "who owns this
 **province-struct** (UI: territory)", and the UI's "Province" field on a selected cell is describing
@@ -23,8 +24,9 @@ correctly side by side.
 Codenamed **"Four Provinces"** internally (see the header comments in `map.js` and `sim.js`) — that
 name predates the `Territory` / `Province` UI copy and refers to the province-structs, not tiles.
 
-When these docs need to talk about the 7×7 block, they say **territory**, matching the UI. When they
-need the individual cell, they say **tile**, to avoid colliding with the UI's own use of "province."
+When these docs need to talk about a `block`-sized block, they say **territory**, matching the UI.
+When they need the individual cell, they say **tile**, to avoid colliding with the UI's own use of
+"province."
 
 **A third name entered the mix 2026-09-13: `editor.html` now calls the same province-struct a
 "Sector"** in its own UI text only (button labels, the sidebar list, tile-inspector copy) — the game's

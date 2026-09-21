@@ -232,7 +232,7 @@ export function create(canvas, M, opts = {}) {
   scene.add(sun);
 
   // ── ground: one instance per tile, so cost stays flat as boards grow ────
-  // (196 tiles for duel, 625 for grand — three draw calls either way, one per
+  // (100 tiles for duel, 625 for grand — three draw calls either way, one per
   // mesh below.) Land is two stacked slabs, not one box: a thin coloured
   // "cap" (ownership reads from its top face, sitting at y=0 same as always
   // — every overlay above this still anchors to that plane) over a deeper,

@@ -15,7 +15,8 @@ today and what this spec actually supports.
 A board declares:
 
 - `slots: { cols, rows }` — a grid of territory-sized cells
-- `block: { w, h }` — one territory's tile footprint (7×7 for `duel`/`solo`, 5×5 for `grand`)
+- `block: { w, h }` — one territory's tile footprint (5×5 for `duel`/`solo`/`grand` — all three now
+  share `DEFAULT_BLOCK`, though `duel`/`solo` still set it explicitly rather than omitting it)
 - `provinces: [{ id, name, sc, sr, ... }]` — one entry per **occupied** slot (`sc`/`sr` = slot
   coordinates). Not every slot has to be filled — see "Sparse boards and water" below.
 
@@ -49,7 +50,7 @@ mode" needed. See [EDITOR_UPGRADE.md](EDITOR_UPGRADE.md). None of the three ship
 (`duel`/`solo`/`grand`) actually use this yet — they all still fill their whole grid — so no board a
 real match is played on has ever had a water tile; that's a content choice now, not a tooling gap.
 
-**A water slot is a real 7×7 (or whatever `block` is) grid of individually addressable tiles, not one
+**A water slot is a real `block`-sized grid of individually addressable tiles, not one
 undivided cell** — `territoryAt()` resolves every `(c, r)` inside it to `null` independently, exactly
 like a province resolves every tile inside it to itself. The 3D renderer didn't visually reflect that
 until 2026-09-14 (see [RENDERING.md](RENDERING.md) → Ground): it drew tile-grid lines only for occupied
@@ -69,7 +70,7 @@ D1 — same shape either way, see [ARCHITECTURE.md](ARCHITECTURE.md)).
 | `note` | string | no | Free-text design note, never read by code |
 | `win` | `{ territories: int }` | no | Territories needed to win outright. Omitted = "every territory on the board" (today's `duel`/`solo` default) |
 | `slots` | `{ cols, rows }` | no (default `{2,2}`) | The territory grid dimensions |
-| `block` | `{ w, h }` | no (default `{5,5}` — `DEFAULT_BLOCK`, the map editor's standard for newly-authored content; `duel`/`solo` set their own explicit `{7,7}` instead, sized to their hand-placed cities, and don't read this default) | One territory's tile footprint |
+| `block` | `{ w, h }` | no (default `{5,5}` — `DEFAULT_BLOCK`, the map editor's standard for newly-authored content; `duel`/`solo`/`grand` all set this explicitly too, matching the default rather than omitting it, since a board's own value always wins regardless) | One territory's tile footprint |
 | `starts` | `[{ seat, territory }]` | no | Which territory each seat's tiles are seeded from at match start (`seedOwners()`) |
 | `provinces` | `[Province]` | yes | One entry per **occupied** slot — see below. Omitted slots are gaps (future water) |
 | `cities` | `[City]` | yes | One entry per city, referencing a province by id |
@@ -212,8 +213,8 @@ instead of this projection math — see [RENDERING.md](RENDERING.md).
 
 | Key | Seats | Territories | Tiles | Status |
 |---|---|---|---|---|
-| `duel` | 2 | 4 (2×2 slots, 7×7 block) | 196 (14×14) | **Live** — the only board ranked 1v1 and the AI test match use. Editable at `editor.supremacy.live`, backed by D1 (see below); the static `MAPS.duel` here is only the seed/fallback. |
-| `solo` | 1 | 4 (same layout as `duel`, asymmetric content) | 196 | The original single-player campaign board — one home territory, escalating neutral territories, `dunmar` as the intended endgame. Not symmetric by design (`symmetry()` correctly reports it isn't). Kept as the AI's balance-tuning reference. |
+| `duel` | 2 | 4 (2×2 slots, 5×5 block) | 100 (10×10) | **Live** — the only board ranked 1v1 and the AI test match use. Editable at `editor.supremacy.live`, backed by D1 (see below); the static `MAPS.duel` here is only the seed/fallback. Block shrank from 7×7 to 5×5 (2026-09-20) — every hand-placed city's `lc`/`lr` was rescaled to fit, not just the number changed; see the comment above `MAPS.duel` itself for the exact rule and why it was chosen over clearing the board. |
+| `solo` | 1 | 4 (same layout as `duel`, asymmetric content) | 100 | The original single-player campaign board — one home territory, escalating neutral territories, `dunmar` as the intended endgame. Not symmetric by design (`symmetry()` correctly reports it isn't). Kept as the AI's balance-tuning reference. Block/city rescale same as `duel`'s, 2026-09-20. |
 | `grand` | 2 | 25 (5×5 slots, 5×5 block) | 625 (25×25) | **Shelved, not deleted.** Fully defined and playable via an explicit `?board=grand`, but nothing defaults to it anymore — see [KNOWN_ISSUES.md](KNOWN_ISSUES.md). `win.territories: 18` (doesn't require holding literally everything, unlike `duel`/`solo`'s implicit "all of them" default). |
 
 ### `duel` is live content, not just a static file

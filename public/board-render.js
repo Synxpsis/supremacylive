@@ -153,7 +153,7 @@
     // instead of reading as a flat painted diamond. Same near-edge-per-axis
     // logic as prism() above, for the same reason.
     {
-      const gw = M.gridW || 14, gh = M.gridH || 14;
+      const gw = M.gridW || 10, gh = M.gridH || 10; // see map.js's worldBounds() comment
       const t = -F.ISO.thick * 2.2;
       const rEdge = rNear ? gh : 0, cEdge = cNear ? gw : 0;
       const face = (pts, fill) => {

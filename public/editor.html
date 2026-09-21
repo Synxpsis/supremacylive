@@ -838,7 +838,7 @@
   // so there's no overlap to arbitrate between the two.
   function onClick(mx, my) {
     const g = growHandleAt2D(mx, my);
-    if (g) { addTerritory(g.sc, g.sr); return; }
+    if (g) { growSlotsOnly(g.sc, g.sr); return; }
     onClickTile(tileAtAny(mx, my));
   }
 
@@ -853,7 +853,7 @@
     const b = cv3d.getBoundingClientRect();
     const mx = e.clientX - b.left, my = e.clientY - b.top;
     const g = growHandleAt3D(mx, my);
-    if (g) { addTerritory(g.sc, g.sr); return; }
+    if (g) { growSlotsOnly(g.sc, g.sr); return; }
     onClickTile(_r3d.tileAtAny(mx, my));
   });
 
@@ -974,30 +974,22 @@
     rebuild();
   }
 
-  /** Place a new sector at slot (sc, sr) — grown into from an empty tile
-   *  click, or from a grow-handle click (see growHandles()), which is why
-   *  this also owns growing (and, on the low edge, shifting) the slot grid
-   *  to fit the target slot rather than assuming it's already in bounds:
-   *  slot coordinates are always non-negative (docs/MAP_SYSTEM.md), so
-   *  growing "left" or "up" means every existing province's sc/sr moves over
-   *  by however far negative the new slot would otherwise be, the same way
-   *  resizeSlots() already grows (without shifting) on the high edge. A
-   *  grow-handle click is always pre-validated by growHandles() itself to
-   *  stay under MAX_SLOTS; clamping here too is just so a direct call (e.g.
-   *  the manual "click open water" tile-inspector path, which only ever
-   *  passes an already-in-bounds slot) can't be talked into exceeding it.
-   *
-   *  Every sector needs a capital to actually be fought over and pay income
-   *  (see docs/MECHANICS.md), so this seeds one — flagged capital: true (see
-   *  map.js's capitalOf(); the flag is what makes it the capital, not where
-   *  it sits) — at the centre tile as a sane starting spot, with modest
-   *  neutral defaults, editable afterward exactly like any other city,
-   *  freely movable without losing capital status. Both the sector and its
-   *  capital are left unnamed (no fantasy-name pool) — the GM names their
-   *  own world; see clearBoard()'s own comment for the same reasoning. */
-  function addTerritory(sc, sr) {
-    if (S.def.provinces.some(p => p.sc === sc && p.sr === sr)) return; // already occupied
-
+  /** Grow (and, on the low edge, shift) the slot grid to fit slot (sc, sr),
+   *  without placing anything there — shared by addTerritory() below and by
+   *  a grow-handle click (see growHandles()/growSlotsOnly()), which only
+   *  wants the slot to *exist* so its tile inspector can offer the land/water
+   *  choice, not to force land immediately. Slot coordinates are always
+   *  non-negative (docs/MAP_SYSTEM.md), so growing "left" or "up" means every
+   *  existing province's sc/sr moves over by however far negative the new
+   *  slot would otherwise be, the same way resizeSlots() already grows
+   *  (without shifting) on the high edge. A grow-handle click is always
+   *  pre-validated by growHandles() itself to stay under MAX_SLOTS; clamping
+   *  here too is just so a direct call (e.g. the manual "click open water"
+   *  tile-inspector path, which only ever passes an already-in-bounds slot)
+   *  can't be talked into exceeding it. Returns the clamped { sc, sr } (0 if
+   *  it was negative going in) and the board's block size, since callers need
+   *  both to resolve an absolute tile. */
+  function growSlotsTo(sc, sr) {
     const block = S.def.block || F().DEFAULT_BLOCK;
     const cur = S.def.slots || F().DEFAULT_SLOTS;
     let cols = cur.cols, rows = cur.rows, shiftC = 0, shiftR = 0;
@@ -1022,6 +1014,47 @@
       S.def.labelOrigin = { c: lo.c + shiftC * block.w, r: lo.r + shiftR * block.h };
     }
     S.def.slots = { cols, rows };
+    return { sc, sr, block };
+  }
+
+  /** Grow the grid to fit slot (sc, sr) and stop — leaves it as open water,
+   *  then selects a tile inside it so the existing "Open water" tile
+   *  inspector (Add land sector / Leave as water) takes over. This is what a
+   *  grow-handle click now does (see growHandles()): previously it called
+   *  addTerritory() directly, forcing land immediately with no way to grow
+   *  the board into water on purpose — "which sectors are water should be
+   *  entirely up to me," reported directly. addTerritory() itself (below)
+   *  still exists for the tile inspector's own "Add land sector" button,
+   *  which already knows the slot it's placing into. */
+  function growSlotsOnly(sc, sr) {
+    if (S.def.provinces.some(p => p.sc === sc && p.sr === sr)) return; // already occupied
+    const { sc: rsc, sr: rsr, block } = growSlotsTo(sc, sr);
+    markDirty();
+    reset3D(); // growing the grid changes which tiles are land vs. water — see addTerritory()'s own comment
+    rebuild();
+    select({ kind: 'tile', c: rsc * block.w + ((block.w - 1) >> 1), r: rsr * block.h + ((block.h - 1) >> 1) });
+  }
+
+  /** Place a new sector at slot (sc, sr) — from the "Open water" tile
+   *  inspector's "Add land sector" button (a click already landed on this
+   *  exact slot, land or water, via select() or growSlotsOnly() above), so
+   *  the slot is already guaranteed to exist; growSlotsTo() still owns
+   *  growing/shifting for the few callers (e.g. a direct API/test call) that
+   *  pass an out-of-bounds slot.
+   *
+   *  Every sector needs a capital to actually be fought over and pay income
+   *  (see docs/MECHANICS.md), so this seeds one — flagged capital: true (see
+   *  map.js's capitalOf(); the flag is what makes it the capital, not where
+   *  it sits) — at the centre tile as a sane starting spot, with modest
+   *  neutral defaults, editable afterward exactly like any other city,
+   *  freely movable without losing capital status. Both the sector and its
+   *  capital are left unnamed (no fantasy-name pool) — the GM names their
+   *  own world; see clearBoard()'s own comment for the same reasoning. */
+  function addTerritory(sc, sr) {
+    if (S.def.provinces.some(p => p.sc === sc && p.sr === sr)) return; // already occupied
+
+    const { sc: rsc, sr: rsr, block } = growSlotsTo(sc, sr);
+    sc = rsc; sr = rsr;
 
     const existingIds = S.def.provinces.map(p => p.id);
     const id = F().pickId('sector' + sc + sr, existingIds);

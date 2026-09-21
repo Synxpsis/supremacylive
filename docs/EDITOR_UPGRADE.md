@@ -160,16 +160,16 @@ as of 2026-09-12 (`ba103ce`, `a4c2834`); the rest are still open.
   empty (editor-only overlay: `growHandles()`/`drawGrowHandles2D()` in `editor.html` for the 2D canvas,
   `syncGrowHandles3D()` for the 3D scene — built directly against `board-render-3d.js`'s exposed
   `scene`/`camera` rather than added to that shared module, since game.html has no use for grid-growth
-  UI). Clicking one places exactly one new sector at that slot and nothing else — growing right of one
-  sector never implicitly reveals a slot in some other row the GM didn't ask for, the way a whole-axis
-  resize would. `addTerritory()` now owns growing (and, on the low edge, *shifting* — every existing
-  province's `sc`/`sr` moves over by one) the slot grid to fit whatever slot it's asked to place a
-  sector at, so growth works from the left/top edges too, not just high-index right/bottom the way
-  `resizeSlots()` alone ever could. The typed Sector cols/rows fields are unchanged and still the only
-  way to shrink. A GM growing the grid now routinely lands on a slot with no province yet, so the tile
-  inspector for an empty (water) slot shows two buttons instead of one — **Add land sector** (the same
-  seeding as a grow-handle click: neutral, capital at centre) and **Leave as water** (a no-op dismiss —
-  water is the absence of a province, never a value to set). Separately: "Remove sector" used to only
+  UI). Clicking one grows the grid by exactly one slot and nothing else — growing right of one sector
+  never implicitly reveals a slot in some other row the GM didn't ask for, the way a whole-axis resize
+  would — then selects that slot, so the same "Open water" tile inspector any other empty tile already
+  shows takes over (**Add land sector**, seeding a neutral sector with a capital at centre, or **Leave
+  as water**, a no-op dismiss — water is the absence of a province, never a value to set). `growSlotsTo()`
+  owns growing (and, on the low edge, *shifting* — every existing province's `sc`/`sr` moves over by one)
+  the slot grid to fit whatever slot it's asked to make room for, so growth works from the left/top edges
+  too, not just high-index right/bottom the way `resizeSlots()` alone ever could; both `growSlotsOnly()`
+  (the grow-handle path) and `addTerritory()` (placing an actual sector) call it. The typed Sector
+  cols/rows fields are unchanged and still the only way to shrink. Separately: "Remove sector" used to only
   appear in the "open ground" tile inspector — a sector's own capital (its centre tile, the single most
   likely first click) had no path to remove it at all; the same two-click-confirm control now renders
   in the city and structure inspector branches too. Finally, growing from the low (west/north) edge
@@ -191,6 +191,17 @@ as of 2026-09-12 (`ba103ce`, `a4c2834`); the rest are still open.
   constant so `syncGrowHandles3D()`'s box always matches a real sector's depth exactly rather than a
   hand-maintained duplicate number, and the module's new `setWaterMask()` hides water under every tile
   a grow handle covers. ✅ **Done, 2026-09-20.**
+- **Fix: a grow-handle click always placed land, with no way to grow the board into water on purpose.**
+  Reported directly: "which sectors can be water should be entirely up to me, and each sector added
+  should have a land/water toggle." The Board panel's typed Sector cols/rows fields already gave this
+  choice (growing that way leaves new slots empty, and clicking into one shows the "Open water" tile
+  inspector's Add land sector / Leave as water pair — see the 2026-09-20 grow-handle entry above), but
+  the on-canvas "+" handles — the primary, most visible way to grow the board one sector at a time —
+  skipped straight to `addTerritory()`, seeding land immediately with no water option. `addTerritory()`'s
+  grid-growing/shifting logic is now its own function, `growSlotsTo()`; a grow-handle click calls a new
+  `growSlotsOnly()` that grows the grid and selects the (still-empty) slot instead, so the same "Open
+  water" inspector every other empty tile already shows takes over — the GM picks Add land sector or
+  Leave as water explicitly, every time, regardless of which path grew the grid. ✅ **Done, 2026-09-20.**
 
 ## What it can't do — the actual gap list
 
@@ -205,7 +216,8 @@ job):
    renders as water (3D) or a dashed placeholder (2D) with zero further work.
 3. ~~**Edit a board's own dimensions.**~~ ✅ **Done, 2026-09-13.** Both halves now have editor UI:
    `slots.cols`/`slots.rows` (how many territory slots the grid has, `a4c2834`) and **`block.w`/
-   `block.h`** (a territory's own tile footprint — 7×7 on `duel`, 5×5 on `grand`, added 2026-09-13). The
+   `block.h`** (a territory's own tile footprint — 5×5 on every shipped board as of 2026-09-20, added
+   2026-09-13). The
    block control refuses to shrink out from under an existing city/structure whose `lc`/`lr` would fall
    outside the new footprint, same philosophy as the slot-grid guard — but note it does *not* reposition
    anything that survives the check, and a territory's centre tile (its capital slot) moves whenever
